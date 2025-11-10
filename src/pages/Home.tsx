@@ -7,12 +7,22 @@ const Home: React.FC = () => {
   return (
     <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
       <Header />
-      <Box component="main" sx={{ flexGrow: 1, py: 4 }}>
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          py: 4,
+          marginTop: "50px",
+          marginLeft: "20px",
+          marginRight: "20px",
+          marginBottom: "20px",
+        }}
+      >
         <Paper elevation={3} sx={{ p: 4, textAlign: "center", mb: 4 }}>
           <Typography variant="h2" component="h1" gutterBottom>
             Welcome to NSolutions
           </Typography>
-          <Typography variant="h5" color="text.secondary" paragraph>
+          <Typography variant="h5" color="text.secondary">
             Innovative solutions for your business needs.
           </Typography>
           <Button variant="contained" size="large" sx={{ mt: 2 }}>

@@ -1,14 +1,17 @@
 import { BrowserRouter } from "react-router-dom";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
+import "./App.css";
+// import { ScopedCssBaseline } from "@mui/material";
+
 import Home from "./pages/Home";
 
-const theme = createTheme();
-
 function App() {
+  const theme = createTheme();
   return (
     <ThemeProvider theme={theme}>
-      <CssBaseline />
+      <CssBaseline />{" "}
+      {/* Provides a consistent baseline for styling accross different browsers */}
       <BrowserRouter>
         <Home />
       </BrowserRouter>
