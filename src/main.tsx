@@ -1,28 +1,15 @@
-<<<<<<< HEAD
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import './index.css'
-import App from './App.tsx'
-
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-)
-=======
-import { createTheme, ThemeProvider } from "@mui/material";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
 import App from "./App.tsx";
+import { store } from "./store/store";
+import { initializeAuth } from "./store/authSlice";
 
-const theme = createTheme();
+// Initialize auth state from localStorage
+store.dispatch(initializeAuth());
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <ThemeProvider theme={theme}>
-      <App />
-    </ThemeProvider>
+    <App />
   </StrictMode>
 );
->>>>>>> e706338a35202b07b243bb08f5e0a8a70cf18f77
