@@ -27,7 +27,10 @@ const navItems = [
   { label: "Register", to: "/register" },
 ];
 
-export default function Header() {
+export default function Header(props: {
+  onRegisterClick?: () => void;
+  onLoginClick?: () => void;
+}) {
   const [mobileOpen, setMobileOpen] = React.useState(false);
 
   const handleDrawerToggle = () => {
@@ -43,31 +46,48 @@ export default function Header() {
       <List>
         {navItems.map((item) => (
           <ListItem key={item.label} disablePadding>
-            <ListItemButton
-              sx={{
-                textAlign: "center",
-                padding: "8px 16px",
-                margin: "4px 8px",
-                ...(item.label === "Login" && {
-                  backgroundColor: "green",
-                  color: "white",
-                  "&:hover": { backgroundColor: "#32CD32", color: "#fff" },
-                }),
-                ...(item.label === "Register" && {
+            {item.label === "Register" ? (
+              <ListItemButton
+                sx={{
+                  textAlign: "center",
+                  padding: "8px 16px",
+                  margin: "4px 8px",
                   backgroundColor: "secondary.main",
                   color: "white",
                   "&:hover": { backgroundColor: "#FF6347", color: "#fff" },
-                }),
-                ...(item.label !== "Login" &&
-                  item.label !== "Register" && {
-                    "&:hover": { backgroundColor: "#BBDEFB", color: "inherit" },
-                  }),
-              }}
-              component={Link}
-              to={item.to}
-            >
-              <ListItemText primary={item.label} />
-            </ListItemButton>
+                }}
+                onClick={props.onRegisterClick}
+              >
+                <ListItemText primary={item.label} />
+              </ListItemButton>
+            ) : item.label === "Login" ? (
+              <ListItemButton
+                sx={{
+                  textAlign: "center",
+                  padding: "8px 16px",
+                  margin: "4px 8px",
+                  backgroundColor: "green",
+                  color: "white",
+                  "&:hover": { backgroundColor: "#32CD32", color: "#fff" },
+                }}
+                onClick={props.onLoginClick}
+              >
+                <ListItemText primary={item.label} />
+              </ListItemButton>
+            ) : (
+              <ListItemButton
+                sx={{
+                  textAlign: "center",
+                  padding: "8px 16px",
+                  margin: "4px 8px",
+                  "&:hover": { backgroundColor: "#BBDEFB", color: "inherit" },
+                }}
+                component={Link}
+                to={item.to}
+              >
+                <ListItemText primary={item.label} />
+              </ListItemButton>
+            )}
           </ListItem>
         ))}
       </List>
@@ -97,57 +117,67 @@ export default function Header() {
             NSolutions
           </Typography>
           <Box sx={{ display: { xs: "none", md: "block" } }}>
-            {navItems.map((item) => (
-              <Button
-                key={item.label}
-                variant={
-                  item.label === "Login" || item.label === "Register"
-                    ? "contained"
-                    : "text"
-                }
-                sx={
-                  item.label === "Login"
-                    ? {
-                        backgroundColor: "green",
-                        color: "white",
-                        mr: 1,
-                        padding: "8px 16px",
-                        borderRadius: "4px",
-                        minWidth: "100px",
-                        ml: 2,
-                        "&:hover": {
-                          backgroundColor: "#32CD32",
-                          color: "#fff",
-                        },
-                      }
-                    : item.label === "Register"
-                    ? {
-                        backgroundColor: "secondary.main",
-                        color: "white",
-                        mr: 1,
-                        padding: "8px 16px",
-                        borderRadius: "4px",
-                        minWidth: "100px",
-                        "&:hover": {
-                          backgroundColor: "#FF6347",
-                          color: "#fff",
-                        },
-                      }
-                    : {
-                        color: "#fff",
-                        mr: 1,
-                        "&:hover": {
-                          backgroundColor: "rgba(255,255,255,0.1)",
-                          color: "#fff",
-                        },
-                      }
-                }
-                component={Link}
-                to={item.to}
-              >
-                {item.label}
-              </Button>
-            ))}
+            {navItems.map((item) =>
+              item.label === "Register" ? (
+                <Button
+                  key={item.label}
+                  variant="contained"
+                  sx={{
+                    backgroundColor: "secondary.main",
+                    color: "white",
+                    mr: 1,
+                    padding: "8px 16px",
+                    borderRadius: "4px",
+                    minWidth: "100px",
+                    "&:hover": {
+                      backgroundColor: "#FF6347",
+                      color: "#fff",
+                    },
+                  }}
+                  onClick={props.onRegisterClick}
+                >
+                  {item.label}
+                </Button>
+              ) : item.label === "Login" ? (
+                <Button
+                  key={item.label}
+                  variant="contained"
+                  sx={{
+                    backgroundColor: "green",
+                    color: "white",
+                    mr: 1,
+                    padding: "8px 16px",
+                    borderRadius: "4px",
+                    minWidth: "100px",
+                    ml: 2,
+                    "&:hover": {
+                      backgroundColor: "#32CD32",
+                      color: "#fff",
+                    },
+                  }}
+                  onClick={props.onLoginClick}
+                >
+                  {item.label}
+                </Button>
+              ) : (
+                <Button
+                  key={item.label}
+                  variant="text"
+                  sx={{
+                    color: "#fff",
+                    mr: 1,
+                    "&:hover": {
+                      backgroundColor: "rgba(255,255,255,0.1)",
+                      color: "#fff",
+                    },
+                  }}
+                  component={Link}
+                  to={item.to}
+                >
+                  {item.label}
+                </Button>
+              )
+            )}
           </Box>
         </Toolbar>
       </AppBar>

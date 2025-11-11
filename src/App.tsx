@@ -1,4 +1,4 @@
-import { BrowserRouter } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import "./App.css";
@@ -13,7 +13,9 @@ function App() {
       <CssBaseline />{" "}
       {/* Provides a consistent baseline for styling accross different browsers */}
       <BrowserRouter>
-        <Home />
+        <Routes>
+          <Route path="/" element={<Home />} />
+        </Routes>
       </BrowserRouter>
     </ThemeProvider>
   );
