@@ -1,10 +1,5 @@
 import React from "react";
-import {
-  Typography,
-  Box,
-  Button,
-  Paper,
-} from "@mui/material";
+import { Typography, Box, Button, Paper } from "@mui/material";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 
@@ -47,5 +42,4 @@ const Home: React.FC = () => {
     </Box>
   );
 };
-
 export default Home;

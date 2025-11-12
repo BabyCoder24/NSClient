@@ -43,50 +43,18 @@ export default function Header() {
       <List>
         {navItems.map((item) => (
           <ListItem key={item.label} disablePadding>
-            {item.label === "Register" ? (
-              <ListItemButton
-                sx={{
-                  textAlign: "center",
-                  padding: "8px 16px",
-                  margin: "4px 8px",
-                  backgroundColor: "secondary.main",
-                  color: "white",
-                  "&:hover": { backgroundColor: "#FF6347", color: "#fff" },
-                }}
-                component={Link}
-                to="/register"
-              >
-                <ListItemText primary={item.label} />
-              </ListItemButton>
-            ) : item.label === "Login" ? (
-              <ListItemButton
-                sx={{
-                  textAlign: "center",
-                  padding: "8px 16px",
-                  margin: "4px 8px",
-                  backgroundColor: "green",
-                  color: "white",
-                  "&:hover": { backgroundColor: "#32CD32", color: "#fff" },
-                }}
-                component={Link}
-                to="/login"
-              >
-                <ListItemText primary={item.label} />
-              </ListItemButton>
-            ) : (
-              <ListItemButton
-                sx={{
-                  textAlign: "center",
-                  padding: "8px 16px",
-                  margin: "4px 8px",
-                  "&:hover": { backgroundColor: "#BBDEFB", color: "inherit" },
-                }}
-                component={Link}
-                to={item.to}
-              >
-                <ListItemText primary={item.label} />
-              </ListItemButton>
-            )}
+            <ListItemButton
+              sx={{
+                textAlign: "center",
+                padding: "8px 16px",
+                margin: "4px 8px",
+                "&:hover": { backgroundColor: "#BBDEFB", color: "inherit" },
+              }}
+              component={Link}
+              to={item.to}
+            >
+              <ListItemText primary={item.label} />
+            </ListItemButton>
           </ListItem>
         ))}
       </List>
@@ -134,7 +102,7 @@ export default function Header() {
                     },
                   }}
                   component={Link}
-                  to="/register"
+                  to={item.to}
                 >
                   {item.label}
                 </Button>
@@ -156,7 +124,7 @@ export default function Header() {
                     },
                   }}
                   component={Link}
-                  to="/login"
+                  to={item.to}
                 >
                   {item.label}
                 </Button>

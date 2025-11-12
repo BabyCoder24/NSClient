@@ -10,7 +10,9 @@ import {
   Link,
 } from "@mui/material";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
-import axios from "axios";
+import { useDispatch, useSelector } from "react-redux";
+import type { AppDispatch, RootState } from "../store/store";
+import { registerUser } from "../store/authThunks";
 import type { RegistrationRequest } from "../types/auth";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
@@ -20,11 +22,11 @@ const RegisterForm: React.FC = () => {
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [company, setCompany] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 
+  const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
+  const { loading, error } = useSelector((state: RootState) => state.auth);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -32,9 +34,6 @@ const RegisterForm: React.FC = () => {
     if (!firstName.trim() || !lastName.trim() || !email.trim()) {
       return;
     }
-
-    setLoading(true);
-    setError("");
 
     try {
       const registrationData: RegistrationRequest = {
@@ -44,7 +43,7 @@ const RegisterForm: React.FC = () => {
         CompanyName: company.trim() || undefined,
       };
 
-      await axios.post("/auth/register", registrationData);
+      await dispatch(registerUser(registrationData)).unwrap();
 
       setSuccess(true);
 
@@ -59,13 +58,7 @@ const RegisterForm: React.FC = () => {
         navigate("/login");
       }, 3000);
     } catch (error: unknown) {
-      const message =
-        (error as any)?.__kind === "network"
-          ? "Network error. Please check your connection."
-          : (error as any).response?.data?.message || "Registration failed";
-      setError(message);
-    } finally {
-      setLoading(false);
+      // Error is handled by the slice
     }
   };
 

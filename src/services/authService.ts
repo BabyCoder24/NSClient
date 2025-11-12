@@ -1,0 +1,59 @@
+import { BASE_URL } from "../config/baseURL";
+import axios from "axios";
+import type {
+  LoginRequest,
+  LoginResponse,
+  RegistrationRequest,
+  ForgotPasswordRequest,
+  ResetPasswordRequest,
+} from "../types/auth";
+
+// Login API
+export const loginAPI = async (
+  credentials: LoginRequest
+): Promise<LoginResponse> => {
+  try {
+    const response = await axios.post<LoginResponse>(
+      `${BASE_URL}/auth/login`,
+      credentials
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error logging in:", error);
+    throw error;
+  }
+};
+
+// Register API
+export const registerAPI = async (data: RegistrationRequest): Promise<void> => {
+  try {
+    await axios.post(`${BASE_URL}/auth/register`, data);
+  } catch (error) {
+    console.error("Error registering user:", error);
+    throw error;
+  }
+};
+
+// Forgot password API
+export const forgotPasswordAPI = async (
+  data: ForgotPasswordRequest
+): Promise<void> => {
+  try {
+    await axios.post(`${BASE_URL}/auth/forgot-password`, data);
+  } catch (error) {
+    console.error("Error sending forgot password request:", error);
+    throw error;
+  }
+};
+
+// Reset password API
+export const resetPasswordAPI = async (
+  data: ResetPasswordRequest
+): Promise<void> => {
+  try {
+    await axios.post(`${BASE_URL}/auth/reset-password`, data);
+  } catch (error) {
+    console.error("Error resetting password:", error);
+    throw error;
+  }
+};

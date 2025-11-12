@@ -1,8 +1,14 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import axios from "axios";
+import {
+  loginAPI,
+  registerAPI,
+  forgotPasswordAPI,
+  resetPasswordAPI,
+} from "../services/authService";
+import { showCrudMessage } from "./createMessageSlice";
 import type {
   LoginRequest,
-  LoginResponse,
+  RegistrationRequest,
   ForgotPasswordRequest,
   ResetPasswordRequest,
   AuthUser,
@@ -11,12 +17,9 @@ import type {
 // Login thunk
 export const loginUser = createAsyncThunk(
   "auth/login",
-  async (credentials: LoginRequest, { rejectWithValue }) => {
+  async (credentials: LoginRequest, { rejectWithValue, dispatch }) => {
     try {
-      const response = await axios.post<LoginResponse>(
-        "/auth/login",
-        credentials
-      );
+      const response = await loginAPI(credentials);
 
       // For now, we'll create a basic user object from the token
       // In a real app, you'd decode the JWT or make another call to get user details
@@ -30,13 +33,14 @@ export const loginUser = createAsyncThunk(
 
       return {
         user,
-        token: response.data.Token,
+        token: response.Token,
       };
     } catch (error: any) {
       const message =
         error?.__kind === "network"
           ? "Network error. Please check your connection."
           : error.response?.data?.message || "Login failed";
+      dispatch(showCrudMessage({ text: message, type: "error" }));
       return rejectWithValue(message);
     }
   }
@@ -45,15 +49,22 @@ export const loginUser = createAsyncThunk(
 // Forgot password thunk
 export const forgotPassword = createAsyncThunk(
   "auth/forgotPassword",
-  async (data: ForgotPasswordRequest, { rejectWithValue }) => {
+  async (data: ForgotPasswordRequest, { rejectWithValue, dispatch }) => {
     try {
-      await axios.post("/auth/forgot-password", data);
+      await forgotPasswordAPI(data);
+      dispatch(
+        showCrudMessage({
+          text: "Password reset email sent successfully",
+          type: "create",
+        })
+      );
       return true;
     } catch (error: any) {
       const message =
         error?.__kind === "network"
           ? "Network error. Please check your connection."
           : error.response?.data?.message || "Failed to send reset email";
+      dispatch(showCrudMessage({ text: message, type: "error" }));
       return rejectWithValue(message);
     }
   }
@@ -62,15 +73,46 @@ export const forgotPassword = createAsyncThunk(
 // Reset password thunk
 export const resetPassword = createAsyncThunk(
   "auth/resetPassword",
-  async (data: ResetPasswordRequest, { rejectWithValue }) => {
+  async (data: ResetPasswordRequest, { rejectWithValue, dispatch }) => {
     try {
-      await axios.post("/auth/reset-password", data);
+      await resetPasswordAPI(data);
+      dispatch(
+        showCrudMessage({ text: "Password reset successfully", type: "update" })
+      );
       return true;
     } catch (error: any) {
       const message =
         error?.__kind === "network"
           ? "Network error. Please check your connection."
           : error.response?.data?.message || "Failed to reset password";
+      dispatch(showCrudMessage({ text: message, type: "error" }));
+      return rejectWithValue(message);
+    }
+  }
+);
+
+// Register user thunk
+export const registerUser = createAsyncThunk(
+  "auth/registerUser",
+  async (
+    registrationData: RegistrationRequest,
+    { rejectWithValue, dispatch }
+  ) => {
+    try {
+      await registerAPI(registrationData);
+      dispatch(
+        showCrudMessage({
+          text: "Registration successful! Please check your email to verify your account.",
+          type: "create",
+        })
+      );
+      return true;
+    } catch (error: any) {
+      const message =
+        error?.__kind === "network"
+          ? "Network error. Please check your connection."
+          : error.response?.data?.message || "Registration failed";
+      dispatch(showCrudMessage({ text: message, type: "error" }));
       return rejectWithValue(message);
     }
   }
