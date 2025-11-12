@@ -23,7 +23,7 @@ export interface LoginRequest {
 }
 
 export interface LoginResponse {
-  Token: string;
+  token: string;
 }
 
 export interface RegistrationRequest {
@@ -46,4 +46,8 @@ export interface CompleteRegistrationRequest {
   Token: string;
   Password: string;
   Username?: string;
+  FirstName: string;
+  LastName: string;
+  CompanyName?: string;
+  Email: string;
 }

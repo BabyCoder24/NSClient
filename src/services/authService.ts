@@ -6,6 +6,7 @@ import type {
   RegistrationRequest,
   ForgotPasswordRequest,
   ResetPasswordRequest,
+  CompleteRegistrationRequest,
 } from "../types/auth";
 
 // Login API
@@ -54,6 +55,18 @@ export const resetPasswordAPI = async (
     await axios.post(`${BASE_URL}/auth/reset-password`, data);
   } catch (error) {
     console.error("Error resetting password:", error);
+    throw error;
+  }
+};
+
+// Complete registration API
+export const completeRegistrationAPI = async (
+  data: CompleteRegistrationRequest
+): Promise<void> => {
+  try {
+    await axios.post(`${BASE_URL}/auth/complete-registration`, data);
+  } catch (error) {
+    console.error("Error completing registration:", error);
     throw error;
   }
 };

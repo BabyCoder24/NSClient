@@ -43,18 +43,54 @@ export default function Header() {
       <List>
         {navItems.map((item) => (
           <ListItem key={item.label} disablePadding>
-            <ListItemButton
-              sx={{
-                textAlign: "center",
-                padding: "8px 16px",
-                margin: "4px 8px",
-                "&:hover": { backgroundColor: "#BBDEFB", color: "inherit" },
-              }}
-              component={Link}
-              to={item.to}
-            >
-              <ListItemText primary={item.label} />
-            </ListItemButton>
+            {item.label === "Register" ? (
+              <ListItemButton
+                sx={{
+                  textAlign: "center",
+                  padding: "8px 16px",
+                  margin: "4px 8px",
+                  backgroundColor: "secondary.main",
+                  color: "white",
+                  borderRadius: "4px",
+                  minWidth: "100px",
+                  "&:hover": { backgroundColor: "#FF6347", color: "#fff" },
+                }}
+                component={Link}
+                to={item.to}
+              >
+                <ListItemText primary={item.label} />
+              </ListItemButton>
+            ) : item.label === "Login" ? (
+              <ListItemButton
+                sx={{
+                  textAlign: "center",
+                  padding: "8px 16px",
+                  margin: "4px 8px",
+                  backgroundColor: "green",
+                  color: "white",
+                  borderRadius: "4px",
+                  minWidth: "100px",
+                  "&:hover": { backgroundColor: "#32CD32", color: "#fff" },
+                }}
+                component={Link}
+                to={item.to}
+              >
+                <ListItemText primary={item.label} />
+              </ListItemButton>
+            ) : (
+              <ListItemButton
+                sx={{
+                  textAlign: "center",
+                  padding: "8px 16px",
+                  margin: "4px 8px",
+                  "&:hover": { backgroundColor: "#BBDEFB", color: "inherit" },
+                }}
+                component={Link}
+                to={item.to}
+              >
+                <ListItemText primary={item.label} />
+              </ListItemButton>
+            )}
           </ListItem>
         ))}
       </List>

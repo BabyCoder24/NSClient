@@ -5,6 +5,7 @@ import {
   forgotPassword,
   resetPassword,
   registerUser,
+  completeRegistration,
 } from "./authThunks";
 import type { AuthState, AuthUser } from "../types/auth";
 
@@ -153,6 +154,20 @@ const authSlice = createSlice({
         state.error = null;
       })
       .addCase(registerUser.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+
+      // Complete Registration
+      .addCase(completeRegistration.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(completeRegistration.fulfilled, (state) => {
+        state.loading = false;
+        state.error = null;
+      })
+      .addCase(completeRegistration.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
       });

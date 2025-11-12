@@ -1,9 +1,11 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
+import { jwtDecode } from "jwt-decode";
 import {
   loginAPI,
   registerAPI,
   forgotPasswordAPI,
   resetPasswordAPI,
+  completeRegistrationAPI,
 } from "../services/authService";
 import { showCrudMessage } from "./createMessageSlice";
 import type {
@@ -11,6 +13,7 @@ import type {
   RegistrationRequest,
   ForgotPasswordRequest,
   ResetPasswordRequest,
+  CompleteRegistrationRequest,
   AuthUser,
 } from "../types/auth";
 
@@ -21,19 +24,26 @@ export const loginUser = createAsyncThunk(
     try {
       const response = await loginAPI(credentials);
 
-      // For now, we'll create a basic user object from the token
-      // In a real app, you'd decode the JWT or make another call to get user details
+      // Decode JWT to get user info
+      const decoded: any = jwtDecode(response.token);
       const user: AuthUser = {
-        id: 0, // This would come from decoding the JWT
-        email: credentials.UsernameOrEmail.includes("@")
-          ? credentials.UsernameOrEmail
-          : "",
-        username: credentials.UsernameOrEmail,
+        id: parseInt(decoded.sub),
+        email: decoded.email,
+        username: decoded.username,
+        firstName: "", // Not included in JWT
+        lastName: "", // Not included in JWT
+        companyName: "", // Not included in JWT
+        roleId:
+          decoded[
+            "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
+          ] === "User"
+            ? 2
+            : 0, // Map role to ID
       };
 
       return {
         user,
-        token: response.Token,
+        token: response.token,
       };
     } catch (error: any) {
       const message =
@@ -112,6 +122,30 @@ export const registerUser = createAsyncThunk(
         error?.__kind === "network"
           ? "Network error. Please check your connection."
           : error.response?.data?.message || "Registration failed";
+      dispatch(showCrudMessage({ text: message, type: "error" }));
+      return rejectWithValue(message);
+    }
+  }
+);
+
+// Complete registration thunk
+export const completeRegistration = createAsyncThunk(
+  "auth/completeRegistration",
+  async (data: CompleteRegistrationRequest, { rejectWithValue, dispatch }) => {
+    try {
+      await completeRegistrationAPI(data);
+      dispatch(
+        showCrudMessage({
+          text: "Registration completed successfully! You can now log in.",
+          type: "update",
+        })
+      );
+      return true;
+    } catch (error: any) {
+      const message =
+        error?.__kind === "network"
+          ? "Network error. Please check your connection."
+          : error.response?.data?.message || "Failed to complete registration";
       dispatch(showCrudMessage({ text: message, type: "error" }));
       return rejectWithValue(message);
     }

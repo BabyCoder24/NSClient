@@ -9,6 +9,7 @@ import Home from "./pages/Home";
 import Dashboard from "./layout/Dashboard";
 import LoginForm from "./pages/LoginForm";
 import RegisterForm from "./pages/RegisterForm";
+import CompleteRegistrationForm from "./pages/CompleteRegistrationForm";
 import ForgotPasswordForm from "./components/ForgotPasswordForm";
 import ResetPasswordForm from "./components/ResetPasswordForm";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -29,6 +30,10 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<LoginForm />} />
             <Route path="/register" element={<RegisterForm />} />
+            <Route
+              path="/complete-registration"
+              element={<CompleteRegistrationForm />}
+            />
             <Route path="/forgot-password" element={<ForgotPasswordForm />} />
             <Route path="/reset-password" element={<ResetPasswordForm />} />
 

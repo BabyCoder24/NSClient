@@ -98,8 +98,8 @@ const RegisterForm: React.FC = () => {
           {success ? (
             <Box sx={{ width: "100%", textAlign: "center" }}>
               <Alert severity="success" sx={{ mb: 2 }}>
-                Registration successful! Please check your email to complete the
-                verification process.
+                Registration successful! Check your email to complete your
+                account setup.
               </Alert>
               <Typography variant="body2" color="text.secondary">
                 Redirecting to login page...
