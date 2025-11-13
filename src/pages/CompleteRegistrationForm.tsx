@@ -232,7 +232,7 @@ const CompleteRegistrationForm: React.FC = () => {
           sx={{
             p: 4,
             width: "100%",
-            maxWidth: 400,
+            maxWidth: 600,
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
@@ -252,29 +252,42 @@ const CompleteRegistrationForm: React.FC = () => {
             </Alert>
           )}
 
-          <Box component="form" onSubmit={handleSubmit} sx={{ width: "100%" }}>
-            <TextField
-              fullWidth
-              label="First Name"
-              value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
-              required
-              margin="normal"
-              variant="outlined"
-              autoComplete="given-name"
-              disabled={loading}
-            />
-            <TextField
-              fullWidth
-              label="Last Name"
-              value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
-              required
-              margin="normal"
-              variant="outlined"
-              autoComplete="family-name"
-              disabled={loading}
-            />
+          <Box
+            component="form"
+            onSubmit={handleSubmit}
+            sx={{
+              width: "100%",
+              display: "flex",
+              flexDirection: "column",
+              gap: 2,
+            }}
+          >
+            <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+              <TextField
+                fullWidth
+                label="First Name"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                required
+                margin="normal"
+                variant="outlined"
+                autoComplete="given-name"
+                disabled={loading}
+                sx={{ flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 8px)" } }}
+              />
+              <TextField
+                fullWidth
+                label="Last Name"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                required
+                margin="normal"
+                variant="outlined"
+                autoComplete="family-name"
+                disabled={loading}
+                sx={{ flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 8px)" } }}
+              />
+            </Box>
             <TextField
               fullWidth
               label="Email"
@@ -287,59 +300,64 @@ const CompleteRegistrationForm: React.FC = () => {
               autoComplete="email"
               disabled={loading}
             />
-            <TextField
-              fullWidth
-              label="Company (Optional)"
-              value={company}
-              onChange={(e) => setCompany(e.target.value)}
-              margin="normal"
-              variant="outlined"
-              autoComplete="organization"
-              disabled={loading}
-            />
-            <TextField
-              fullWidth
-              label="Username (Optional)"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              margin="normal"
-              variant="outlined"
-              autoComplete="username"
-              disabled={loading}
-            />
-
-            <TextField
-              fullWidth
-              label="Password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              margin="normal"
-              variant="outlined"
-              autoComplete="new-password"
-              disabled={loading}
-            />
-
-            <TextField
-              fullWidth
-              label="Confirm Password"
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-              margin="normal"
-              variant="outlined"
-              autoComplete="new-password"
-              disabled={loading}
-              error={!!passwordError}
-            />
-
+            <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+              <TextField
+                fullWidth
+                label="Company (Optional)"
+                value={company}
+                onChange={(e) => setCompany(e.target.value)}
+                margin="normal"
+                variant="outlined"
+                autoComplete="organization"
+                disabled={loading}
+                sx={{ flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 8px)" } }}
+              />
+              <TextField
+                fullWidth
+                label="Username (Optional)"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                margin="normal"
+                variant="outlined"
+                autoComplete="username"
+                disabled={loading}
+                sx={{ flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 8px)" } }}
+              />
+            </Box>
+            <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+              <TextField
+                fullWidth
+                label="Password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                margin="normal"
+                variant="outlined"
+                autoComplete="new-password"
+                disabled={loading}
+                sx={{ flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 8px)" } }}
+              />
+              <TextField
+                fullWidth
+                label="Confirm Password"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+                margin="normal"
+                variant="outlined"
+                autoComplete="new-password"
+                disabled={loading}
+                error={!!passwordError}
+                sx={{ flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 8px)" } }}
+              />
+            </Box>
             <Button
               type="submit"
               fullWidth
               variant="contained"
-              sx={{ mt: 3, mb: 2, py: 1.5 }}
+              sx={{ mt: 2, mb: 2, py: 1.5 }}
               disabled={
                 loading ||
                 !password.trim() ||
@@ -355,7 +373,6 @@ const CompleteRegistrationForm: React.FC = () => {
                 "Complete Registration"
               )}
             </Button>
-
             <Box sx={{ textAlign: "center" }}>
               <Link
                 component={RouterLink}
