@@ -18,29 +18,26 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 
 const RegisterForm: React.FC = () => {
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
-  const [company, setCompany] = useState("");
   const [success, setSuccess] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-  const { loading, error } = useSelector((state: RootState) => state.auth);
+  const { loading } = useSelector((state: RootState) => state.auth);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
 
-    if (!firstName.trim() || !lastName.trim() || !email.trim()) {
+    setFormError(null);
+
+    if (!email.trim()) {
       return;
     }
 
     try {
       const registrationData: RegistrationRequest = {
-        FirstName: firstName.trim(),
-        LastName: lastName.trim(),
         Email: email.trim(),
-        CompanyName: company.trim() || undefined,
       };
 
       await dispatch(registerUser(registrationData)).unwrap();
@@ -48,17 +45,20 @@ const RegisterForm: React.FC = () => {
       setSuccess(true);
 
       // Clear form
-      setFirstName("");
-      setLastName("");
       setEmail("");
-      setCompany("");
 
       // Redirect to login after a delay
       setTimeout(() => {
         navigate("/login");
       }, 3000);
-    } catch (error: unknown) {
-      // Error is handled by the slice
+    } catch (error: any) {
+      if (error.status === 400 || error.status === 401) {
+        setFormError(error.message);
+      } else if (error.kind === "network") {
+        setFormError(error.message);
+      } else {
+        setFormError("An error occurred");
+      }
     }
   };
 
@@ -107,9 +107,9 @@ const RegisterForm: React.FC = () => {
             </Box>
           ) : (
             <>
-              {error && (
+              {formError && (
                 <Alert severity="error" sx={{ width: "100%", mb: 2 }}>
-                  {error}
+                  {formError}
                 </Alert>
               )}
 
@@ -118,28 +118,6 @@ const RegisterForm: React.FC = () => {
                 onSubmit={handleSubmit}
                 sx={{ width: "100%" }}
               >
-                <TextField
-                  fullWidth
-                  label="First Name"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  required
-                  margin="normal"
-                  variant="outlined"
-                  autoComplete="given-name"
-                  disabled={loading}
-                />
-                <TextField
-                  fullWidth
-                  label="Last Name"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  required
-                  margin="normal"
-                  variant="outlined"
-                  autoComplete="family-name"
-                  disabled={loading}
-                />
                 <TextField
                   fullWidth
                   label="Email"
@@ -152,27 +130,12 @@ const RegisterForm: React.FC = () => {
                   autoComplete="email"
                   disabled={loading}
                 />
-                <TextField
-                  fullWidth
-                  label="Company (Optional)"
-                  value={company}
-                  onChange={(e) => setCompany(e.target.value)}
-                  margin="normal"
-                  variant="outlined"
-                  autoComplete="organization"
-                  disabled={loading}
-                />
                 <Button
                   type="submit"
                   fullWidth
                   variant="contained"
                   sx={{ mt: 3, mb: 2, py: 1.5 }}
-                  disabled={
-                    loading ||
-                    !firstName.trim() ||
-                    !lastName.trim() ||
-                    !email.trim()
-                  }
+                  disabled={loading || !email.trim()}
                 >
                   {loading ? (
                     <CircularProgress size={24} color="inherit" />

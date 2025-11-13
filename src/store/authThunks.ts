@@ -51,7 +51,11 @@ export const loginUser = createAsyncThunk(
           ? "Network error. Please check your connection."
           : error.response?.data?.message || "Login failed";
       dispatch(showCrudMessage({ text: message, type: "error" }));
-      return rejectWithValue(message);
+      return rejectWithValue({
+        message: error.message,
+        status: error.__status,
+        kind: error.__kind,
+      });
     }
   }
 );
@@ -75,7 +79,11 @@ export const forgotPassword = createAsyncThunk(
           ? "Network error. Please check your connection."
           : error.response?.data?.message || "Failed to send reset email";
       dispatch(showCrudMessage({ text: message, type: "error" }));
-      return rejectWithValue(message);
+      return rejectWithValue({
+        message: error.message,
+        status: error.__status,
+        kind: error.__kind,
+      });
     }
   }
 );
@@ -96,7 +104,11 @@ export const resetPassword = createAsyncThunk(
           ? "Network error. Please check your connection."
           : error.response?.data?.message || "Failed to reset password";
       dispatch(showCrudMessage({ text: message, type: "error" }));
-      return rejectWithValue(message);
+      return rejectWithValue({
+        message: error.message,
+        status: error.__status,
+        kind: error.__kind,
+      });
     }
   }
 );
@@ -123,7 +135,11 @@ export const registerUser = createAsyncThunk(
           ? "Network error. Please check your connection."
           : error.response?.data?.message || "Registration failed";
       dispatch(showCrudMessage({ text: message, type: "error" }));
-      return rejectWithValue(message);
+      return rejectWithValue({
+        message: error.message,
+        status: error.__status,
+        kind: error.__kind,
+      });
     }
   }
 );
@@ -147,7 +163,11 @@ export const completeRegistration = createAsyncThunk(
           ? "Network error. Please check your connection."
           : error.response?.data?.message || "Failed to complete registration";
       dispatch(showCrudMessage({ text: message, type: "error" }));
-      return rejectWithValue(message);
+      return rejectWithValue({
+        message: error.message,
+        status: error.__status,
+        kind: error.__kind,
+      });
     }
   }
 );

@@ -109,14 +109,11 @@ const authSlice = createSlice({
         state.error = null;
         localStorage.setItem("authToken", action.payload.token);
       })
-      .addCase(loginUser.rejected, (state, action) => {
+      .addCase(loginUser.rejected, (state) => {
         state.loading = false;
-        state.error = action.payload as string;
         state.user = null;
         state.token = null;
-      })
-
-      // Forgot Password
+      }) // Forgot Password
       .addCase(forgotPassword.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -125,9 +122,8 @@ const authSlice = createSlice({
         state.loading = false;
         state.error = null;
       })
-      .addCase(forgotPassword.rejected, (state, action) => {
+      .addCase(forgotPassword.rejected, (state) => {
         state.loading = false;
-        state.error = action.payload as string;
       })
 
       // Reset Password
@@ -139,9 +135,8 @@ const authSlice = createSlice({
         state.loading = false;
         state.error = null;
       })
-      .addCase(resetPassword.rejected, (state, action) => {
+      .addCase(resetPassword.rejected, (state) => {
         state.loading = false;
-        state.error = action.payload as string;
       })
 
       // Register User
@@ -153,9 +148,8 @@ const authSlice = createSlice({
         state.loading = false;
         state.error = null;
       })
-      .addCase(registerUser.rejected, (state, action) => {
+      .addCase(registerUser.rejected, (state) => {
         state.loading = false;
-        state.error = action.payload as string;
       })
 
       // Complete Registration
@@ -167,9 +161,8 @@ const authSlice = createSlice({
         state.loading = false;
         state.error = null;
       })
-      .addCase(completeRegistration.rejected, (state, action) => {
+      .addCase(completeRegistration.rejected, (state) => {
         state.loading = false;
-        state.error = action.payload as string;
       });
   },
 });

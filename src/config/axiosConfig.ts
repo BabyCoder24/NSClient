@@ -42,8 +42,12 @@ axios.interceptors.response.use(
       // For now, we'll just clear the token
     }
 
-    // Prefer server-provided message, fallback to original
-    const serverMsg = error?.response?.data?.message;
+    // Prefer server-provided message, check multiple possible fields
+    let serverMsg = error?.response?.data?.message;
+    if (!serverMsg) serverMsg = error?.response?.data?.detail;
+    if (!serverMsg) serverMsg = error?.response?.data?.title;
+    if (!serverMsg && typeof error?.response?.data === "string")
+      serverMsg = error.response.data;
     if (serverMsg && typeof serverMsg === "string") {
       error.message = serverMsg;
     }

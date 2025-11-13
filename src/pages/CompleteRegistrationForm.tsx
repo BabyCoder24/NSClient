@@ -31,13 +31,14 @@ const CompleteRegistrationForm: React.FC = () => {
   const [email, setEmail] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token");
 
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-  const { loading, error } = useSelector((state: RootState) => state.auth);
+  const { loading } = useSelector((state: RootState) => state.auth);
 
   useEffect(() => {
     // Clear any previous errors when component mounts
@@ -64,6 +65,8 @@ const CompleteRegistrationForm: React.FC = () => {
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+
+    setFormError(null);
 
     if (!validatePasswords() || !token) {
       return;
@@ -92,8 +95,14 @@ const CompleteRegistrationForm: React.FC = () => {
       setTimeout(() => {
         navigate("/login");
       }, 3000);
-    } catch {
-      // Error is handled by the slice
+    } catch (error: any) {
+      if (error.status === 400 || error.status === 401) {
+        setFormError(error.message);
+      } else if (error.kind === "network") {
+        setFormError(error.message);
+      } else {
+        setFormError("An error occurred");
+      }
     }
   };
 
@@ -237,9 +246,9 @@ const CompleteRegistrationForm: React.FC = () => {
             registration.
           </Typography>
 
-          {(error || passwordError) && (
+          {(formError || passwordError) && (
             <Alert severity="error" sx={{ width: "100%", mb: 2 }}>
-              {error || passwordError}
+              {formError || passwordError}
             </Alert>
           )}
 

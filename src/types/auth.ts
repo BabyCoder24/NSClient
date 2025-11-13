@@ -27,9 +27,6 @@ export interface LoginResponse {
 }
 
 export interface RegistrationRequest {
-  FirstName: string;
-  LastName: string;
-  CompanyName?: string;
   Email: string;
 }
 

@@ -20,10 +20,11 @@ import Footer from "./Footer";
 const ForgotPasswordForm: React.FC = () => {
   const [email, setEmail] = useState("");
   const [success, setSuccess] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-  const { loading, error } = useSelector((state: RootState) => state.auth);
+  const { loading } = useSelector((state: RootState) => state.auth);
 
   useEffect(() => {
     // Clear any previous errors when component mounts
@@ -32,6 +33,8 @@ const ForgotPasswordForm: React.FC = () => {
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+
+    setFormError(null);
 
     if (!email.trim()) {
       return;
@@ -45,8 +48,14 @@ const ForgotPasswordForm: React.FC = () => {
       ).unwrap();
 
       setSuccess(true);
-    } catch {
-      // Error is handled by the slice
+    } catch (error: any) {
+      if (error.status === 400 || error.status === 401) {
+        setFormError(error.message);
+      } else if (error.kind === "network") {
+        setFormError(error.message);
+      } else {
+        setFormError("An error occurred");
+      }
     }
   };
 
@@ -157,9 +166,9 @@ const ForgotPasswordForm: React.FC = () => {
             password.
           </Typography>
 
-          {error && (
+          {formError && (
             <Alert severity="error" sx={{ width: "100%", mb: 2 }}>
-              {error}
+              {formError}
             </Alert>
           )}
 

@@ -20,10 +20,11 @@ import Footer from "../components/Footer";
 const LoginForm: React.FC = () => {
   const [usernameOrEmail, setUsernameOrEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [formError, setFormError] = useState<string | null>(null);
 
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-  const { loading, error } = useSelector((state: RootState) => state.auth);
+  const { loading } = useSelector((state: RootState) => state.auth);
 
   useEffect(() => {
     // Clear any previous errors when component mounts
@@ -32,6 +33,8 @@ const LoginForm: React.FC = () => {
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+
+    setFormError(null);
 
     if (!usernameOrEmail.trim() || !password.trim()) {
       return;
@@ -47,8 +50,14 @@ const LoginForm: React.FC = () => {
 
       // Redirect to dashboard on successful login
       navigate("/dashboard");
-    } catch {
-      // Error is handled by the slice
+    } catch (error: any) {
+      if (error.status === 400 || error.status === 401) {
+        setFormError(error.message);
+      } else if (error.kind === "network") {
+        setFormError(error.message);
+      } else {
+        setFormError("An error occurred");
+      }
     }
   };
 
@@ -85,9 +94,9 @@ const LoginForm: React.FC = () => {
             Welcome back! Please sign in to your account.
           </Typography>
 
-          {error && (
+          {formError && (
             <Alert severity="error" sx={{ width: "100%", mb: 2 }}>
-              {error}
+              {formError}
             </Alert>
           )}
 
