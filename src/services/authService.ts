@@ -59,6 +59,22 @@ export const resetPasswordAPI = async (
   }
 };
 
+// Refresh token API
+export const refreshTokenAPI = async (
+  refreshToken: string
+): Promise<LoginResponse> => {
+  try {
+    const response = await axios.post<LoginResponse>(
+      `${BASE_URL}/auth/refresh`,
+      { refreshToken: refreshToken }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error refreshing token:", error);
+    throw error;
+  }
+};
+
 // Complete registration API
 export const completeRegistrationAPI = async (
   data: CompleteRegistrationRequest
@@ -67,6 +83,22 @@ export const completeRegistrationAPI = async (
     await axios.post(`${BASE_URL}/auth/complete-registration`, data);
   } catch (error) {
     console.error("Error completing registration:", error);
+    throw error;
+  }
+};
+
+// Logout API
+export const logoutAPI = async (
+  accessToken: string,
+  refreshToken: string
+): Promise<void> => {
+  try {
+    await axios.post(`${BASE_URL}/auth/logout`, {
+      accessToken: accessToken,
+      refreshToken: refreshToken,
+    });
+  } catch (error) {
+    console.error("Error logging out:", error);
     throw error;
   }
 };

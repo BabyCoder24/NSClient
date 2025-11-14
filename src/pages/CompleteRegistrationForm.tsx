@@ -9,11 +9,7 @@ import {
   CircularProgress,
   Link,
 } from "@mui/material";
-import {
-  Link as RouterLink,
-  useNavigate,
-  useSearchParams,
-} from "react-router-dom";
+import { Link as RouterLink, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "../store/store";
 import { completeRegistration } from "../store/authThunks";
@@ -33,8 +29,7 @@ const CompleteRegistrationForm: React.FC = () => {
   const [success, setSuccess] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
-  const [searchParams] = useSearchParams();
-  const token = searchParams.get("token");
+  const token = new URLSearchParams(window.location.search).get("token");
 
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();

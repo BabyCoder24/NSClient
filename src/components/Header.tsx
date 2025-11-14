@@ -14,7 +14,10 @@ import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
 import BusinessIcon from "@mui/icons-material/Business";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import type { RootState } from "../store/store";
+import { logout } from "../store/authSlice";
 
 const drawerWidth = 240;
 const navItems = [
@@ -27,11 +30,23 @@ const navItems = [
   { label: "Register", to: "/register" },
 ];
 
+const publicNavItems = navItems.filter(
+  (item) => !["Login", "Register"].includes(item.label)
+);
+
 export default function Header() {
   const [mobileOpen, setMobileOpen] = React.useState(false);
+  const { accessToken } = useSelector((state: RootState) => state.auth);
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   const handleDrawerToggle = () => {
     setMobileOpen((prevState) => !prevState);
+  };
+
+  const handleLogout = () => {
+    dispatch(logout());
+    navigate("/login");
   };
 
   const drawer = (
@@ -41,26 +56,25 @@ export default function Header() {
       </Typography>
       <Divider />
       <List>
-        {navItems.map((item) => (
+        {publicNavItems.map((item) => (
           <ListItem key={item.label} disablePadding>
-            {item.label === "Register" ? (
-              <ListItemButton
-                sx={{
-                  textAlign: "center",
-                  padding: "8px 16px",
-                  margin: "4px 8px",
-                  backgroundColor: "secondary.main",
-                  color: "white",
-                  borderRadius: "4px",
-                  minWidth: "100px",
-                  "&:hover": { backgroundColor: "#FF6347", color: "#fff" },
-                }}
-                component={Link}
-                to={item.to}
-              >
-                <ListItemText primary={item.label} />
-              </ListItemButton>
-            ) : item.label === "Login" ? (
+            <ListItemButton
+              sx={{
+                textAlign: "center",
+                padding: "8px 16px",
+                margin: "4px 8px",
+                "&:hover": { backgroundColor: "#BBDEFB", color: "inherit" },
+              }}
+              component={Link}
+              to={item.to}
+            >
+              <ListItemText primary={item.label} />
+            </ListItemButton>
+          </ListItem>
+        ))}
+        {!accessToken ? (
+          <>
+            <ListItem disablePadding>
               <ListItemButton
                 sx={{
                   textAlign: "center",
@@ -73,26 +87,49 @@ export default function Header() {
                   "&:hover": { backgroundColor: "#32CD32", color: "#fff" },
                 }}
                 component={Link}
-                to={item.to}
+                to="/login"
               >
-                <ListItemText primary={item.label} />
+                <ListItemText primary="Login" />
               </ListItemButton>
-            ) : (
+            </ListItem>
+            <ListItem disablePadding>
               <ListItemButton
                 sx={{
                   textAlign: "center",
                   padding: "8px 16px",
                   margin: "4px 8px",
-                  "&:hover": { backgroundColor: "#BBDEFB", color: "inherit" },
+                  backgroundColor: "secondary.main",
+                  color: "white",
+                  borderRadius: "4px",
+                  minWidth: "100px",
+                  "&:hover": { backgroundColor: "#FF6347", color: "#fff" },
                 }}
                 component={Link}
-                to={item.to}
+                to="/register"
               >
-                <ListItemText primary={item.label} />
+                <ListItemText primary="Register" />
               </ListItemButton>
-            )}
+            </ListItem>
+          </>
+        ) : (
+          <ListItem disablePadding>
+            <ListItemButton
+              sx={{
+                textAlign: "center",
+                padding: "8px 16px",
+                margin: "4px 8px",
+                backgroundColor: "error.main",
+                color: "white",
+                borderRadius: "4px",
+                minWidth: "100px",
+                "&:hover": { backgroundColor: "#d32f2f", color: "#fff" },
+              }}
+              onClick={handleLogout}
+            >
+              <ListItemText primary="Logout" />
+            </ListItemButton>
           </ListItem>
-        ))}
+        )}
       </List>
     </Box>
   );
@@ -120,31 +157,27 @@ export default function Header() {
             NSolutions
           </Typography>
           <Box sx={{ display: { xs: "none", md: "block" } }}>
-            {navItems.map((item) =>
-              item.label === "Register" ? (
+            {publicNavItems.map((item) => (
+              <Button
+                key={item.label}
+                variant="text"
+                sx={{
+                  color: "#fff",
+                  mr: 1,
+                  "&:hover": {
+                    backgroundColor: "rgba(255,255,255,0.1)",
+                    color: "#fff",
+                  },
+                }}
+                component={Link}
+                to={item.to}
+              >
+                {item.label}
+              </Button>
+            ))}
+            {!accessToken ? (
+              <>
                 <Button
-                  key={item.label}
-                  variant="contained"
-                  sx={{
-                    backgroundColor: "secondary.main",
-                    color: "white",
-                    mr: 1,
-                    padding: "8px 16px",
-                    borderRadius: "4px",
-                    minWidth: "100px",
-                    "&:hover": {
-                      backgroundColor: "#FF6347",
-                      color: "#fff",
-                    },
-                  }}
-                  component={Link}
-                  to={item.to}
-                >
-                  {item.label}
-                </Button>
-              ) : item.label === "Login" ? (
-                <Button
-                  key={item.label}
                   variant="contained"
                   sx={{
                     backgroundColor: "green",
@@ -160,28 +193,49 @@ export default function Header() {
                     },
                   }}
                   component={Link}
-                  to={item.to}
+                  to="/login"
                 >
-                  {item.label}
+                  Login
                 </Button>
-              ) : (
                 <Button
-                  key={item.label}
-                  variant="text"
+                  variant="contained"
                   sx={{
-                    color: "#fff",
+                    backgroundColor: "secondary.main",
+                    color: "white",
                     mr: 1,
+                    padding: "8px 16px",
+                    borderRadius: "4px",
+                    minWidth: "100px",
                     "&:hover": {
-                      backgroundColor: "rgba(255,255,255,0.1)",
+                      backgroundColor: "#FF6347",
                       color: "#fff",
                     },
                   }}
                   component={Link}
-                  to={item.to}
+                  to="/register"
                 >
-                  {item.label}
+                  Register
                 </Button>
-              )
+              </>
+            ) : (
+              <Button
+                variant="contained"
+                sx={{
+                  backgroundColor: "error.main",
+                  color: "white",
+                  mr: 1,
+                  padding: "8px 16px",
+                  borderRadius: "4px",
+                  minWidth: "100px",
+                  "&:hover": {
+                    backgroundColor: "#d32f2f",
+                    color: "#fff",
+                  },
+                }}
+                onClick={handleLogout}
+              >
+                Logout
+              </Button>
             )}
           </Box>
         </Toolbar>

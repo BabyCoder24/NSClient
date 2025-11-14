@@ -21,7 +21,6 @@ import {
 import {
   Person,
   Email,
-  Phone,
   LocationOn,
   AccountBalance,
   TrendingUp,
@@ -34,19 +33,10 @@ import {
   NavigateNext,
 } from "@mui/icons-material";
 import { Link } from "react-router-dom";
+import { useSelector } from "react-redux";
+import type { RootState } from "../store/store";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
-
-// Static user data
-const userData = {
-  name: "John Doe",
-  email: "john.doe@example.com",
-  phone: "+1 (555) 123-4567",
-  location: "New York, NY",
-  avatar: "JD",
-  joinDate: "January 2024",
-  accountType: "Premium",
-};
 
 const accountStats = [
   {
@@ -138,6 +128,14 @@ const quickActions = [
 ];
 
 const Dashboard: React.FC = () => {
+  const user = useSelector((state: RootState) => state.auth.user);
+
+  const displayName = user ? `${user.firstName} ${user.lastName}` : "User";
+  const avatarInitials = user
+    ? `${user.firstName?.[0] || ""}${user.lastName?.[0] || ""}`.toUpperCase()
+    : "U";
+  const userEmail = user?.email || "user@example.com";
+  const accountType = user?.roleId === 2 ? "User" : "Admin";
   return (
     <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
       <Header />
@@ -170,7 +168,7 @@ const Dashboard: React.FC = () => {
         {/* Header Section */}
         <Box sx={{ mb: 4 }}>
           <Typography variant="h4" component="h1" gutterBottom>
-            Welcome back, {userData.name}!
+            Welcome back, {displayName}!
           </Typography>
           <Typography variant="body1" color="text.secondary">
             Here's an overview of your account activity
@@ -208,13 +206,13 @@ const Dashboard: React.FC = () => {
                     fontSize: "2rem",
                   }}
                 >
-                  {userData.avatar}
+                  {avatarInitials}
                 </Avatar>
                 <Typography variant="h6" gutterBottom>
-                  {userData.name}
+                  {displayName}
                 </Typography>
                 <Chip
-                  label={userData.accountType}
+                  label={accountType}
                   color="primary"
                   variant="outlined"
                   sx={{ mb: 2 }}
@@ -224,19 +222,23 @@ const Dashboard: React.FC = () => {
                     <Email
                       sx={{ mr: 1, color: "text.secondary", fontSize: 18 }}
                     />
-                    <Typography variant="body2">{userData.email}</Typography>
+                    <Typography variant="body2">{userEmail}</Typography>
                   </Box>
                   <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-                    <Phone
+                    <Person
                       sx={{ mr: 1, color: "text.secondary", fontSize: 18 }}
                     />
-                    <Typography variant="body2">{userData.phone}</Typography>
+                    <Typography variant="body2">
+                      {user?.username || "N/A"}
+                    </Typography>
                   </Box>
                   <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
                     <LocationOn
                       sx={{ mr: 1, color: "text.secondary", fontSize: 18 }}
                     />
-                    <Typography variant="body2">{userData.location}</Typography>
+                    <Typography variant="body2">
+                      {user?.companyName || "N/A"}
+                    </Typography>
                   </Box>
                 </Box>
                 <Typography
@@ -244,7 +246,7 @@ const Dashboard: React.FC = () => {
                   color="text.secondary"
                   sx={{ mt: 2, display: "block" }}
                 >
-                  Member since {userData.joinDate}
+                  Welcome to NSolutions
                 </Typography>
               </CardContent>
             </Card>

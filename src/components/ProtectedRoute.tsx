@@ -9,7 +9,9 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { token, loading } = useSelector((state: RootState) => state.auth);
+  const { accessToken, loading } = useSelector(
+    (state: RootState) => state.auth
+  );
   const location = useLocation();
 
   // Show loading spinner while checking authentication
@@ -29,7 +31,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   }
 
   // Redirect to login if not authenticated
-  if (!token) {
+  if (!accessToken) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 

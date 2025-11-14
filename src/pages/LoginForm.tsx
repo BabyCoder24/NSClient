@@ -8,6 +8,8 @@ import {
   Alert,
   CircularProgress,
   Link,
+  Checkbox,
+  FormControlLabel,
 } from "@mui/material";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
@@ -20,6 +22,7 @@ import Footer from "../components/Footer";
 const LoginForm: React.FC = () => {
   const [usernameOrEmail, setUsernameOrEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
   const dispatch = useDispatch<AppDispatch>();
@@ -45,12 +48,14 @@ const LoginForm: React.FC = () => {
         loginUser({
           UsernameOrEmail: usernameOrEmail.trim(),
           Password: password,
+          RememberMe: rememberMe,
         })
       ).unwrap();
 
       // Redirect to dashboard on successful login
       navigate("/dashboard");
     } catch (error: any) {
+      console.error("Login error:", error);
       if (error.status === 400 || error.status === 401) {
         setFormError(error.message);
       } else if (error.kind === "network") {
@@ -125,6 +130,19 @@ const LoginForm: React.FC = () => {
               variant="outlined"
               autoComplete="current-password"
               disabled={loading}
+            />
+
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  color="primary"
+                  disabled={loading}
+                />
+              }
+              label="Remember me"
+              sx={{ alignSelf: "flex-start" }}
             />
 
             <Button

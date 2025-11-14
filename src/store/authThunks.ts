@@ -6,6 +6,7 @@ import {
   forgotPasswordAPI,
   resetPasswordAPI,
   completeRegistrationAPI,
+  refreshTokenAPI,
 } from "../services/authService";
 import { showCrudMessage } from "./createMessageSlice";
 import type {
@@ -16,6 +17,7 @@ import type {
   CompleteRegistrationRequest,
   AuthUser,
 } from "../types/auth";
+import type { RootState } from "./store";
 
 // Login thunk
 export const loginUser = createAsyncThunk(
@@ -23,16 +25,25 @@ export const loginUser = createAsyncThunk(
   async (credentials: LoginRequest, { rejectWithValue, dispatch }) => {
     try {
       const response = await loginAPI(credentials);
+      console.log("Login API response:", response);
 
       // Decode JWT to get user info
-      const decoded: any = jwtDecode(response.token);
+      let decoded: any;
+      try {
+        decoded = jwtDecode(response.accessToken);
+        console.log("Decoded JWT:", decoded);
+      } catch (decodeError) {
+        console.error("JWT decode error:", decodeError);
+        throw new Error("Invalid token format received from server");
+      }
+
       const user: AuthUser = {
         id: parseInt(decoded.sub),
         email: decoded.email,
         username: decoded.username,
-        firstName: "", // Not included in JWT
-        lastName: "", // Not included in JWT
-        companyName: "", // Not included in JWT
+        firstName: decoded.firstName || "",
+        lastName: decoded.lastName || "",
+        companyName: decoded.companyName || "",
         roleId:
           decoded[
             "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
@@ -41,15 +52,20 @@ export const loginUser = createAsyncThunk(
             : 0, // Map role to ID
       };
 
+      const expiresAt = Date.now() + response.expiresIn * 1000;
+
       return {
         user,
-        token: response.token,
+        accessToken: response.accessToken,
+        refreshToken: response.refreshToken,
+        expiresAt,
       };
     } catch (error: any) {
+      console.error("Login thunk error:", error);
       const message =
         error?.__kind === "network"
           ? "Network error. Please check your connection."
-          : error.response?.data?.message || "Login failed";
+          : error.response?.data?.message || error.message || "Login failed";
       dispatch(showCrudMessage({ text: message, type: "error" }));
       return rejectWithValue({
         message: error.message,
@@ -152,8 +168,8 @@ export const completeRegistration = createAsyncThunk(
       await completeRegistrationAPI(data);
       dispatch(
         showCrudMessage({
-          text: "Registration completed successfully! You can now log in.",
-          type: "update",
+          text: "Registration completed successfully!",
+          type: "create",
         })
       );
       return true;
@@ -163,6 +179,60 @@ export const completeRegistration = createAsyncThunk(
           ? "Network error. Please check your connection."
           : error.response?.data?.message || "Failed to complete registration";
       dispatch(showCrudMessage({ text: message, type: "error" }));
+      return rejectWithValue({
+        message: error.message,
+        status: error.__status,
+        kind: error.__kind,
+      });
+    }
+  }
+);
+
+// Refresh token thunk
+export const refreshToken = createAsyncThunk(
+  "auth/refresh",
+  async (_, { getState, rejectWithValue, dispatch }) => {
+    try {
+      const state = getState() as RootState;
+      const refreshToken = state.auth.refreshToken;
+      if (!refreshToken) {
+        throw new Error("No refresh token available");
+      }
+
+      const response = await refreshTokenAPI(refreshToken);
+
+      // Decode JWT to get user info
+      const decoded: any = jwtDecode(response.accessToken);
+      const user: AuthUser = {
+        id: parseInt(decoded.sub),
+        email: decoded.email,
+        username: decoded.username,
+        firstName: decoded.firstName || "",
+        lastName: decoded.lastName || "",
+        companyName: decoded.companyName || "",
+        roleId:
+          decoded[
+            "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
+          ] === "User"
+            ? 2
+            : 0,
+      };
+
+      const expiresAt = Date.now() + response.expiresIn * 1000;
+
+      return {
+        user,
+        accessToken: response.accessToken,
+        refreshToken: response.refreshToken,
+        expiresAt,
+      };
+    } catch (error: any) {
+      dispatch(
+        showCrudMessage({
+          text: "Session expired. Please log in again.",
+          type: "error",
+        })
+      );
       return rejectWithValue({
         message: error.message,
         status: error.__status,

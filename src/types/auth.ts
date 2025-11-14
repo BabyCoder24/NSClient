@@ -11,7 +11,9 @@ export interface AuthUser {
 
 export interface AuthState {
   user: AuthUser | null;
-  token: string | null;
+  accessToken: string | null;
+  refreshToken: string | null;
+  expiresAt: number | null;
   loading: boolean;
   error: string | null;
 }
@@ -20,10 +22,13 @@ export interface AuthState {
 export interface LoginRequest {
   UsernameOrEmail: string;
   Password: string;
+  RememberMe?: boolean;
 }
 
 export interface LoginResponse {
-  token: string;
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: number;
 }
 
 export interface RegistrationRequest {
