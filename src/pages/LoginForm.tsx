@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Box,
   TextField,
@@ -28,6 +28,11 @@ const LoginForm: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const { loading } = useSelector((state: RootState) => state.auth);
+
+  const isDisabled = useMemo(
+    () => loading || !usernameOrEmail.trim() || !password.trim(),
+    [loading, usernameOrEmail, password]
+  );
 
   useEffect(() => {
     // Clear any previous errors when component mounts
@@ -150,7 +155,7 @@ const LoginForm: React.FC = () => {
               fullWidth
               variant="contained"
               sx={{ mt: 3, mb: 2, py: 1.5 }}
-              disabled={loading || !usernameOrEmail.trim() || !password.trim()}
+              disabled={isDisabled}
             >
               {loading ? (
                 <CircularProgress size={24} color="inherit" />

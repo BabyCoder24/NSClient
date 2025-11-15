@@ -6,6 +6,10 @@ import "./App.css";
 
 // Components
 import Home from "./pages/Home";
+import About from "./pages/About";
+import Products from "./pages/Products";
+import Services from "./pages/Services";
+import Contact from "./pages/Contact";
 import Dashboard from "./layout/Dashboard";
 import LoginForm from "./pages/LoginForm";
 import RegisterForm from "./pages/RegisterForm";
@@ -28,6 +32,10 @@ function App() {
           <Routes>
             {/* Public routes */}
             <Route path="/" element={<Home />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/products" element={<Products />} />
+            <Route path="/services" element={<Services />} />
+            <Route path="/contact" element={<Contact />} />
             <Route path="/login" element={<LoginForm />} />
             <Route path="/register" element={<RegisterForm />} />
             <Route

@@ -50,25 +50,55 @@ export default function Header() {
   };
 
   const drawer = (
-    <Box onClick={handleDrawerToggle} sx={{ textAlign: "center" }}>
-      <Typography variant="h6" sx={{ my: 2 }}>
-        NSolutions
-      </Typography>
+    <Box
+      onClick={handleDrawerToggle}
+      sx={{ textAlign: "center", height: "100%" }}
+    >
+      <Box
+        sx={{
+          p: 3,
+          background: "linear-gradient(135deg, #1976d2 0%, #1565c0 100%)",
+          color: "white",
+        }}
+      >
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            mb: 2,
+          }}
+        >
+          <BusinessIcon sx={{ mr: 1, fontSize: 28 }} />
+          <Typography variant="h6" sx={{ fontWeight: 600 }}>
+            NSolutions
+          </Typography>
+        </Box>
+      </Box>
       <Divider />
-      <List>
+      <List sx={{ pt: 2 }}>
         {publicNavItems.map((item) => (
           <ListItem key={item.label} disablePadding>
             <ListItemButton
               sx={{
                 textAlign: "center",
-                padding: "8px 16px",
+                padding: "12px 16px",
                 margin: "4px 8px",
-                "&:hover": { backgroundColor: "#BBDEFB", color: "inherit" },
+                borderRadius: 1,
+                transition: "all 0.2s ease",
+                "&:hover": {
+                  backgroundColor: "#BBDEFB",
+                  color: "inherit",
+                  transform: "translateX(4px)",
+                },
               }}
               component={Link}
               to={item.to}
             >
-              <ListItemText primary={item.label} />
+              <ListItemText
+                primary={item.label}
+                primaryTypographyProps={{ fontWeight: 500 }}
+              />
             </ListItemButton>
           </ListItem>
         ))}
@@ -78,36 +108,53 @@ export default function Header() {
               <ListItemButton
                 sx={{
                   textAlign: "center",
-                  padding: "8px 16px",
-                  margin: "4px 8px",
-                  backgroundColor: "green",
-                  color: "white",
-                  borderRadius: "4px",
-                  minWidth: "100px",
-                  "&:hover": { backgroundColor: "#32CD32", color: "#fff" },
+                  padding: "12px 16px",
+                  margin: "8px",
+                  backgroundColor: "#f44336",
+                  borderRadius: 2,
+                  transition: "all 0.2s ease",
+                  "&:hover": {
+                    backgroundColor: "#d32f2f",
+                    transform: "translateY(-1px)",
+                    boxShadow: "0 2px 4px rgba(244, 67, 54, 0.3)",
+                  },
                 }}
                 component={Link}
                 to="/login"
               >
-                <ListItemText primary="Login" />
+                <ListItemText
+                  primary="Login"
+                  primaryTypographyProps={{
+                    fontWeight: 600,
+                    color: "white",
+                  }}
+                />
               </ListItemButton>
             </ListItem>
             <ListItem disablePadding>
               <ListItemButton
                 sx={{
                   textAlign: "center",
-                  padding: "8px 16px",
-                  margin: "4px 8px",
-                  backgroundColor: "secondary.main",
+                  padding: "12px 16px",
+                  margin: "8px",
+                  backgroundColor: "#4caf50",
                   color: "white",
-                  borderRadius: "4px",
-                  minWidth: "100px",
-                  "&:hover": { backgroundColor: "#FF6347", color: "#fff" },
+                  borderRadius: 2,
+                  fontWeight: 600,
+                  transition: "all 0.2s ease",
+                  "&:hover": {
+                    backgroundColor: "#45a049",
+                    transform: "translateY(-1px)",
+                    boxShadow: "0 2px 4px rgba(76, 175, 80, 0.3)",
+                  },
                 }}
                 component={Link}
                 to="/register"
               >
-                <ListItemText primary="Register" />
+                <ListItemText
+                  primary="Register"
+                  primaryTypographyProps={{ fontWeight: 600, color: "white" }}
+                />
               </ListItemButton>
             </ListItem>
           </>
@@ -116,17 +163,25 @@ export default function Header() {
             <ListItemButton
               sx={{
                 textAlign: "center",
-                padding: "8px 16px",
-                margin: "4px 8px",
-                backgroundColor: "error.main",
+                padding: "12px 16px",
+                margin: "8px",
+                backgroundColor: "#f44336",
                 color: "white",
-                borderRadius: "4px",
-                minWidth: "100px",
-                "&:hover": { backgroundColor: "#d32f2f", color: "#fff" },
+                borderRadius: 2,
+                fontWeight: 600,
+                transition: "all 0.2s ease",
+                "&:hover": {
+                  backgroundColor: "#d32f2f",
+                  transform: "translateY(-1px)",
+                  boxShadow: "0 2px 4px rgba(244, 67, 54, 0.3)",
+                },
               }}
               onClick={handleLogout}
             >
-              <ListItemText primary="Logout" />
+              <ListItemText
+                primary="Logout"
+                primaryTypographyProps={{ fontWeight: 600 }}
+              />
             </ListItemButton>
           </ListItem>
         )}
@@ -137,22 +192,44 @@ export default function Header() {
   return (
     <Box sx={{ display: "flex" }}>
       <CssBaseline />
-      <AppBar component="nav">
-        <Toolbar>
+      <AppBar
+        component="nav"
+        elevation={2}
+        sx={{
+          background: "linear-gradient(135deg, #1976d2 0%, #1565c0 100%)",
+          backdropFilter: "blur(10px)",
+        }}
+      >
+        <Toolbar sx={{ minHeight: 64 }}>
           <IconButton
             color="inherit"
             aria-label="open drawer"
             edge="start"
             onClick={handleDrawerToggle}
-            sx={{ mr: 2, display: { md: "none" } }}
+            sx={{
+              mr: 2,
+              display: { md: "none" },
+              "&:hover": { backgroundColor: "rgba(255, 255, 255, 0.1)" },
+            }}
           >
             <MenuIcon />
           </IconButton>
-          <BusinessIcon sx={{ mr: 2, display: { xs: "none", md: "block" } }} />
+          <BusinessIcon
+            sx={{
+              mr: 2,
+              fontSize: 32,
+              display: { xs: "none", md: "block" },
+            }}
+          />
           <Typography
             variant="h6"
             component="div"
-            sx={{ flexGrow: 1, display: { xs: "none", md: "block" } }}
+            sx={{
+              flexGrow: 1,
+              display: { xs: "none", md: "block" },
+              fontWeight: 600,
+              letterSpacing: 0.5,
+            }}
           >
             NSolutions
           </Typography>
@@ -164,9 +241,15 @@ export default function Header() {
                 sx={{
                   color: "#fff",
                   mr: 1,
+                  px: 2,
+                  py: 1,
+                  borderRadius: 1,
+                  fontWeight: 500,
+                  transition: "all 0.2s ease",
                   "&:hover": {
-                    backgroundColor: "rgba(255,255,255,0.1)",
+                    backgroundColor: "rgba(255,255,255,0.15)",
                     color: "#fff",
+                    transform: "translateY(-1px)",
                   },
                 }}
                 component={Link}
@@ -180,16 +263,20 @@ export default function Header() {
                 <Button
                   variant="contained"
                   sx={{
-                    backgroundColor: "green",
+                    backgroundColor: "#f44336",
                     color: "white",
                     mr: 1,
-                    padding: "8px 16px",
-                    borderRadius: "4px",
-                    minWidth: "100px",
+                    px: 3,
+                    py: 1,
+                    borderRadius: 2,
+                    fontWeight: 600,
                     ml: 2,
+                    transition: "all 0.2s ease",
                     "&:hover": {
-                      backgroundColor: "#32CD32",
+                      backgroundColor: "#d32f2f",
                       color: "#fff",
+                      transform: "translateY(-1px)",
+                      boxShadow: "0 4px 8px rgba(244, 67, 54, 0.3)",
                     },
                   }}
                   component={Link}
@@ -200,15 +287,19 @@ export default function Header() {
                 <Button
                   variant="contained"
                   sx={{
-                    backgroundColor: "secondary.main",
+                    backgroundColor: "#4caf50",
                     color: "white",
                     mr: 1,
-                    padding: "8px 16px",
-                    borderRadius: "4px",
-                    minWidth: "100px",
+                    px: 3,
+                    py: 1,
+                    borderRadius: 2,
+                    fontWeight: 600,
+                    transition: "all 0.2s ease",
                     "&:hover": {
-                      backgroundColor: "#FF6347",
+                      backgroundColor: "#45a049",
                       color: "#fff",
+                      transform: "translateY(-1px)",
+                      boxShadow: "0 4px 8px rgba(76, 175, 80, 0.3)",
                     },
                   }}
                   component={Link}
@@ -221,15 +312,19 @@ export default function Header() {
               <Button
                 variant="contained"
                 sx={{
-                  backgroundColor: "error.main",
+                  backgroundColor: "#f44336",
                   color: "white",
                   mr: 1,
-                  padding: "8px 16px",
-                  borderRadius: "4px",
-                  minWidth: "100px",
+                  px: 3,
+                  py: 1,
+                  borderRadius: 2,
+                  fontWeight: 600,
+                  transition: "all 0.2s ease",
                   "&:hover": {
                     backgroundColor: "#d32f2f",
                     color: "#fff",
+                    transform: "translateY(-1px)",
+                    boxShadow: "0 4px 8px rgba(244, 67, 54, 0.3)",
                   },
                 }}
                 onClick={handleLogout}

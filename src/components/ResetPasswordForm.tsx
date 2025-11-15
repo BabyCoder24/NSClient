@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Box,
   TextField,
@@ -24,7 +24,6 @@ import Footer from "./Footer";
 const ResetPasswordForm: React.FC = () => {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [passwordError, setPasswordError] = useState("");
   const [success, setSuccess] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -34,6 +33,21 @@ const ResetPasswordForm: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const { loading } = useSelector((state: RootState) => state.auth);
+
+  const isDisabled = useMemo(
+    () => loading || !newPassword.trim() || !confirmPassword.trim(),
+    [loading, newPassword, confirmPassword]
+  );
+
+  const passwordError = useMemo(() => {
+    if (newPassword.length < 6) {
+      return "Password must be at least 6 characters long";
+    }
+    if (newPassword !== confirmPassword) {
+      return "Passwords do not match";
+    }
+    return "";
+  }, [newPassword, confirmPassword]);
 
   useEffect(() => {
     // Clear any previous errors when component mounts
@@ -46,16 +60,7 @@ const ResetPasswordForm: React.FC = () => {
   }, [dispatch, token, navigate]);
 
   const validatePasswords = () => {
-    if (newPassword.length < 6) {
-      setPasswordError("Password must be at least 6 characters long");
-      return false;
-    }
-    if (newPassword !== confirmPassword) {
-      setPasswordError("Passwords do not match");
-      return false;
-    }
-    setPasswordError("");
-    return true;
+    return passwordError === "";
   };
 
   const handleSubmit = async (event: React.FormEvent) => {
@@ -270,9 +275,7 @@ const ResetPasswordForm: React.FC = () => {
               fullWidth
               variant="contained"
               sx={{ mt: 3, mb: 2, py: 1.5 }}
-              disabled={
-                loading || !newPassword.trim() || !confirmPassword.trim()
-              }
+              disabled={isDisabled}
             >
               {loading ? (
                 <CircularProgress size={24} color="inherit" />

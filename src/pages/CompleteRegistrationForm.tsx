@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Box,
   TextField,
@@ -25,7 +25,6 @@ const CompleteRegistrationForm: React.FC = () => {
   const [lastName, setLastName] = useState("");
   const [company, setCompany] = useState("");
   const [email, setEmail] = useState("");
-  const [passwordError, setPasswordError] = useState("");
   const [success, setSuccess] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -34,6 +33,27 @@ const CompleteRegistrationForm: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const { loading } = useSelector((state: RootState) => state.auth);
+
+  const isDisabled = useMemo(
+    () =>
+      loading ||
+      !password.trim() ||
+      !confirmPassword.trim() ||
+      !firstName.trim() ||
+      !lastName.trim() ||
+      !email.trim(),
+    [loading, password, confirmPassword, firstName, lastName, email]
+  );
+
+  const passwordError = useMemo(() => {
+    if (password.length < 6) {
+      return "Password must be at least 6 characters long";
+    }
+    if (password !== confirmPassword) {
+      return "Passwords do not match";
+    }
+    return "";
+  }, [password, confirmPassword]);
 
   useEffect(() => {
     // Clear any previous errors when component mounts
@@ -46,16 +66,7 @@ const CompleteRegistrationForm: React.FC = () => {
   }, [dispatch, token, navigate]);
 
   const validatePasswords = () => {
-    if (password.length < 6) {
-      setPasswordError("Password must be at least 6 characters long");
-      return false;
-    }
-    if (password !== confirmPassword) {
-      setPasswordError("Passwords do not match");
-      return false;
-    }
-    setPasswordError("");
-    return true;
+    return passwordError === "";
   };
 
   const handleSubmit = async (event: React.FormEvent) => {
@@ -353,14 +364,7 @@ const CompleteRegistrationForm: React.FC = () => {
               fullWidth
               variant="contained"
               sx={{ mt: 2, mb: 2, py: 1.5 }}
-              disabled={
-                loading ||
-                !password.trim() ||
-                !confirmPassword.trim() ||
-                !firstName.trim() ||
-                !lastName.trim() ||
-                !email.trim()
-              }
+              disabled={isDisabled}
             >
               {loading ? (
                 <CircularProgress size={24} color="inherit" />
