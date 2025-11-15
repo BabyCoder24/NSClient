@@ -104,38 +104,47 @@ const recentActivities = [
   },
 ];
 
-const quickActions = [
-  {
-    label: "View Profile",
-    icon: <Person />,
-    action: () => console.log("View Profile"),
-  },
-  {
-    label: "Account Settings",
-    icon: <Settings />,
-    action: () => console.log("Account Settings"),
-  },
-  {
-    label: "Transaction History",
-    icon: <Receipt />,
-    action: () => console.log("Transaction History"),
-  },
-  {
-    label: "Notifications",
-    icon: <Notifications />,
-    action: () => console.log("Notifications"),
-  },
-];
-
 const Dashboard: React.FC = () => {
-  const user = useSelector((state: RootState) => state.auth.user);
+  const { user, role } = useSelector((state: RootState) => state.auth);
 
   const displayName = user ? `${user.firstName} ${user.lastName}` : "User";
   const avatarInitials = user
     ? `${user.firstName?.[0] || ""}${user.lastName?.[0] || ""}`.toUpperCase()
     : "U";
   const userEmail = user?.email || "user@example.com";
-  const accountType = user?.roleId === 2 ? "User" : "Admin";
+  const accountType = role === "Administrator" ? "Admin" : "User";
+
+  const quickActions = [
+    {
+      label: "View Profile",
+      icon: <Person />,
+      action: () => console.log("View Profile"),
+    },
+    {
+      label: "Account Settings",
+      icon: <Settings />,
+      action: () => console.log("Account Settings"),
+    },
+    {
+      label: "Transaction History",
+      icon: <Receipt />,
+      action: () => console.log("Transaction History"),
+    },
+    {
+      label: "Notifications",
+      icon: <Notifications />,
+      action: () => console.log("Notifications"),
+    },
+    ...(role === "Administrator"
+      ? [
+          {
+            label: "User Management",
+            icon: <Person />,
+            action: () => console.log("User Management"),
+          },
+        ]
+      : []),
+  ];
   return (
     <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
       <Header />
@@ -171,8 +180,14 @@ const Dashboard: React.FC = () => {
             Welcome back, {displayName}!
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            Here's an overview of your account activity
+            Here's an overview of your {accountType.toLowerCase()} account
+            activity
           </Typography>
+          {role === "Administrator" && (
+            <Typography variant="body2" color="primary" sx={{ mt: 1 }}>
+              You have administrative privileges.
+            </Typography>
+          )}
         </Box>
 
         <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3 }}>

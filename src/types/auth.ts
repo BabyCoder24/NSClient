@@ -14,6 +14,7 @@ export interface AuthState {
   accessToken: string | null;
   refreshToken: string | null;
   expiresAt: number | null;
+  role: string | null;
   loading: boolean;
   error: string | null;
 }

@@ -27,12 +27,24 @@ const LoginForm: React.FC = () => {
 
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-  const { loading } = useSelector((state: RootState) => state.auth);
+  const { loading, role } = useSelector((state: RootState) => state.auth);
 
   const isDisabled = useMemo(
     () => loading || !usernameOrEmail.trim() || !password.trim(),
     [loading, usernameOrEmail, password]
   );
+
+  useEffect(() => {
+    if (role) {
+      if (role === "Administrator") {
+        navigate("/admin-dashboard");
+      } else if (role === "Standard User") {
+        navigate("/user-dashboard");
+      } else {
+        navigate("/dashboard"); // fallback
+      }
+    }
+  }, [role, navigate]);
 
   useEffect(() => {
     // Clear any previous errors when component mounts
@@ -57,8 +69,7 @@ const LoginForm: React.FC = () => {
         })
       ).unwrap();
 
-      // Redirect to dashboard on successful login
-      navigate("/dashboard");
+      // Navigation handled by useEffect on role change
     } catch (error: any) {
       console.error("Login error:", error);
       if (error.status === 400 || error.status === 401) {

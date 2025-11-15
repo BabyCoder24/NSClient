@@ -7,6 +7,7 @@ import {
   resetPassword,
   registerUser,
   completeRegistration,
+  refreshToken,
 } from "./authThunks";
 import { logoutAPI } from "../services/authService";
 import type { AuthState, AuthUser } from "../types/auth";
@@ -16,6 +17,7 @@ const initialState: AuthState = {
   accessToken: null,
   refreshToken: null,
   expiresAt: null,
+  role: null,
   loading: false,
   error: null,
 };
@@ -36,6 +38,7 @@ const authSlice = createSlice({
         accessToken: string;
         refreshToken: string;
         expiresAt: number;
+        role: string;
       }>
     ) => {
       state.loading = false;
@@ -43,11 +46,13 @@ const authSlice = createSlice({
       state.accessToken = action.payload.accessToken;
       state.refreshToken = action.payload.refreshToken;
       state.expiresAt = action.payload.expiresAt;
+      state.role = action.payload.role;
       state.error = null;
       // Store tokens in localStorage
       localStorage.setItem("accessToken", action.payload.accessToken);
       localStorage.setItem("refreshToken", action.payload.refreshToken);
       localStorage.setItem("expiresAt", action.payload.expiresAt.toString());
+      localStorage.setItem("role", action.payload.role);
     },
     loginFailure: (state, action: PayloadAction<string>) => {
       state.loading = false;
@@ -56,6 +61,7 @@ const authSlice = createSlice({
       state.accessToken = null;
       state.refreshToken = null;
       state.expiresAt = null;
+      state.role = null;
     },
 
     // Forgot password actions
@@ -98,11 +104,13 @@ const authSlice = createSlice({
       state.accessToken = null;
       state.refreshToken = null;
       state.expiresAt = null;
+      state.role = null;
       state.loading = false;
       state.error = null;
       localStorage.removeItem("accessToken");
       localStorage.removeItem("refreshToken");
       localStorage.removeItem("expiresAt");
+      localStorage.removeItem("role");
     },
 
     // Initialize auth from localStorage
@@ -110,10 +118,12 @@ const authSlice = createSlice({
       const accessToken = localStorage.getItem("accessToken");
       const refreshToken = localStorage.getItem("refreshToken");
       const expiresAt = localStorage.getItem("expiresAt");
+      const role = localStorage.getItem("role");
       if (accessToken && refreshToken && expiresAt) {
         state.accessToken = accessToken;
         state.refreshToken = refreshToken;
         state.expiresAt = parseInt(expiresAt);
+        state.role = role;
         // Decode token to get user info
         try {
           const decoded: any = jwtDecode(accessToken);
@@ -136,9 +146,11 @@ const authSlice = createSlice({
           localStorage.removeItem("accessToken");
           localStorage.removeItem("refreshToken");
           localStorage.removeItem("expiresAt");
+          localStorage.removeItem("role");
           state.accessToken = null;
           state.refreshToken = null;
           state.expiresAt = null;
+          state.role = null;
           state.user = null;
         }
       }
@@ -162,10 +174,12 @@ const authSlice = createSlice({
         state.accessToken = action.payload.accessToken;
         state.refreshToken = action.payload.refreshToken;
         state.expiresAt = action.payload.expiresAt;
+        state.role = action.payload.role;
         state.error = null;
         localStorage.setItem("accessToken", action.payload.accessToken);
         localStorage.setItem("refreshToken", action.payload.refreshToken);
         localStorage.setItem("expiresAt", action.payload.expiresAt.toString());
+        localStorage.setItem("role", action.payload.role);
       })
       .addCase(loginUser.rejected, (state) => {
         state.loading = false;
@@ -222,6 +236,28 @@ const authSlice = createSlice({
         state.error = null;
       })
       .addCase(completeRegistration.rejected, (state) => {
+        state.loading = false;
+      })
+
+      // Refresh Token
+      .addCase(refreshToken.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(refreshToken.fulfilled, (state, action) => {
+        state.loading = false;
+        state.user = action.payload.user;
+        state.accessToken = action.payload.accessToken;
+        state.refreshToken = action.payload.refreshToken;
+        state.expiresAt = action.payload.expiresAt;
+        state.role = action.payload.role;
+        state.error = null;
+        localStorage.setItem("accessToken", action.payload.accessToken);
+        localStorage.setItem("refreshToken", action.payload.refreshToken);
+        localStorage.setItem("expiresAt", action.payload.expiresAt.toString());
+        localStorage.setItem("role", action.payload.role);
+      })
+      .addCase(refreshToken.rejected, (state) => {
         state.loading = false;
       });
   },

@@ -52,6 +52,11 @@ export const loginUser = createAsyncThunk(
             : 0, // Map role to ID
       };
 
+      const role =
+        decoded[
+          "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
+        ] || "Standard User";
+
       const expiresAt = Date.now() + response.expiresIn * 1000;
 
       return {
@@ -59,6 +64,7 @@ export const loginUser = createAsyncThunk(
         accessToken: response.accessToken,
         refreshToken: response.refreshToken,
         expiresAt,
+        role,
       };
     } catch (error: any) {
       console.error("Login thunk error:", error);
@@ -218,6 +224,11 @@ export const refreshToken = createAsyncThunk(
             : 0,
       };
 
+      const role =
+        decoded[
+          "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
+        ] || "Standard User";
+
       const expiresAt = Date.now() + response.expiresIn * 1000;
 
       return {
@@ -225,6 +236,7 @@ export const refreshToken = createAsyncThunk(
         accessToken: response.accessToken,
         refreshToken: response.refreshToken,
         expiresAt,
+        role,
       };
     } catch (error: any) {
       dispatch(

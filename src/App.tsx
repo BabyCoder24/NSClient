@@ -11,11 +11,14 @@ import Products from "./pages/Products";
 import Services from "./pages/Services";
 import Contact from "./pages/Contact";
 import Dashboard from "./layout/Dashboard";
+import AdminDashboard from "./pages/AdminDashboard";
+import Settings from "./pages/Settings";
 import LoginForm from "./pages/LoginForm";
 import RegisterForm from "./pages/RegisterForm";
 import CompleteRegistrationForm from "./pages/CompleteRegistrationForm";
 import ForgotPasswordForm from "./components/ForgotPasswordForm";
 import ResetPasswordForm from "./components/ResetPasswordForm";
+import Unauthorized from "./pages/Unauthorized";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 // Store
@@ -44,13 +47,38 @@ function App() {
             />
             <Route path="/forgot-password" element={<ForgotPasswordForm />} />
             <Route path="/reset-password" element={<ResetPasswordForm />} />
+            <Route path="/unauthorized" element={<Unauthorized />} />
 
             {/* Protected routes */}
+            <Route
+              path="/admin-dashboard"
+              element={
+                <ProtectedRoute requiredRole="Administrator">
+                  <AdminDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/user-dashboard"
+              element={
+                <ProtectedRoute requiredRole="Standard User">
+                  <Dashboard />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/dashboard"
               element={
                 <ProtectedRoute>
                   <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/settings"
+              element={
+                <ProtectedRoute>
+                  <Settings />
                 </ProtectedRoute>
               }
             />
