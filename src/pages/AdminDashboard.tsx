@@ -534,17 +534,17 @@ const AdminDashboard: React.FC = () => {
               </Box>
             </Fade>
 
-            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3 }}>
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: { xs: "1fr", md: "1fr 2fr" },
+                gap: { xs: 2, md: 3 },
+              }}
+            >
               {/* User Profile Card */}
-              <Box
-                sx={{
-                  flex: "1 1 300px",
-                  minWidth: { xs: "100%", sm: "300px" },
-                  maxWidth: { xs: "100%", md: "calc(33.333% - 16px)" },
-                }}
-              >
+              <Box sx={{ gridColumn: { xs: "1", md: "1" } }}>
                 {loading ? (
-                  <Card sx={{ height: 400 }}>
+                  <Card sx={{ height: { xs: 300, md: 400 } }}>
                     <CardContent sx={{ textAlign: "center", pt: 3 }}>
                       <Skeleton
                         variant="circular"
@@ -583,21 +583,27 @@ const AdminDashboard: React.FC = () => {
                       }}
                       aria-label="User Profile"
                     >
-                      <CardContent sx={{ textAlign: "center", pt: 3 }}>
+                      <CardContent
+                        sx={{ textAlign: "center", pt: { xs: 2, md: 3 } }}
+                      >
                         <Avatar
                           sx={{
-                            width: 80,
-                            height: 80,
+                            width: { xs: 60, md: 80 },
+                            height: { xs: 60, md: 80 },
                             mx: "auto",
                             mb: 2,
                             bgcolor: "primary.main",
-                            fontSize: "2rem",
+                            fontSize: { xs: "1.5rem", md: "2rem" },
                             boxShadow: (theme) => theme.shadows[4],
                           }}
                         >
                           {avatarInitials}
                         </Avatar>
-                        <Typography variant="h6" gutterBottom>
+                        <Typography
+                          variant={isMobile ? "subtitle1" : "h6"}
+                          gutterBottom
+                          sx={{ overflow: "hidden", textOverflow: "ellipsis" }}
+                        >
                           {displayName}
                         </Typography>
                         <Chip
@@ -612,6 +618,7 @@ const AdminDashboard: React.FC = () => {
                               display: "flex",
                               alignItems: "center",
                               mb: 1,
+                              flexWrap: "wrap",
                             }}
                           >
                             <Email
@@ -621,13 +628,22 @@ const AdminDashboard: React.FC = () => {
                                 fontSize: 18,
                               }}
                             />
-                            <Typography variant="body2">{userEmail}</Typography>
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                              }}
+                            >
+                              {userEmail}
+                            </Typography>
                           </Box>
                           <Box
                             sx={{
                               display: "flex",
                               alignItems: "center",
                               mb: 1,
+                              flexWrap: "wrap",
                             }}
                           >
                             <Person
@@ -637,7 +653,13 @@ const AdminDashboard: React.FC = () => {
                                 fontSize: 18,
                               }}
                             />
-                            <Typography variant="body2">
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                              }}
+                            >
                               {user?.username || "N/A"}
                             </Typography>
                           </Box>
@@ -646,6 +668,7 @@ const AdminDashboard: React.FC = () => {
                               display: "flex",
                               alignItems: "center",
                               mb: 1,
+                              flexWrap: "wrap",
                             }}
                           >
                             <LocationOn
@@ -655,7 +678,13 @@ const AdminDashboard: React.FC = () => {
                                 fontSize: 18,
                               }}
                             />
-                            <Typography variant="body2">
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                              }}
+                            >
                               {user?.companyName || "N/A"}
                             </Typography>
                           </Box>
@@ -674,23 +703,21 @@ const AdminDashboard: React.FC = () => {
               </Box>
 
               {/* Account Statistics with Charts */}
-              <Box
-                sx={{
-                  flex: "1 1 500px",
-                  minWidth: { xs: "100%", sm: "500px" },
-                  maxWidth: { xs: "100%", md: "calc(66.666% - 16px)" },
-                }}
-              >
-                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3 }}>
+              <Box sx={{ gridColumn: { xs: "1", md: "2" } }}>
+                <Box
+                  sx={{
+                    display: "grid",
+                    gridTemplateColumns: {
+                      xs: "1fr",
+                      sm: "1fr 1fr",
+                      md: "1fr 1fr 1fr 1fr",
+                    },
+                    gap: { xs: 2, md: 3 },
+                  }}
+                >
                   {/* Statistics Cards */}
                   {accountStats.map((stat, index) => (
-                    <Box
-                      sx={{
-                        flex: "1 1 250px",
-                        minWidth: { xs: "200px", sm: "250px" },
-                      }}
-                      key={index}
-                    >
+                    <Box key={index}>
                       {loading ? (
                         <Card>
                           <CardContent>
@@ -728,6 +755,7 @@ const AdminDashboard: React.FC = () => {
                                   display: "flex",
                                   alignItems: "center",
                                   mb: 1,
+                                  flexWrap: "wrap",
                                 }}
                               >
                                 <Box
@@ -745,10 +773,21 @@ const AdminDashboard: React.FC = () => {
                                   <Typography
                                     variant="body2"
                                     color="text.secondary"
+                                    sx={{
+                                      overflow: "hidden",
+                                      textOverflow: "ellipsis",
+                                    }}
                                   >
                                     {stat.title}
                                   </Typography>
-                                  <Typography variant="h5" component="div">
+                                  <Typography
+                                    variant={isMobile ? "h6" : "h5"}
+                                    component="div"
+                                    sx={{
+                                      overflow: "hidden",
+                                      textOverflow: "ellipsis",
+                                    }}
+                                  >
                                     {stat.value}
                                   </Typography>
                                 </Box>
@@ -759,6 +798,8 @@ const AdminDashboard: React.FC = () => {
                                   color: stat.change.startsWith("+")
                                     ? "success.main"
                                     : "error.main",
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
                                 }}
                               >
                                 {stat.change} from last month
@@ -771,7 +812,11 @@ const AdminDashboard: React.FC = () => {
                   ))}
 
                   {/* Spending Chart */}
-                  <Box sx={{ flex: "1 1 100%", minWidth: 0 }}>
+                  <Box
+                    sx={{
+                      gridColumn: { xs: "1 / -1", sm: "1 / -1", md: "1 / -1" },
+                    }}
+                  >
                     {loading ? (
                       <Card>
                         <CardContent>
@@ -800,13 +845,9 @@ const AdminDashboard: React.FC = () => {
                             <Typography variant="h6" gutterBottom>
                               Monthly Spending Trend
                             </Typography>
-                            <Box sx={{ height: 300 }}>
+                            <Box sx={{ height: { xs: 200, md: 300 } }}>
                               {mounted && (
-                                <ResponsiveContainer
-                                  width="100%"
-                                  height={300}
-                                  minWidth={0}
-                                >
+                                <ResponsiveContainer width="100%" height="100%">
                                   <LineChart data={spendingData}>
                                     <CartesianGrid strokeDasharray="3 3" />
                                     <XAxis dataKey="month" />
@@ -832,13 +873,7 @@ const AdminDashboard: React.FC = () => {
               </Box>
 
               {/* Recent Activity */}
-              <Box
-                sx={{
-                  flex: "1 1 500px",
-                  minWidth: { xs: "100%", sm: "500px" },
-                  maxWidth: { xs: "100%", md: "calc(50% - 8px)" },
-                }}
-              >
+              <Box sx={{ gridColumn: { xs: "1", md: "1" } }}>
                 {loading ? (
                   <Card>
                     <CardContent>
@@ -913,6 +948,16 @@ const AdminDashboard: React.FC = () => {
                                 <ListItemText
                                   primary={activity.description}
                                   secondary={activity.date}
+                                  primaryTypographyProps={{
+                                    noWrap: true,
+                                    overflow: "hidden",
+                                    textOverflow: "ellipsis",
+                                  }}
+                                  secondaryTypographyProps={{
+                                    noWrap: true,
+                                    overflow: "hidden",
+                                    textOverflow: "ellipsis",
+                                  }}
                                 />
                                 <Typography
                                   variant="body1"
@@ -922,7 +967,10 @@ const AdminDashboard: React.FC = () => {
                                       activity.type === "income"
                                         ? "success.main"
                                         : "error.main",
+                                    ml: 1,
+                                    flexShrink: 0,
                                   }}
+                                  noWrap
                                 >
                                   {activity.amount}
                                 </Typography>
@@ -940,14 +988,14 @@ const AdminDashboard: React.FC = () => {
               </Box>
 
               {/* Quick Actions & Goals */}
-              <Box
-                sx={{
-                  flex: "1 1 500px",
-                  minWidth: { xs: "100%", sm: "500px" },
-                  maxWidth: { xs: "100%", md: "calc(50% - 8px)" },
-                }}
-              >
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+              <Box sx={{ gridColumn: { xs: "1", md: "2" } }}>
+                <Box
+                  sx={{
+                    display: "grid",
+                    gridTemplateColumns: { xs: "1fr", md: "1fr" },
+                    gap: { xs: 2, md: 3 },
+                  }}
+                >
                   {/* Quick Actions */}
                   <Box>
                     {loading ? (
@@ -1059,6 +1107,7 @@ const AdminDashboard: React.FC = () => {
                                   display: "flex",
                                   justifyContent: "space-between",
                                   mb: 1,
+                                  flexWrap: "wrap",
                                 }}
                               >
                                 <Typography variant="body2">
@@ -1079,6 +1128,7 @@ const AdminDashboard: React.FC = () => {
                                   display: "flex",
                                   justifyContent: "space-between",
                                   mb: 1,
+                                  flexWrap: "wrap",
                                 }}
                               >
                                 <Typography variant="body2">
@@ -1099,6 +1149,7 @@ const AdminDashboard: React.FC = () => {
                                   display: "flex",
                                   justifyContent: "space-between",
                                   mb: 1,
+                                  flexWrap: "wrap",
                                 }}
                               >
                                 <Typography variant="body2">
@@ -1120,7 +1171,7 @@ const AdminDashboard: React.FC = () => {
                   </Box>
 
                   {/* Balance Distribution Chart */}
-                  <Box sx={{ flex: "1 1 100%", minWidth: 0 }}>
+                  <Box>
                     {loading ? (
                       <Card>
                         <CardContent>
@@ -1149,13 +1200,9 @@ const AdminDashboard: React.FC = () => {
                             <Typography variant="h6" gutterBottom>
                               Balance Distribution
                             </Typography>
-                            <Box sx={{ height: 300 }}>
+                            <Box sx={{ height: { xs: 200, md: 300 } }}>
                               {mounted && (
-                                <ResponsiveContainer
-                                  width="100%"
-                                  height={300}
-                                  minWidth={0}
-                                >
+                                <ResponsiveContainer width="100%" height="100%">
                                   <PieChart>
                                     <Pie
                                       data={balanceData}

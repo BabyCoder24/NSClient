@@ -13,6 +13,7 @@ import Contact from "./pages/Contact";
 import Dashboard from "./layout/Dashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import Settings from "./pages/Settings";
+import ManageUsers from "./pages/ManageUsers";
 import LoginForm from "./pages/LoginForm";
 import RegisterForm from "./pages/RegisterForm";
 import CompleteRegistrationForm from "./pages/CompleteRegistrationForm";
@@ -55,6 +56,14 @@ function App() {
               element={
                 <ProtectedRoute requiredRole="Administrator">
                   <AdminDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/manage-users"
+              element={
+                <ProtectedRoute requiredRole="Administrator">
+                  <ManageUsers />
                 </ProtectedRoute>
               }
             />
