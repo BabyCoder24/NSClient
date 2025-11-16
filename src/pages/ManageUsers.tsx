@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Box,
   Container,
@@ -13,7 +13,6 @@ import {
   TextField,
   Chip,
   IconButton,
-  Fab,
   useMediaQuery,
   useTheme,
   Drawer,
@@ -33,6 +32,7 @@ import {
   Snackbar,
   Menu,
   MenuItem,
+  Pagination,
 } from "@mui/material";
 import {
   DataGrid,
@@ -40,6 +40,7 @@ import {
   GridActionsCellItem,
   type GridRowParams,
 } from "@mui/x-data-grid";
+import { alpha } from "@mui/material/styles";
 import {
   Dashboard as DashboardIcon,
   People as PeopleIcon,
@@ -144,6 +145,14 @@ const initialUsers = [
   },
 ];
 
+const MOBILE_PAGE_SIZE = 5;
+const DATA_GRID_ROW_HEIGHT = 52;
+const DATA_GRID_HEADER_HEIGHT = 56;
+const DATA_GRID_FOOTER_HEIGHT = 52;
+const DATA_GRID_MIN_HEIGHT = 360;
+
+type DialogType = "view" | "create" | "edit" | "delete" | "reset";
+
 interface User {
   id: number;
   name: string;
@@ -166,14 +175,13 @@ const ManageUsers: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const isSmall = useMediaQuery(theme.breakpoints.down("sm"));
+  const isTablet = useMediaQuery(theme.breakpoints.between("sm", "lg"));
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [users, setUsers] = useState<User[]>(initialUsers);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [dialogType, setDialogType] = useState<
-    "view" | "create" | "edit" | "delete" | "reset"
-  >("view");
+  const [dialogType, setDialogType] = useState<DialogType>("view");
   const [formData, setFormData] = useState<Partial<User>>({});
   const [filters, setFilters] = useState({
     name: "",
@@ -183,12 +191,177 @@ const ManageUsers: React.FC = () => {
     department: "",
   });
   const [displayedUsers, setDisplayedUsers] = useState<User[]>(initialUsers);
+  const [mobilePage, setMobilePage] = useState(1);
+  const [paginationModel, setPaginationModel] = useState({
+    page: 0,
+    pageSize: 10,
+  });
+
+  const filterUsers = useCallback(
+    (list: User[]) =>
+      list.filter(
+        (user) =>
+          (filters.name === "" ||
+            user.name.toLowerCase().includes(filters.name.toLowerCase())) &&
+          (filters.email === "" ||
+            user.email.toLowerCase().includes(filters.email.toLowerCase())) &&
+          (filters.role === "" || user.role === filters.role) &&
+          (filters.status === "" || user.status === filters.status) &&
+          (filters.department === "" ||
+            user.department
+              .toLowerCase()
+              .includes(filters.department.toLowerCase()))
+      ),
+    [filters]
+  );
+
+  useEffect(() => {
+    const maxPage = Math.max(
+      1,
+      Math.ceil(displayedUsers.length / MOBILE_PAGE_SIZE)
+    );
+    setMobilePage((prev) => Math.min(prev, maxPage));
+  }, [displayedUsers.length]);
+
+  useEffect(() => {
+    setPaginationModel((prev) => {
+      const maxPageIndex = Math.max(
+        0,
+        Math.ceil(displayedUsers.length / prev.pageSize) - 1
+      );
+      if (prev.page > maxPageIndex) {
+        return { ...prev, page: maxPageIndex };
+      }
+      return prev;
+    });
+  }, [displayedUsers.length]);
+
+  const mobileTotalPages = Math.max(
+    1,
+    Math.ceil(displayedUsers.length / MOBILE_PAGE_SIZE)
+  );
+
+  const mobilePaginatedUsers = useMemo(() => {
+    const startIndex = (mobilePage - 1) * MOBILE_PAGE_SIZE;
+    return displayedUsers.slice(startIndex, startIndex + MOBILE_PAGE_SIZE);
+  }, [displayedUsers, mobilePage]);
+
+  const visibleDesktopRowCount = useMemo(() => {
+    if (displayedUsers.length === 0) {
+      return 0;
+    }
+    const startIndex = paginationModel.page * paginationModel.pageSize;
+    const remaining = displayedUsers.length - startIndex;
+    return Math.max(0, Math.min(paginationModel.pageSize, remaining));
+  }, [displayedUsers.length, paginationModel]);
+
+  const dataGridHeight = useMemo(() => {
+    const rowsHeight = visibleDesktopRowCount * DATA_GRID_ROW_HEIGHT;
+    return Math.max(
+      DATA_GRID_MIN_HEIGHT,
+      DATA_GRID_HEADER_HEIGHT + DATA_GRID_FOOTER_HEIGHT + rowsHeight
+    );
+  }, [visibleDesktopRowCount]);
 
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
     severity: "success" as "success" | "error",
   });
+
+  const dialogMeta = useMemo<
+    Record<DialogType, { title: string; subtitle: string }>
+  >(
+    () => ({
+      view: {
+        title: "View User",
+        subtitle: "Review account information and access history.",
+      },
+      create: {
+        title: "Create New User",
+        subtitle: "Configure profile details and access permissions.",
+      },
+      edit: {
+        title: "Edit User",
+        subtitle: "Update personal information or adjust their role.",
+      },
+      delete: {
+        title: "Delete User",
+        subtitle: "Double-check before removing this account permanently.",
+      },
+      reset: {
+        title: "Reset Password",
+        subtitle: "Send the user a secure password reset link via email.",
+      },
+    }),
+    []
+  );
+
+  const activeDialogMeta = dialogMeta[dialogType];
+
+  const dialogHeaderStyles = useMemo(() => {
+    switch (dialogType) {
+      case "delete":
+        return {
+          background: `linear-gradient(135deg, ${theme.palette.error.main} 0%, ${theme.palette.error.dark} 100%)`,
+        };
+      case "reset":
+        return {
+          background: `linear-gradient(135deg, ${theme.palette.info.main} 0%, ${theme.palette.info.dark} 100%)`,
+        };
+      default:
+        return {
+          background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+        };
+    }
+  }, [dialogType, theme]);
+
+  const selectedUserDetails = useMemo(
+    () =>
+      selectedUser
+        ? [
+            { label: "First Name", value: selectedUser.firstName },
+            { label: "Last Name", value: selectedUser.lastName },
+            { label: "Email", value: selectedUser.email },
+            { label: "Phone", value: selectedUser.phone || "Not provided" },
+            { label: "Department", value: selectedUser.department },
+            { label: "Status", value: selectedUser.status },
+            { label: "Join Date", value: selectedUser.joinDate },
+            { label: "Last Login", value: selectedUser.lastLogin },
+          ]
+        : [],
+    [selectedUser]
+  );
+
+  const columnVisibilityModel = useMemo(() => {
+    if (isSmall) {
+      return {
+        avatar: false,
+        email: false,
+        department: false,
+        lastLogin: false,
+        role: false,
+      };
+    }
+
+    if (isTablet) {
+      return {
+        avatar: true,
+        email: false,
+        department: false,
+        lastLogin: false,
+        role: true,
+      };
+    }
+
+    return {
+      avatar: true,
+      email: true,
+      department: true,
+      lastLogin: true,
+      role: true,
+    };
+  }, [isSmall, isTablet]);
 
   const displayName = user ? `${user.firstName} ${user.lastName}` : "User";
 
@@ -220,20 +393,9 @@ const ManageUsers: React.FC = () => {
   };
 
   const handleSearch = () => {
-    const filtered = users.filter(
-      (user) =>
-        (filters.name === "" ||
-          user.name.toLowerCase().includes(filters.name.toLowerCase())) &&
-        (filters.email === "" ||
-          user.email.toLowerCase().includes(filters.email.toLowerCase())) &&
-        (filters.role === "" || user.role === filters.role) &&
-        (filters.status === "" || user.status === filters.status) &&
-        (filters.department === "" ||
-          user.department
-            .toLowerCase()
-            .includes(filters.department.toLowerCase()))
-    );
+    const filtered = filterUsers(users);
     setDisplayedUsers(filtered);
+    setMobilePage(1);
   };
 
   const handleClearFilters = () => {
@@ -245,6 +407,7 @@ const ManageUsers: React.FC = () => {
       department: "",
     });
     setDisplayedUsers(users);
+    setMobilePage(1);
   };
 
   const handleView = (user: User) => {
@@ -295,15 +458,19 @@ const ManageUsers: React.FC = () => {
 
   const handleFormSubmit = () => {
     if (dialogType === "create") {
+      const nextId = users.length ? Math.max(...users.map((u) => u.id)) + 1 : 1;
       const newUser: User = {
         ...formData,
-        id: Math.max(...users.map((u) => u.id)) + 1,
+        id: nextId,
         name: `${formData.firstName || ""} ${formData.lastName || ""}`.trim(),
         joinDate: new Date().toISOString().split("T")[0],
         lastLogin: "Never",
         avatar: "",
       } as User;
-      setUsers([...users, newUser]);
+      const updatedUsers = [...users, newUser];
+      setUsers(updatedUsers);
+      setDisplayedUsers(filterUsers(updatedUsers));
+      setMobilePage(1);
       setSnackbar({
         open: true,
         message: "User created successfully!",
@@ -317,14 +484,20 @@ const ManageUsers: React.FC = () => {
           formData.lastName || selectedUser.lastName
         }`.trim(),
       };
-      setUsers(users.map((u) => (u.id === selectedUser.id ? updatedUser : u)));
+      const updatedUsers = users.map((u) =>
+        u.id === selectedUser.id ? updatedUser : u
+      );
+      setUsers(updatedUsers);
+      setDisplayedUsers(filterUsers(updatedUsers));
       setSnackbar({
         open: true,
         message: "User updated successfully!",
         severity: "success",
       });
     } else if (dialogType === "delete" && selectedUser) {
-      setUsers(users.filter((u) => u.id !== selectedUser.id));
+      const updatedUsers = users.filter((u) => u.id !== selectedUser.id);
+      setUsers(updatedUsers);
+      setDisplayedUsers(filterUsers(updatedUsers));
       setSnackbar({
         open: true,
         message: "User deleted successfully!",
@@ -503,13 +676,22 @@ const ManageUsers: React.FC = () => {
 
           {/* User Menu */}
           <Box
-            sx={{ display: "flex", alignItems: "center", marginLeft: "auto" }}
+            sx={{
+              display: "flex",
+              flexDirection: { xs: "column", sm: "row" },
+              alignItems: { xs: "flex-end", sm: "center" },
+              marginLeft: "auto",
+              gap: { xs: 0.5, sm: 1 },
+            }}
           >
             <Typography
-              variant="body1"
+              variant="body2"
+              noWrap
               sx={{
-                mr: 1,
                 color: "white",
+                fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                maxWidth: { xs: 120, sm: "none" },
+                textAlign: { xs: "right", sm: "left" },
               }}
             >
               Welcome, {displayName}
@@ -637,10 +819,7 @@ const ManageUsers: React.FC = () => {
         </Drawer>
 
         {/* Main content */}
-        <Box
-          component="main"
-          sx={{ flexGrow: 1, p: { xs: 0, sm: 0.25, md: 1 }, pt: 8 }}
-        >
+        <Box component="main" sx={{ flexGrow: 1, width: "100%", pt: 8 }}>
           {/* User Menu */}
           <Menu
             id="user-menu"
@@ -667,7 +846,7 @@ const ManageUsers: React.FC = () => {
             </MenuItem>
           </Menu>
 
-          <Container maxWidth={false} sx={{ py: 2 }}>
+          <Container maxWidth="xl" sx={{ py: 2, px: { xs: 2, sm: 3, md: 4 } }}>
             {/* Breadcrumb Navigation */}
             <Breadcrumbs
               separator={<NavigateNext fontSize="small" />}
@@ -705,7 +884,7 @@ const ManageUsers: React.FC = () => {
             </Breadcrumbs>
           </Container>
 
-          <Container maxWidth={false} sx={{ py: 4 }}>
+          <Container maxWidth="xl" sx={{ py: 4, px: { xs: 2, sm: 3, md: 4 } }}>
             {/* Header Section */}
             <Box
               sx={{
@@ -748,13 +927,9 @@ const ManageUsers: React.FC = () => {
             <Box
               sx={{
                 display: "grid",
-                gridTemplateColumns: {
-                  xs: "1fr",
-                  sm: "1fr 1fr",
-                  md: "1fr 1fr",
-                  lg: "1fr 1fr 1fr 1fr",
-                },
-                gap: { xs: 1, sm: 2, md: 4 },
+                gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+                gap: { xs: 2, sm: 3, md: 4 },
+                alignItems: "stretch",
                 mb: 4,
               }}
             >
@@ -766,6 +941,7 @@ const ManageUsers: React.FC = () => {
                     transform: "translateY(-4px)",
                     transition: "0.3s",
                   },
+                  height: "100%",
                 }}
               >
                 <CardContent>
@@ -810,6 +986,7 @@ const ManageUsers: React.FC = () => {
                     transform: "translateY(-4px)",
                     transition: "0.3s",
                   },
+                  height: "100%",
                 }}
               >
                 <CardContent>
@@ -854,6 +1031,7 @@ const ManageUsers: React.FC = () => {
                     transform: "translateY(-4px)",
                     transition: "0.3s",
                   },
+                  height: "100%",
                 }}
               >
                 <CardContent>
@@ -898,6 +1076,7 @@ const ManageUsers: React.FC = () => {
                     transform: "translateY(-4px)",
                     transition: "0.3s",
                   },
+                  height: "100%",
                 }}
               >
                 <CardContent>
@@ -937,102 +1116,181 @@ const ManageUsers: React.FC = () => {
             </Box>
 
             {/* Filters Card */}
-            <Card sx={{ mb: 3 }}>
-              <CardContent>
-                <Typography variant="h6" sx={{ mb: 2 }}>
-                  Filters
-                </Typography>
+            <Card
+              sx={{
+                mb: 3,
+                borderRadius: 3,
+                position: "relative",
+                overflow: "hidden",
+                color: "common.white",
+                background:
+                  "linear-gradient(135deg, #1e3c72 0%, #2a5298 45%, #38a3d1 100%)",
+                boxShadow: "0px 18px 42px rgba(30, 64, 175, 0.22)",
+                "&::before": {
+                  content: '""',
+                  position: "absolute",
+                  inset: 0,
+                  background:
+                    "linear-gradient(180deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0) 70%)",
+                },
+              }}
+            >
+              <CardContent
+                sx={{
+                  position: "relative",
+                  zIndex: 1,
+                  p: { xs: 2, sm: 3 },
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: { xs: 2, sm: 2.5 },
+                }}
+              >
+                <Box>
+                  <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                    Smart Filters
+                  </Typography>
+                  <Typography variant="body2" sx={{ opacity: 0.85 }}>
+                    Quickly narrow down users by name, contact, role, or status.
+                  </Typography>
+                </Box>
                 <Box
                   sx={{
+                    backgroundColor: (theme) =>
+                      alpha(theme.palette.common.white, 0.92),
+                    borderRadius: 2,
+                    p: { xs: 1.5, sm: 2.5 },
+                    boxShadow: "0 12px 32px rgba(15, 23, 42, 0.15)",
                     display: "flex",
-                    flexWrap: "wrap",
-                    gap: { xs: 1, sm: 2 },
+                    flexDirection: "column",
+                    gap: { xs: 1.5, sm: 2 },
+                    color: "text.primary",
                   }}
                 >
-                  <TextField
-                    label="Name"
-                    value={filters.name}
-                    onChange={(e) => handleFilterChange("name", e.target.value)}
+                  <Box
                     sx={{
-                      minWidth: { xs: "100%", sm: 120 },
-                      flex: { xs: "1 1 100%", sm: "1 1 120px" },
+                      display: "grid",
+                      gap: { xs: 1, sm: 1.5, md: 2 },
+                      gridTemplateColumns: {
+                        xs: "1fr",
+                        sm: "repeat(auto-fit, minmax(200px, 1fr))",
+                      },
                     }}
-                    id="filter-name"
-                    name="filter-name"
-                  />
-                  <TextField
-                    label="Email"
-                    value={filters.email}
-                    onChange={(e) =>
-                      handleFilterChange("email", e.target.value)
-                    }
-                    sx={{
-                      minWidth: { xs: "100%", sm: 120 },
-                      flex: { xs: "1 1 100%", sm: "1 1 120px" },
-                    }}
-                    id="filter-email"
-                    name="filter-email"
-                  />
-                  <TextField
-                    select
-                    label="Role"
-                    value={filters.role}
-                    onChange={(e) => handleFilterChange("role", e.target.value)}
-                    sx={{
-                      minWidth: { xs: "100%", sm: 120 },
-                      flex: { xs: "1 1 100%", sm: "1 1 120px" },
-                    }}
-                    id="filter-role"
-                    name="filter-role"
                   >
-                    <MenuItem value="">All</MenuItem>
-                    <MenuItem value="User">User</MenuItem>
-                    <MenuItem value="Moderator">Moderator</MenuItem>
-                    <MenuItem value="Administrator">Administrator</MenuItem>
-                  </TextField>
-                  <TextField
-                    select
-                    label="Status"
-                    value={filters.status}
-                    onChange={(e) =>
-                      handleFilterChange("status", e.target.value)
-                    }
+                    <TextField
+                      fullWidth
+                      label="Name"
+                      value={filters.name}
+                      onChange={(e) =>
+                        handleFilterChange("name", e.target.value)
+                      }
+                      sx={{ minWidth: 0 }}
+                      id="filter-name"
+                      name="filter-name"
+                    />
+                    <TextField
+                      fullWidth
+                      label="Email"
+                      value={filters.email}
+                      onChange={(e) =>
+                        handleFilterChange("email", e.target.value)
+                      }
+                      sx={{ minWidth: 0 }}
+                      id="filter-email"
+                      name="filter-email"
+                    />
+                    <TextField
+                      fullWidth
+                      select
+                      label="Role"
+                      value={filters.role}
+                      onChange={(e) =>
+                        handleFilterChange("role", e.target.value)
+                      }
+                      sx={{ minWidth: 0 }}
+                      id="filter-role"
+                      name="filter-role"
+                    >
+                      <MenuItem value="">All</MenuItem>
+                      <MenuItem value="User">User</MenuItem>
+                      <MenuItem value="Moderator">Moderator</MenuItem>
+                      <MenuItem value="Administrator">Administrator</MenuItem>
+                    </TextField>
+                    <TextField
+                      fullWidth
+                      select
+                      label="Status"
+                      value={filters.status}
+                      onChange={(e) =>
+                        handleFilterChange("status", e.target.value)
+                      }
+                      sx={{ minWidth: 0 }}
+                      id="filter-status"
+                      name="filter-status"
+                    >
+                      <MenuItem value="">All</MenuItem>
+                      <MenuItem value="Active">Active</MenuItem>
+                      <MenuItem value="Inactive">Inactive</MenuItem>
+                    </TextField>
+                    <TextField
+                      fullWidth
+                      label="Department"
+                      value={filters.department}
+                      onChange={(e) =>
+                        handleFilterChange("department", e.target.value)
+                      }
+                      sx={{ minWidth: 0 }}
+                      id="filter-department"
+                      name="filter-department"
+                    />
+                  </Box>
+                  <Box
                     sx={{
-                      minWidth: { xs: "100%", sm: 120 },
-                      flex: { xs: "1 1 100%", sm: "1 1 120px" },
+                      display: "flex",
+                      gap: 1.5,
+                      flexWrap: "wrap",
+                      alignItems: "center",
                     }}
-                    id="filter-status"
-                    name="filter-status"
                   >
-                    <MenuItem value="">All</MenuItem>
-                    <MenuItem value="Active">Active</MenuItem>
-                    <MenuItem value="Inactive">Inactive</MenuItem>
-                  </TextField>
-                  <TextField
-                    label="Department"
-                    value={filters.department}
-                    onChange={(e) =>
-                      handleFilterChange("department", e.target.value)
-                    }
-                    sx={{
-                      minWidth: { xs: "100%", sm: 120 },
-                      flex: { xs: "1 1 100%", sm: "1 1 120px" },
-                    }}
-                    id="filter-department"
-                    name="filter-department"
-                  />
-                </Box>
-                <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", mt: 2 }}>
-                  <Button
-                    variant="contained"
-                    startIcon={<Search />}
-                    onClick={handleSearch}
-                  >
-                    Search
-                  </Button>
-                  <Button variant="outlined" onClick={handleClearFilters}>
-                    Clear Filters
-                  </Button>
+                    <Button
+                      variant="contained"
+                      startIcon={<Search />}
+                      onClick={handleSearch}
+                      sx={{
+                        minWidth: 140,
+                        borderRadius: 999,
+                        px: 3,
+                        background:
+                          "linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)",
+                        boxShadow: "0px 12px 24px rgba(37, 99, 235, 0.25)",
+                        "&:hover": {
+                          background:
+                            "linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%)",
+                          boxShadow: "0px 10px 20px rgba(30, 64, 175, 0.3)",
+                        },
+                      }}
+                    >
+                      Apply Filters
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      onClick={handleClearFilters}
+                      sx={{
+                        minWidth: 140,
+                        borderRadius: 999,
+                        px: 3,
+                        color: "text.primary",
+                        borderColor: (theme) =>
+                          alpha(theme.palette.primary.main, 0.4),
+                        "&:hover": {
+                          borderColor: (theme) => theme.palette.primary.main,
+                          backgroundColor: (theme) =>
+                            alpha(theme.palette.primary.main, 0.08),
+                        },
+                      }}
+                    >
+                      Reset
+                    </Button>
+                  </Box>
                 </Box>
               </CardContent>
             </Card>
@@ -1043,7 +1301,9 @@ const ManageUsers: React.FC = () => {
                   sx={{
                     display: "flex",
                     justifyContent: "space-between",
-                    alignItems: "center",
+                    alignItems: { xs: "stretch", md: "center" },
+                    flexDirection: { xs: "column", md: "row" },
+                    gap: { xs: 1.5, md: 2 },
                     mb: 3,
                   }}
                 >
@@ -1054,7 +1314,8 @@ const ManageUsers: React.FC = () => {
                     onClick={handleCreate}
                     sx={{
                       borderRadius: 2,
-                      display: { xs: "none", md: "inline-flex" },
+                      width: { xs: "100%", md: "auto" },
+                      alignSelf: { xs: "stretch", md: "center" },
                     }}
                   >
                     Add User
@@ -1064,174 +1325,348 @@ const ManageUsers: React.FC = () => {
                   <Box
                     sx={{ display: "flex", flexDirection: "column", gap: 2 }}
                   >
-                    {displayedUsers.map((user) => (
-                      <Card key={user.id} sx={{ p: 2 }}>
-                        <Box
-                          sx={{ display: "flex", alignItems: "center", gap: 2 }}
-                        >
-                          <Avatar sx={{ width: 40, height: 40 }}>
-                            {user.firstName?.[0] || "?"}
-                            {user.lastName?.[0] || ""}
-                          </Avatar>
-                          <Box sx={{ flex: 1 }}>
-                            <Typography variant="h6">{user.name}</Typography>
-                            <Typography variant="body2" color="text.secondary">
-                              {user.email}
-                            </Typography>
-                            <Box sx={{ display: "flex", gap: 1, mt: 1 }}>
-                              <Chip
-                                label={user.role}
-                                color={
-                                  user.role === "Administrator"
-                                    ? "error"
-                                    : user.role === "Moderator"
-                                    ? "warning"
-                                    : "default"
-                                }
+                    {mobilePaginatedUsers.length > 0 ? (
+                      mobilePaginatedUsers.map((user) => (
+                        <Card key={user.id} sx={{ p: 2 }}>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 2,
+                              flexWrap: "wrap",
+                            }}
+                          >
+                            <Avatar sx={{ width: 40, height: 40 }}>
+                              {user.firstName?.[0] || "?"}
+                              {user.lastName?.[0] || ""}
+                            </Avatar>
+                            <Box sx={{ flex: 1, minWidth: 160 }}>
+                              <Typography variant="h6">{user.name}</Typography>
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                              >
+                                {user.email}
+                              </Typography>
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  gap: 1,
+                                  mt: 1,
+                                  flexWrap: "wrap",
+                                }}
+                              >
+                                <Chip
+                                  label={user.role}
+                                  color={
+                                    user.role === "Administrator"
+                                      ? "error"
+                                      : user.role === "Moderator"
+                                      ? "warning"
+                                      : "default"
+                                  }
+                                  size="small"
+                                />
+                                <Chip
+                                  label={user.status}
+                                  color={
+                                    user.status === "Active"
+                                      ? "success"
+                                      : "error"
+                                  }
+                                  size="small"
+                                />
+                              </Box>
+                            </Box>
+                            <Box
+                              sx={{
+                                display: "flex",
+                                gap: 1,
+                                flexWrap: "wrap",
+                                justifyContent: "flex-end",
+                              }}
+                            >
+                              <IconButton
                                 size="small"
-                              />
-                              <Chip
-                                label={user.status}
-                                color={
-                                  user.status === "Active" ? "success" : "error"
-                                }
+                                onClick={() => handleView(user)}
+                              >
+                                <Visibility />
+                              </IconButton>
+                              <IconButton
                                 size="small"
-                              />
+                                onClick={() => handleEdit(user)}
+                              >
+                                <Edit />
+                              </IconButton>
+                              <IconButton
+                                size="small"
+                                onClick={() => handlePasswordReset(user)}
+                              >
+                                <LockReset />
+                              </IconButton>
+                              <IconButton
+                                size="small"
+                                onClick={() => handleDelete(user)}
+                              >
+                                <Delete />
+                              </IconButton>
                             </Box>
                           </Box>
-                          <Box sx={{ display: "flex", gap: 1 }}>
-                            <IconButton
-                              size="small"
-                              onClick={() => handleView(user)}
-                            >
-                              <Visibility />
-                            </IconButton>
-                            <IconButton
-                              size="small"
-                              onClick={() => handleEdit(user)}
-                            >
-                              <Edit />
-                            </IconButton>
-                            <IconButton
-                              size="small"
-                              onClick={() => handlePasswordReset(user)}
-                            >
-                              <LockReset />
-                            </IconButton>
-                            <IconButton
-                              size="small"
-                              onClick={() => handleDelete(user)}
-                            >
-                              <Delete />
-                            </IconButton>
-                          </Box>
-                        </Box>
-                      </Card>
-                    ))}
+                        </Card>
+                      ))
+                    ) : (
+                      <Paper sx={{ p: 3, textAlign: "center" }}>
+                        <Typography variant="body2" color="text.secondary">
+                          No users found with the selected filters.
+                        </Typography>
+                      </Paper>
+                    )}
+                    {mobileTotalPages > 1 && (
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "center",
+                          mt: 1,
+                        }}
+                      >
+                        <Pagination
+                          count={mobileTotalPages}
+                          page={mobilePage}
+                          onChange={(_, value) => setMobilePage(value)}
+                          size="small"
+                          color="primary"
+                          showFirstButton
+                          showLastButton
+                        />
+                      </Box>
+                    )}
                   </Box>
                 ) : (
-                  <Box
-                    sx={{
-                      width: "100%",
-                    }}
-                  >
-                    <DataGrid
-                      autoHeight // Dynamic height to prevent fixed overflows
-                      rows={displayedUsers}
-                      columns={columns}
-                      initialState={{
-                        pagination: {
-                          paginationModel: { page: 0, pageSize: 10 },
-                        },
-                      }}
-                      pageSizeOptions={[5, 10, 25]}
-                      checkboxSelection
-                      disableRowSelectionOnClick
-                      columnVisibilityModel={{
-                        avatar: !isMobile,
-                        department: !isMobile,
-                        lastLogin: !isMobile,
-                        email: !isMobile, // Hide email on medium down
-                        role: !isMobile, // Hide role on medium down
-                      }}
+                  <Box sx={{ width: "100%", overflowX: "auto" }}>
+                    <Box
                       sx={{
-                        border: 0,
-                        "& .MuiDataGrid-cell:focus": {
-                          outline: "none",
-                        },
-                        "& .MuiDataGrid-row:hover": {
-                          backgroundColor: "action.hover",
-                        },
+                        minWidth: 680,
+                        borderRadius: 3,
+                        border: (theme) =>
+                          `1px solid ${alpha(
+                            theme.palette.primary.main,
+                            0.18
+                          )}`,
+                        boxShadow: "0px 22px 48px rgba(15, 23, 42, 0.16)",
+                        backgroundColor: (theme) =>
+                          theme.palette.mode === "light"
+                            ? theme.palette.background.paper
+                            : alpha(theme.palette.background.paper, 0.9),
+                        display: "flex",
+                        flexDirection: "column",
+                        minHeight: dataGridHeight,
                       }}
-                    />
+                    >
+                      <DataGrid
+                        rows={displayedUsers}
+                        columns={columns}
+                        showCellVerticalBorder
+                        disableColumnResize
+                        disableColumnFilter
+                        disableColumnMenu
+                        paginationModel={paginationModel}
+                        onPaginationModelChange={setPaginationModel}
+                        pageSizeOptions={[5, 10, 25]}
+                        checkboxSelection
+                        disableRowSelectionOnClick
+                        hideFooterSelectedRowCount
+                        columnVisibilityModel={columnVisibilityModel}
+                        sx={{
+                          flexGrow: 1,
+                          minWidth: 680,
+                          border: 0,
+                          "& .MuiDataGrid-columnHeaders": {
+                            background: (theme) =>
+                              `linear-gradient(135deg, ${alpha(
+                                theme.palette.primary.main,
+                                0.08
+                              )} 0%, ${alpha(
+                                theme.palette.primary.main,
+                                0.18
+                              )} 100%)`,
+                            backdropFilter: "blur(6px)",
+                            borderBottom: (theme) =>
+                              `1px solid ${alpha(
+                                theme.palette.primary.main,
+                                0.18
+                              )}`,
+                            color: (theme) => theme.palette.text.primary,
+                            fontWeight: 600,
+                          },
+                          "& .MuiDataGrid-columnSeparator": {
+                            color: (theme) =>
+                              alpha(theme.palette.primary.main, 0.25),
+                          },
+                          "& .MuiDataGrid-cell": {
+                            borderBottom: (theme) =>
+                              `1px solid ${alpha(theme.palette.divider, 0.6)}`,
+                          },
+                          "& .MuiDataGrid-cell:focus": {
+                            outline: "none",
+                          },
+                          "& .MuiDataGrid-row:hover": {
+                            backgroundColor: (theme) =>
+                              alpha(theme.palette.primary.main, 0.06),
+                          },
+                          "& .MuiDataGrid-virtualScroller": {
+                            overflowX: "auto",
+                            overflowY: "auto",
+                            backgroundColor: "transparent",
+                          },
+                          "& .MuiDataGrid-footerContainer": {
+                            borderTop: (theme) =>
+                              `1px solid ${alpha(
+                                theme.palette.primary.main,
+                                0.18
+                              )}`,
+                            backgroundColor: (theme) =>
+                              alpha(theme.palette.background.paper, 0.9),
+                          },
+                        }}
+                      />
+                    </Box>
                   </Box>
                 )}
               </CardContent>
             </Card>
           </Container>
-
-          {/* Floating Action Button for Mobile */}
-          {isMobile && (
-            <Fab
-              color="primary"
-              aria-label="add user"
-              sx={{
-                position: "fixed",
-                bottom: 16,
-                right: 16,
-                zIndex: 1000,
-              }}
-              onClick={handleCreate}
-            >
-              <Add />
-            </Fab>
-          )}
         </Box>
       </Box>
 
       {/* User Dialog */}
       <Dialog
         open={dialogOpen}
-        onClose={(reason) => {
-          if (reason === "backdropClick") return;
+        onClose={(_event, reason) => {
+          if (reason === "backdropClick" || reason === "escapeKeyDown") {
+            return;
+          }
           handleDialogClose();
         }}
         maxWidth="md"
         fullWidth
-        fullScreen={isSmall}
+        disableEscapeKeyDown
+        PaperProps={{
+          sx: {
+            borderRadius: { xs: 3, sm: 4 },
+            width: "100%",
+            maxWidth: isSmall ? "92vw" : 720,
+            maxHeight: isSmall ? "86vh" : "80vh",
+            display: "flex",
+            flexDirection: "column",
+            overflow: "hidden",
+            boxShadow: "0px 24px 48px rgba(15, 23, 42, 0.2)",
+            backgroundImage: `linear-gradient(180deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`,
+          },
+        }}
       >
-        <DialogTitle>
-          {dialogType === "view" && "View User"}
-          {dialogType === "create" && "Create New User"}
-          {dialogType === "edit" && "Edit User"}
-          {dialogType === "delete" && "Delete User"}
-          {dialogType === "reset" && "Reset Password"}
+        <DialogTitle
+          sx={{
+            position: "relative",
+            px: { xs: 2.5, sm: 3 },
+            py: { xs: 2, sm: 2.75 },
+            background: dialogHeaderStyles.background,
+            color: "common.white",
+            display: "flex",
+            flexDirection: "column",
+            gap: 0.75,
+          }}
+        >
+          <Typography variant="h6" sx={{ fontWeight: 700 }}>
+            {activeDialogMeta.title}
+          </Typography>
+          <Typography
+            variant="body2"
+            sx={{
+              opacity: 0.85,
+              maxWidth: 420,
+              display: { xs: "none", sm: "block" },
+            }}
+          >
+            {activeDialogMeta.subtitle}
+          </Typography>
           <IconButton
             aria-label="close"
             onClick={handleDialogClose}
-            sx={{ position: "absolute", right: 8, top: 8 }}
+            sx={{
+              position: "absolute",
+              top: { xs: 10, sm: 12 },
+              right: { xs: 10, sm: 12 },
+              color: "common.white",
+              backgroundColor: "rgba(255, 255, 255, 0.12)",
+              "&:hover": {
+                backgroundColor: "rgba(255, 255, 255, 0.24)",
+              },
+            }}
           >
             <Close />
           </IconButton>
         </DialogTitle>
-        <DialogContent>
+        <DialogContent
+          sx={{
+            p: { xs: 2.5, sm: 3 },
+            backgroundColor: (theme) =>
+              theme.palette.mode === "light"
+                ? "rgba(248, 250, 252, 0.96)"
+                : theme.palette.background.paper,
+            flex: 1,
+            overflowY: "auto",
+          }}
+        >
           {dialogType === "view" && selectedUser && (
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                gap: { xs: 2, sm: 3 },
+                backgroundColor: (theme) =>
+                  theme.palette.mode === "light"
+                    ? "rgba(255, 255, 255, 0.92)"
+                    : "rgba(15, 23, 42, 0.45)",
+                p: { xs: 1.5, sm: 2.5 },
+                borderRadius: 2,
+                border: (theme) => `1px solid ${theme.palette.divider}`,
+                boxShadow: (theme) =>
+                  theme.palette.mode === "light"
+                    ? "inset 0 1px 0 rgba(255, 255, 255, 0.65)"
+                    : "inset 0 1px 0 rgba(255, 255, 255, 0.08)",
+              }}
+            >
               <Box
                 sx={{
                   display: "grid",
-                  gridTemplateColumns: { xs: "1fr", md: "1fr 2fr" },
-                  gap: { xs: 0.5, sm: 2 },
+                  gridTemplateColumns: {
+                    xs: "1fr",
+                    md: "minmax(0, 280px) 1fr",
+                  },
+                  gap: { xs: 2, md: 3 },
+                  alignItems: "stretch",
                 }}
               >
                 <Box
                   sx={{
-                    flex: "1 1 300px",
-                    minWidth: { xs: "100%", sm: "300px" },
-                    maxWidth: { xs: "100%", md: "calc(33.333% - 16px)" },
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 2,
                   }}
                 >
-                  <Paper sx={{ p: { xs: 1, sm: 2 }, textAlign: "center" }}>
+                  <Paper
+                    sx={{
+                      p: { xs: 1.5, sm: 2 },
+                      textAlign: "center",
+                      background: (theme) =>
+                        theme.palette.mode === "light"
+                          ? "linear-gradient(180deg, rgba(227,242,253,0.9) 0%, rgba(187,222,251,0.9) 100%)"
+                          : "linear-gradient(180deg, rgba(30,41,59,0.85) 0%, rgba(15,23,42,0.9) 100%)",
+                      borderRadius: 2,
+                      border: (theme) => `1px solid ${theme.palette.divider}`,
+                      boxShadow: "none",
+                    }}
+                  >
                     <Avatar
                       sx={{
                         width: { xs: 60, sm: 80, md: 100 },
@@ -1257,142 +1692,74 @@ const ManageUsers: React.FC = () => {
                       }
                       sx={{ mt: 1 }}
                     />
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ mt: 1 }}
+                    >
+                      ID: #{selectedUser.id}
+                    </Typography>
                   </Paper>
                 </Box>
                 <Box
                   sx={{
-                    flex: "1 1 400px",
-                    minWidth: { xs: "100%", sm: 400 },
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: { xs: 1.5, md: 2 },
                   }}
                 >
-                  <Box
+                  <Paper
                     sx={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: { xs: 1, md: 2 },
+                      p: { xs: 1.5, sm: 2.5 },
+                      borderRadius: 2,
+                      border: (theme) => `1px solid ${theme.palette.divider}`,
+                      backgroundColor: (theme) =>
+                        theme.palette.mode === "light"
+                          ? "rgba(248, 250, 252, 0.85)"
+                          : "rgba(15, 23, 42, 0.55)",
+                      boxShadow: "none",
                     }}
                   >
+                    <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                      Account Details
+                    </Typography>
+                    <Divider sx={{ mt: 1.5, mb: { xs: 2, md: 2.5 } }} />
                     <Box
                       sx={{
-                        display: "flex",
-                        flexWrap: "wrap",
-                        gap: { xs: 1, sm: 2 },
+                        display: "grid",
+                        gridTemplateColumns: {
+                          xs: "1fr",
+                          sm: "repeat(auto-fit, minmax(220px, 1fr))",
+                        },
+                        gap: { xs: 1.25, md: 2 },
                       }}
                     >
-                      <Box
-                        sx={{
-                          flex: "1 1 120px",
-                          minWidth: { xs: "100%", sm: 120 },
-                        }}
-                      >
-                        <TextField
-                          fullWidth
-                          label="First Name"
-                          value={selectedUser.firstName}
-                          InputProps={{ readOnly: true }}
-                          id="view-first-name"
-                        />
-                      </Box>
-                      <Box
-                        sx={{
-                          flex: "1 1 120px",
-                          minWidth: { xs: "100%", sm: 120 },
-                        }}
-                      >
-                        <TextField
-                          fullWidth
-                          label="Last Name"
-                          value={selectedUser.lastName}
-                          InputProps={{ readOnly: true }}
-                          id="view-last-name"
-                        />
-                      </Box>
-                      <Box
-                        sx={{
-                          flex: "1 1 120px",
-                          minWidth: { xs: "100%", sm: 120 },
-                        }}
-                      >
-                        <TextField
-                          fullWidth
-                          label="Email"
-                          value={selectedUser.email}
-                          InputProps={{ readOnly: true }}
-                          id="view-email"
-                        />
-                      </Box>
-                      <Box
-                        sx={{
-                          flex: "1 1 120px",
-                          minWidth: { xs: "100%", sm: 120 },
-                        }}
-                      >
-                        <TextField
-                          fullWidth
-                          label="Phone"
-                          value={selectedUser.phone}
-                          InputProps={{ readOnly: true }}
-                          id="view-phone"
-                        />
-                      </Box>
-                      <Box
-                        sx={{
-                          flex: "1 1 120px",
-                          minWidth: { xs: "100%", sm: 120 },
-                        }}
-                      >
-                        <TextField
-                          fullWidth
-                          label="Department"
-                          value={selectedUser.department}
-                          InputProps={{ readOnly: true }}
-                          id="view-department"
-                        />
-                      </Box>
-                      <Box
-                        sx={{
-                          flex: "1 1 120px",
-                          minWidth: { xs: "100%", sm: 120 },
-                        }}
-                      >
-                        <TextField
-                          fullWidth
-                          label="Status"
-                          value={selectedUser.status}
-                          InputProps={{ readOnly: true }}
-                          id="view-status"
-                        />
-                      </Box>
-                      <Box
-                        sx={{
-                          flex: "1 1 120px",
-                          minWidth: { xs: "100%", sm: 120 },
-                        }}
-                      >
-                        <TextField
-                          fullWidth
-                          label="Join Date"
-                          value={selectedUser.joinDate}
-                          InputProps={{ readOnly: true }}
-                          id="view-join-date"
-                        />
-                      </Box>
-                      <Box
-                        sx={{
-                          flex: "1 1 120px",
-                          minWidth: { xs: "100%", sm: 120 },
-                        }}
-                      >
-                        <TextField
-                          fullWidth
-                          label="Last Login"
-                          value={selectedUser.lastLogin}
-                          InputProps={{ readOnly: true }}
-                          id="view-last-login"
-                        />
-                      </Box>
+                      {selectedUserDetails.map((detail) => (
+                        <Box
+                          key={detail.label}
+                          sx={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 0.5,
+                          }}
+                        >
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            sx={{
+                              textTransform: "uppercase",
+                              letterSpacing: 0.6,
+                            }}
+                          >
+                            {detail.label}
+                          </Typography>
+                          <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                            {detail.value}
+                          </Typography>
+                        </Box>
+                      ))}
                     </Box>
-                  </Box>
+                  </Paper>
                 </Box>
               </Box>
             </Box>
@@ -1403,7 +1770,18 @@ const ManageUsers: React.FC = () => {
               sx={{
                 display: "flex",
                 flexDirection: "column",
-                gap: { xs: 0.5, sm: 1.5 },
+                gap: { xs: 1, sm: 2 },
+                backgroundColor: (theme) =>
+                  theme.palette.mode === "light"
+                    ? "rgba(255, 255, 255, 0.92)"
+                    : "rgba(15, 23, 42, 0.45)",
+                p: { xs: 1.5, sm: 2.5 },
+                borderRadius: 2,
+                border: (theme) => `1px solid ${theme.palette.divider}`,
+                boxShadow: (theme) =>
+                  theme.palette.mode === "light"
+                    ? "inset 0 1px 0 rgba(255, 255, 255, 0.65)"
+                    : "inset 0 1px 0 rgba(255, 255, 255, 0.08)",
               }}
             >
               <Box
@@ -1559,8 +1937,26 @@ const ManageUsers: React.FC = () => {
             </Alert>
           )}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleDialogClose}>Cancel</Button>
+        <DialogActions
+          sx={{
+            px: { xs: 2.5, sm: 3 },
+            py: { xs: 2, sm: 2.5 },
+            backgroundColor: (theme) =>
+              theme.palette.mode === "light"
+                ? "rgba(255, 255, 255, 0.92)"
+                : theme.palette.background.default,
+            borderTop: (theme) => `1px solid ${theme.palette.divider}`,
+            gap: 1,
+            justifyContent: "flex-end",
+          }}
+        >
+          <Button
+            onClick={handleDialogClose}
+            variant="outlined"
+            color="primary"
+          >
+            Cancel
+          </Button>
           {dialogType !== "view" && (
             <Button
               onClick={handleFormSubmit}
