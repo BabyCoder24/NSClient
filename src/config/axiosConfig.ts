@@ -2,6 +2,7 @@ import axios from "axios";
 import { BASE_URL } from "./baseURL";
 import { refreshTokenAPI } from "../services/authService";
 import { store } from "../store/store";
+import { logoutUser } from "../store/authThunks";
 
 // Set global defaults
 axios.defaults.baseURL = BASE_URL;
@@ -73,7 +74,7 @@ axios.interceptors.response.use(
         }
       } catch (refreshError) {
         // Refresh failed, logout
-        store.dispatch({ type: "auth/logout" });
+        store.dispatch(logoutUser());
         window.location.href = "/login";
       }
     }
@@ -95,7 +96,7 @@ axios.interceptors.response.use(
       localStorage.removeItem("accessToken");
       localStorage.removeItem("refreshToken");
       localStorage.removeItem("expiresAt");
-      store.dispatch({ type: "auth/logout" });
+      store.dispatch(logoutUser());
       window.location.href = "/login";
     }
 

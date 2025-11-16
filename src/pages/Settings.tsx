@@ -43,8 +43,8 @@ import {
 } from "@mui/icons-material";
 import { Link, useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
-import type { RootState } from "../store/store";
-import { logout } from "../store/authSlice";
+import type { RootState, AppDispatch } from "../store/store";
+import { logoutUser } from "../store/authThunks";
 
 const drawerWidth = 240;
 
@@ -52,7 +52,7 @@ const Settings: React.FC = () => {
   const { user, role, accessToken } = useSelector(
     (state: RootState) => state.auth
   );
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
@@ -73,8 +73,8 @@ const Settings: React.FC = () => {
     setMobileOpen(!mobileOpen);
   };
 
-  const handleLogout = () => {
-    dispatch(logout());
+  const handleLogout = async () => {
+    await dispatch(logoutUser());
     navigate("/login");
     handleClose();
   };

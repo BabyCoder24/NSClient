@@ -7,6 +7,7 @@ import {
   resetPasswordAPI,
   completeRegistrationAPI,
   refreshTokenAPI,
+  logoutAPI,
 } from "../services/authService";
 import { showCrudMessage } from "./createMessageSlice";
 import type {
@@ -251,5 +252,29 @@ export const refreshToken = createAsyncThunk(
         kind: error.__kind,
       });
     }
+  }
+);
+
+// Logout thunk
+export const logoutUser = createAsyncThunk(
+  "auth/logout",
+  async (_, { getState }) => {
+    const state = getState() as RootState;
+    const accessToken = state.auth.accessToken;
+    const refreshToken = state.auth.refreshToken;
+    if (accessToken && refreshToken) {
+      try {
+        await logoutAPI(accessToken, refreshToken);
+      } catch (error) {
+        console.error("Logout API error:", error);
+        // Still proceed to clear local state
+      }
+    }
+    // Clear localStorage
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("expiresAt");
+    localStorage.removeItem("role");
+    return {};
   }
 );

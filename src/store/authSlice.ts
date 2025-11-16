@@ -8,8 +8,8 @@ import {
   registerUser,
   completeRegistration,
   refreshToken,
+  logoutUser,
 } from "./authThunks";
-import { logoutAPI } from "../services/authService";
 import type { AuthState, AuthUser } from "../types/auth";
 
 const initialState: AuthState = {
@@ -90,27 +90,6 @@ const authSlice = createSlice({
     resetPasswordFailure: (state, action: PayloadAction<string>) => {
       state.loading = false;
       state.error = action.payload;
-    },
-
-    // Logout
-    logout: (state) => {
-      const accessToken = state.accessToken;
-      const refreshToken = state.refreshToken;
-      if (accessToken && refreshToken) {
-        // Call logout API (fire and forget)
-        logoutAPI(accessToken, refreshToken).catch(console.error);
-      }
-      state.user = null;
-      state.accessToken = null;
-      state.refreshToken = null;
-      state.expiresAt = null;
-      state.role = null;
-      state.loading = false;
-      state.error = null;
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
-      localStorage.removeItem("expiresAt");
-      localStorage.removeItem("role");
     },
 
     // Initialize auth from localStorage
@@ -259,6 +238,17 @@ const authSlice = createSlice({
       })
       .addCase(refreshToken.rejected, (state) => {
         state.loading = false;
+      })
+
+      // Logout
+      .addCase(logoutUser.fulfilled, (state) => {
+        state.user = null;
+        state.accessToken = null;
+        state.refreshToken = null;
+        state.expiresAt = null;
+        state.role = null;
+        state.loading = false;
+        state.error = null;
       });
   },
 });
@@ -273,7 +263,6 @@ export const {
   resetPasswordStart,
   resetPasswordSuccess,
   resetPasswordFailure,
-  logout,
   initializeAuth,
   clearError,
 } = authSlice.actions;

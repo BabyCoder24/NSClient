@@ -16,8 +16,8 @@ import Button from "@mui/material/Button";
 import BusinessIcon from "@mui/icons-material/Business";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import type { RootState } from "../store/store";
-import { logout } from "../store/authSlice";
+import type { RootState, AppDispatch } from "../store/store";
+import { logoutUser } from "../store/authThunks";
 
 const drawerWidth = 240;
 const navItems = [
@@ -37,15 +37,15 @@ const publicNavItems = navItems.filter(
 export default function Header() {
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const { accessToken } = useSelector((state: RootState) => state.auth);
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
 
   const handleDrawerToggle = () => {
     setMobileOpen((prevState) => !prevState);
   };
 
-  const handleLogout = () => {
-    dispatch(logout());
+  const handleLogout = async () => {
+    await dispatch(logoutUser());
     navigate("/login");
   };
 

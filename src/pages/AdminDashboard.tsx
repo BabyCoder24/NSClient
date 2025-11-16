@@ -25,6 +25,8 @@ import {
   useTheme,
   AppBar,
   Toolbar,
+  Skeleton,
+  Fade,
 } from "@mui/material";
 import {
   Dashboard as DashboardIcon,
@@ -49,8 +51,20 @@ import {
 } from "@mui/icons-material";
 import { Link, useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
-import type { RootState } from "../store/store";
-import { logout } from "../store/authSlice";
+import type { RootState, AppDispatch } from "../store/store";
+import { logoutUser } from "../store/authThunks";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+} from "recharts";
 
 const drawerWidth = 240;
 
@@ -120,16 +134,46 @@ const recentActivities = [
   },
 ];
 
+// Chart data
+const spendingData = [
+  { month: "Jan", amount: 1200 },
+  { month: "Feb", amount: 1900 },
+  { month: "Mar", amount: 800 },
+  { month: "Apr", amount: 2780 },
+  { month: "May", amount: 1890 },
+  { month: "Jun", amount: 2390 },
+];
+
+const balanceData = [
+  { name: "Checking", value: 4000, color: "#8884d8" },
+  { name: "Savings", value: 3000, color: "#82ca9d" },
+  { name: "Investment", value: 2000, color: "#ffc658" },
+  { name: "Credit", value: 1000, color: "#ff7c7c" },
+];
+
 const AdminDashboard: React.FC = () => {
   const { user, role, accessToken } = useSelector(
     (state: RootState) => state.auth
   );
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
+
+  // Simulate loading
+  React.useEffect(() => {
+    const timer = setTimeout(() => setLoading(false), 2000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Set mounted after component mounts
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const displayName = user ? `${user.firstName} ${user.lastName}` : "User";
   const avatarInitials = user
@@ -182,8 +226,8 @@ const AdminDashboard: React.FC = () => {
     setMobileOpen(!mobileOpen);
   };
 
-  const handleLogout = () => {
-    dispatch(logout());
+  const handleLogout = async () => {
+    await dispatch(logoutUser());
     navigate("/login");
     handleClose();
   };
@@ -438,130 +482,131 @@ const AdminDashboard: React.FC = () => {
           </Container>
 
           <Container maxWidth="lg" sx={{ py: 4 }}>
-            {/* Header Section */}
-            <Box sx={{ mb: 4 }}>
-              <Typography variant="h4" component="h1" gutterBottom>
-                Welcome back, {displayName}!
-              </Typography>
-              <Typography variant="body1" color="text.secondary">
-                Here's an overview of your {accountType.toLowerCase()} account
-                activity
-              </Typography>
-              {role === "Administrator" && (
-                <Typography variant="body2" color="primary" sx={{ mt: 1 }}>
-                  You have administrative privileges.
-                </Typography>
-              )}
-            </Box>
+            {/* Hero Header Section */}
+            <Fade in={!loading} timeout={1000}>
+              <Box
+                sx={{
+                  background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
+                  borderRadius: 3,
+                  p: 4,
+                  mb: 4,
+                  color: "white",
+                  position: "relative",
+                  overflow: "hidden",
+                  "&::before": {
+                    content: '""',
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: "rgba(255, 255, 255, 0.1)",
+                    borderRadius: 3,
+                  },
+                }}
+              >
+                <Box sx={{ position: "relative", zIndex: 1 }}>
+                  <Typography
+                    variant="h3"
+                    component="h1"
+                    gutterBottom
+                    sx={{ fontWeight: 700 }}
+                  >
+                    Welcome back, {displayName}!
+                  </Typography>
+                  <Typography variant="h6" sx={{ mb: 2, opacity: 0.9 }}>
+                    Here's an overview of your {accountType.toLowerCase()}{" "}
+                    account activity
+                  </Typography>
+                  {role === "Administrator" && (
+                    <Chip
+                      label="Administrator Access"
+                      color="secondary"
+                      variant="outlined"
+                      sx={{
+                        color: "white",
+                        borderColor: "white",
+                        "& .MuiChip-label": { fontWeight: 600 },
+                      }}
+                    />
+                  )}
+                </Box>
+              </Box>
+            </Fade>
 
             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3 }}>
               {/* User Profile Card */}
               <Box
                 sx={{
                   flex: "1 1 300px",
-                  minWidth: "300px",
+                  minWidth: { xs: "100%", sm: "300px" },
                   maxWidth: { xs: "100%", md: "calc(33.333% - 16px)" },
                 }}
               >
-                <Card
-                  sx={{
-                    height: "100%",
-                    transition:
-                      "transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out",
-                    "&:hover": {
-                      transform: "translateY(-4px)",
-                      boxShadow: (theme) => theme.shadows[8],
-                    },
-                  }}
-                >
-                  <CardContent sx={{ textAlign: "center", pt: 3 }}>
-                    <Avatar
+                {loading ? (
+                  <Card sx={{ height: 400 }}>
+                    <CardContent sx={{ textAlign: "center", pt: 3 }}>
+                      <Skeleton
+                        variant="circular"
+                        width={80}
+                        height={80}
+                        sx={{ mx: "auto", mb: 2 }}
+                      />
+                      <Skeleton
+                        variant="text"
+                        sx={{ fontSize: "2rem", mx: "auto", mb: 2 }}
+                      />
+                      <Skeleton
+                        variant="rectangular"
+                        width={100}
+                        height={32}
+                        sx={{ mx: "auto", mb: 2 }}
+                      />
+                      <Skeleton variant="text" sx={{ mx: "auto", mb: 1 }} />
+                      <Skeleton variant="text" sx={{ mx: "auto", mb: 1 }} />
+                      <Skeleton variant="text" sx={{ mx: "auto", mb: 1 }} />
+                      <Skeleton variant="text" sx={{ mx: "auto" }} />
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <Fade in={!loading} timeout={1500}>
+                    <Card
                       sx={{
-                        width: 80,
-                        height: 80,
-                        mx: "auto",
-                        mb: 2,
-                        bgcolor: "primary.main",
-                        fontSize: "2rem",
+                        height: "100%",
+                        background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.grey[50]} 100%)`,
+                        transition:
+                          "transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out",
+                        "&:hover": {
+                          transform: "translateY(-8px)",
+                          boxShadow: (theme) => theme.shadows[12],
+                        },
                       }}
+                      aria-label="User Profile"
                     >
-                      {avatarInitials}
-                    </Avatar>
-                    <Typography variant="h6" gutterBottom>
-                      {displayName}
-                    </Typography>
-                    <Chip
-                      label={accountType}
-                      color="primary"
-                      variant="outlined"
-                      sx={{ mb: 2 }}
-                    />
-                    <Box sx={{ textAlign: "left" }}>
-                      <Box
-                        sx={{ display: "flex", alignItems: "center", mb: 1 }}
-                      >
-                        <Email
-                          sx={{ mr: 1, color: "text.secondary", fontSize: 18 }}
-                        />
-                        <Typography variant="body2">{userEmail}</Typography>
-                      </Box>
-                      <Box
-                        sx={{ display: "flex", alignItems: "center", mb: 1 }}
-                      >
-                        <Person
-                          sx={{ mr: 1, color: "text.secondary", fontSize: 18 }}
-                        />
-                        <Typography variant="body2">
-                          {user?.username || "N/A"}
-                        </Typography>
-                      </Box>
-                      <Box
-                        sx={{ display: "flex", alignItems: "center", mb: 1 }}
-                      >
-                        <LocationOn
-                          sx={{ mr: 1, color: "text.secondary", fontSize: 18 }}
-                        />
-                        <Typography variant="body2">
-                          {user?.companyName || "N/A"}
-                        </Typography>
-                      </Box>
-                    </Box>
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      sx={{ mt: 2, display: "block" }}
-                    >
-                      Welcome to NSolutions
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Box>
-
-              {/* Account Statistics */}
-              <Box
-                sx={{
-                  flex: "1 1 500px",
-                  minWidth: "500px",
-                  maxWidth: { xs: "100%", md: "calc(66.666% - 16px)" },
-                }}
-              >
-                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3 }}>
-                  {accountStats.map((stat, index) => (
-                    <Box
-                      key={index}
-                      sx={{ flex: "1 1 250px", minWidth: "250px" }}
-                    >
-                      <Card
-                        sx={{
-                          transition:
-                            "transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out",
-                          "&:hover": {
-                            transform: "translateY(-2px)",
+                      <CardContent sx={{ textAlign: "center", pt: 3 }}>
+                        <Avatar
+                          sx={{
+                            width: 80,
+                            height: 80,
+                            mx: "auto",
+                            mb: 2,
+                            bgcolor: "primary.main",
+                            fontSize: "2rem",
                             boxShadow: (theme) => theme.shadows[4],
-                          },
-                        }}
-                      >
-                        <CardContent>
+                          }}
+                        >
+                          {avatarInitials}
+                        </Avatar>
+                        <Typography variant="h6" gutterBottom>
+                          {displayName}
+                        </Typography>
+                        <Chip
+                          label={accountType}
+                          color="primary"
+                          variant="outlined"
+                          sx={{ mb: 2 }}
+                        />
+                        <Box sx={{ textAlign: "left" }}>
                           <Box
                             sx={{
                               display: "flex",
@@ -569,43 +614,220 @@ const AdminDashboard: React.FC = () => {
                               mb: 1,
                             }}
                           >
-                            <Box
+                            <Email
                               sx={{
-                                p: 1,
-                                borderRadius: 1,
-                                bgcolor: `${stat.color}.light`,
-                                color: `${stat.color}.main`,
-                                mr: 2,
+                                mr: 1,
+                                color: "text.secondary",
+                                fontSize: 18,
                               }}
-                            >
-                              {stat.icon}
-                            </Box>
-                            <Box sx={{ flexGrow: 1 }}>
-                              <Typography
-                                variant="body2"
-                                color="text.secondary"
-                              >
-                                {stat.title}
-                              </Typography>
-                              <Typography variant="h5" component="div">
-                                {stat.value}
-                              </Typography>
-                            </Box>
+                            />
+                            <Typography variant="body2">{userEmail}</Typography>
                           </Box>
-                          <Typography
-                            variant="body2"
+                          <Box
                             sx={{
-                              color: stat.change.startsWith("+")
-                                ? "success.main"
-                                : "error.main",
+                              display: "flex",
+                              alignItems: "center",
+                              mb: 1,
                             }}
                           >
-                            {stat.change} from last month
-                          </Typography>
-                        </CardContent>
-                      </Card>
+                            <Person
+                              sx={{
+                                mr: 1,
+                                color: "text.secondary",
+                                fontSize: 18,
+                              }}
+                            />
+                            <Typography variant="body2">
+                              {user?.username || "N/A"}
+                            </Typography>
+                          </Box>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              mb: 1,
+                            }}
+                          >
+                            <LocationOn
+                              sx={{
+                                mr: 1,
+                                color: "text.secondary",
+                                fontSize: 18,
+                              }}
+                            />
+                            <Typography variant="body2">
+                              {user?.companyName || "N/A"}
+                            </Typography>
+                          </Box>
+                        </Box>
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          sx={{ mt: 2, display: "block" }}
+                        >
+                          Welcome to NSolutions
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Fade>
+                )}
+              </Box>
+
+              {/* Account Statistics with Charts */}
+              <Box
+                sx={{
+                  flex: "1 1 500px",
+                  minWidth: { xs: "100%", sm: "500px" },
+                  maxWidth: { xs: "100%", md: "calc(66.666% - 16px)" },
+                }}
+              >
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3 }}>
+                  {/* Statistics Cards */}
+                  {accountStats.map((stat, index) => (
+                    <Box
+                      sx={{
+                        flex: "1 1 250px",
+                        minWidth: { xs: "200px", sm: "250px" },
+                      }}
+                      key={index}
+                    >
+                      {loading ? (
+                        <Card>
+                          <CardContent>
+                            <Skeleton
+                              variant="rectangular"
+                              width={48}
+                              height={48}
+                              sx={{ mb: 1 }}
+                            />
+                            <Skeleton variant="text" sx={{ mb: 1 }} />
+                            <Skeleton
+                              variant="text"
+                              sx={{ fontSize: "2rem" }}
+                            />
+                            <Skeleton variant="text" width="60%" />
+                          </CardContent>
+                        </Card>
+                      ) : (
+                        <Fade in={!loading} timeout={1500 + index * 200}>
+                          <Card
+                            sx={{
+                              background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.grey[50]} 100%)`,
+                              transition:
+                                "transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out",
+                              "&:hover": {
+                                transform: "translateY(-4px)",
+                                boxShadow: (theme) => theme.shadows[8],
+                              },
+                            }}
+                            aria-label={`${stat.title} statistics`}
+                          >
+                            <CardContent>
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  mb: 1,
+                                }}
+                              >
+                                <Box
+                                  sx={{
+                                    p: 1,
+                                    borderRadius: 1,
+                                    bgcolor: `${stat.color}.light`,
+                                    color: `${stat.color}.main`,
+                                    mr: 2,
+                                  }}
+                                >
+                                  {stat.icon}
+                                </Box>
+                                <Box sx={{ flexGrow: 1 }}>
+                                  <Typography
+                                    variant="body2"
+                                    color="text.secondary"
+                                  >
+                                    {stat.title}
+                                  </Typography>
+                                  <Typography variant="h5" component="div">
+                                    {stat.value}
+                                  </Typography>
+                                </Box>
+                              </Box>
+                              <Typography
+                                variant="body2"
+                                sx={{
+                                  color: stat.change.startsWith("+")
+                                    ? "success.main"
+                                    : "error.main",
+                                }}
+                              >
+                                {stat.change} from last month
+                              </Typography>
+                            </CardContent>
+                          </Card>
+                        </Fade>
+                      )}
                     </Box>
                   ))}
+
+                  {/* Spending Chart */}
+                  <Box sx={{ flex: "1 1 100%", minWidth: 0 }}>
+                    {loading ? (
+                      <Card>
+                        <CardContent>
+                          <Skeleton
+                            variant="text"
+                            sx={{ fontSize: "1.5rem", mb: 2 }}
+                          />
+                          <Skeleton variant="rectangular" height={300} />
+                        </CardContent>
+                      </Card>
+                    ) : (
+                      <Fade in={!loading} timeout={2000}>
+                        <Card
+                          sx={{
+                            background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.grey[50]} 100%)`,
+                            transition:
+                              "transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out",
+                            "&:hover": {
+                              transform: "translateY(-4px)",
+                              boxShadow: (theme) => theme.shadows[8],
+                            },
+                          }}
+                          aria-label="Monthly spending chart"
+                        >
+                          <CardContent>
+                            <Typography variant="h6" gutterBottom>
+                              Monthly Spending Trend
+                            </Typography>
+                            <Box sx={{ height: 300 }}>
+                              {mounted && (
+                                <ResponsiveContainer
+                                  width="100%"
+                                  height={300}
+                                  minWidth={0}
+                                >
+                                  <LineChart data={spendingData}>
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis dataKey="month" />
+                                    <YAxis />
+                                    <Tooltip />
+                                    <Line
+                                      type="monotone"
+                                      dataKey="amount"
+                                      stroke={theme.palette.primary.main}
+                                      strokeWidth={2}
+                                      dot={{ fill: theme.palette.primary.main }}
+                                    />
+                                  </LineChart>
+                                </ResponsiveContainer>
+                              )}
+                            </Box>
+                          </CardContent>
+                        </Card>
+                      </Fade>
+                    )}
+                  </Box>
                 </Box>
               </Box>
 
@@ -613,199 +835,360 @@ const AdminDashboard: React.FC = () => {
               <Box
                 sx={{
                   flex: "1 1 500px",
-                  minWidth: "500px",
-                  maxWidth: { xs: "100%", md: "calc(66.666% - 16px)" },
+                  minWidth: { xs: "100%", sm: "500px" },
+                  maxWidth: { xs: "100%", md: "calc(50% - 8px)" },
                 }}
               >
-                <Card
-                  sx={{
-                    transition:
-                      "transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out",
-                    "&:hover": {
-                      transform: "translateY(-2px)",
-                      boxShadow: (theme) => theme.shadows[4],
-                    },
-                  }}
-                >
-                  <CardContent>
-                    <Typography variant="h6" gutterBottom>
-                      Recent Activity
-                    </Typography>
-                    <List>
-                      {recentActivities.map((activity, index) => (
-                        <React.Fragment key={activity.id}>
-                          <ListItem>
-                            <ListItemIcon>
-                              <Box
-                                sx={{
-                                  p: 1,
-                                  borderRadius: 1,
-                                  bgcolor:
-                                    activity.type === "income"
-                                      ? "success.light"
-                                      : "error.light",
-                                  color:
-                                    activity.type === "income"
-                                      ? "success.main"
-                                      : "error.main",
-                                }}
-                              >
-                                {activity.type === "income" ? (
-                                  <TrendingUp />
-                                ) : (
-                                  <Receipt />
-                                )}
-                              </Box>
-                            </ListItemIcon>
-                            <ListItemText
-                              primary={activity.description}
-                              secondary={activity.date}
-                            />
-                            <Typography
-                              variant="body1"
-                              sx={{
-                                fontWeight: "bold",
-                                color:
-                                  activity.type === "income"
-                                    ? "success.main"
-                                    : "error.main",
-                              }}
-                            >
-                              {activity.amount}
-                            </Typography>
-                          </ListItem>
-                          {index < recentActivities.length - 1 && <Divider />}
-                        </React.Fragment>
+                {loading ? (
+                  <Card>
+                    <CardContent>
+                      <Skeleton
+                        variant="text"
+                        sx={{ fontSize: "1.5rem", mb: 2 }}
+                      />
+                      {[...Array(4)].map((_, i) => (
+                        <Box
+                          key={i}
+                          sx={{ display: "flex", alignItems: "center", mb: 2 }}
+                        >
+                          <Skeleton
+                            variant="circular"
+                            width={40}
+                            height={40}
+                            sx={{ mr: 2 }}
+                          />
+                          <Box sx={{ flexGrow: 1 }}>
+                            <Skeleton variant="text" />
+                            <Skeleton variant="text" width="60%" />
+                          </Box>
+                          <Skeleton variant="text" width={60} />
+                        </Box>
                       ))}
-                    </List>
-                  </CardContent>
-                </Card>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <Fade in={!loading} timeout={2500}>
+                    <Card
+                      sx={{
+                        background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.grey[50]} 100%)`,
+                        transition:
+                          "transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out",
+                        "&:hover": {
+                          transform: "translateY(-4px)",
+                          boxShadow: (theme) => theme.shadows[8],
+                        },
+                      }}
+                      aria-label="Recent activity list"
+                    >
+                      <CardContent>
+                        <Typography variant="h6" gutterBottom>
+                          Recent Activity
+                        </Typography>
+                        <List>
+                          {recentActivities.map((activity, index) => (
+                            <React.Fragment key={activity.id}>
+                              <ListItem>
+                                <ListItemIcon>
+                                  <Box
+                                    sx={{
+                                      p: 1,
+                                      borderRadius: 1,
+                                      bgcolor:
+                                        activity.type === "income"
+                                          ? "success.light"
+                                          : "error.light",
+                                      color:
+                                        activity.type === "income"
+                                          ? "success.main"
+                                          : "error.main",
+                                    }}
+                                  >
+                                    {activity.type === "income" ? (
+                                      <TrendingUp />
+                                    ) : (
+                                      <Receipt />
+                                    )}
+                                  </Box>
+                                </ListItemIcon>
+                                <ListItemText
+                                  primary={activity.description}
+                                  secondary={activity.date}
+                                />
+                                <Typography
+                                  variant="body1"
+                                  sx={{
+                                    fontWeight: "bold",
+                                    color:
+                                      activity.type === "income"
+                                        ? "success.main"
+                                        : "error.main",
+                                  }}
+                                >
+                                  {activity.amount}
+                                </Typography>
+                              </ListItem>
+                              {index < recentActivities.length - 1 && (
+                                <Divider />
+                              )}
+                            </React.Fragment>
+                          ))}
+                        </List>
+                      </CardContent>
+                    </Card>
+                  </Fade>
+                )}
               </Box>
 
-              {/* Quick Actions & Progress */}
+              {/* Quick Actions & Goals */}
               <Box
                 sx={{
-                  flex: "1 1 300px",
-                  minWidth: "300px",
-                  maxWidth: { xs: "100%", md: "calc(33.333% - 16px)" },
+                  flex: "1 1 500px",
+                  minWidth: { xs: "100%", sm: "500px" },
+                  maxWidth: { xs: "100%", md: "calc(50% - 8px)" },
                 }}
               >
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
                   {/* Quick Actions */}
                   <Box>
-                    <Card
-                      sx={{
-                        transition:
-                          "transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out",
-                        "&:hover": {
-                          transform: "translateY(-2px)",
-                          boxShadow: (theme) => theme.shadows[4],
-                        },
-                      }}
-                    >
-                      <CardContent>
-                        <Typography variant="h6" gutterBottom>
-                          Quick Actions
-                        </Typography>
-                        <Box
+                    {loading ? (
+                      <Card>
+                        <CardContent>
+                          <Skeleton
+                            variant="text"
+                            sx={{ fontSize: "1.5rem", mb: 2 }}
+                          />
+                          {[...Array(4)].map((_, i) => (
+                            <Skeleton
+                              variant="rectangular"
+                              height={36}
+                              sx={{ mb: 1 }}
+                              key={i}
+                            />
+                          ))}
+                        </CardContent>
+                      </Card>
+                    ) : (
+                      <Fade in={!loading} timeout={3000}>
+                        <Card
                           sx={{
-                            display: "flex",
-                            flexDirection: "column",
-                            gap: 1,
+                            background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.grey[50]} 100%)`,
+                            transition:
+                              "transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out",
+                            "&:hover": {
+                              transform: "translateY(-4px)",
+                              boxShadow: (theme) => theme.shadows[8],
+                            },
                           }}
+                          aria-label="Quick actions"
                         >
-                          {quickActions.map((action, index) => (
-                            <Button
-                              key={index}
-                              variant="outlined"
-                              startIcon={action.icon}
-                              onClick={action.action}
+                          <CardContent>
+                            <Typography variant="h6" gutterBottom>
+                              Quick Actions
+                            </Typography>
+                            <Box
                               sx={{
-                                justifyContent: "flex-start",
-                                transition: "all 0.2s ease-in-out",
-                                "&:hover": {
-                                  transform: "translateX(4px)",
-                                  boxShadow: (theme) => theme.shadows[2],
-                                },
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: 1,
                               }}
                             >
-                              {action.label}
-                            </Button>
-                          ))}
-                        </Box>
-                      </CardContent>
-                    </Card>
+                              {quickActions.map((action, index) => (
+                                <Button
+                                  key={index}
+                                  variant="outlined"
+                                  startIcon={action.icon}
+                                  onClick={action.action}
+                                  sx={{
+                                    justifyContent: "flex-start",
+                                    transition: "all 0.3s ease-in-out",
+                                    "&:hover": {
+                                      transform: "translateX(4px)",
+                                      boxShadow: (theme) => theme.shadows[4],
+                                    },
+                                  }}
+                                  aria-label={action.label}
+                                >
+                                  {action.label}
+                                </Button>
+                              ))}
+                            </Box>
+                          </CardContent>
+                        </Card>
+                      </Fade>
+                    )}
                   </Box>
 
                   {/* Account Goals */}
                   <Box>
-                    <Card
-                      sx={{
-                        transition:
-                          "transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out",
-                        "&:hover": {
-                          transform: "translateY(-2px)",
-                          boxShadow: (theme) => theme.shadows[4],
-                        },
-                      }}
-                    >
-                      <CardContent>
-                        <Typography variant="h6" gutterBottom>
-                          Account Goals
-                        </Typography>
-                        <Box sx={{ mb: 2 }}>
-                          <Box
-                            sx={{
-                              display: "flex",
-                              justifyContent: "space-between",
-                              mb: 1,
-                            }}
-                          >
-                            <Typography variant="body2">
-                              Monthly Savings
+                    {loading ? (
+                      <Card>
+                        <CardContent>
+                          <Skeleton
+                            variant="text"
+                            sx={{ fontSize: "1.5rem", mb: 2 }}
+                          />
+                          {[...Array(3)].map((_, i) => (
+                            <Box key={i} sx={{ mb: 2 }}>
+                              <Skeleton variant="text" sx={{ mb: 1 }} />
+                              <Skeleton variant="rectangular" height={8} />
+                            </Box>
+                          ))}
+                        </CardContent>
+                      </Card>
+                    ) : (
+                      <Fade in={!loading} timeout={3500}>
+                        <Card
+                          sx={{
+                            background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.grey[50]} 100%)`,
+                            transition:
+                              "transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out",
+                            "&:hover": {
+                              transform: "translateY(-4px)",
+                              boxShadow: (theme) => theme.shadows[8],
+                            },
+                          }}
+                          aria-label="Account goals progress"
+                        >
+                          <CardContent>
+                            <Typography variant="h6" gutterBottom>
+                              Account Goals
                             </Typography>
-                            <Typography variant="body2">
-                              $850 / $1,000
+                            <Box sx={{ mb: 2 }}>
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  justifyContent: "space-between",
+                                  mb: 1,
+                                }}
+                              >
+                                <Typography variant="body2">
+                                  Monthly Savings
+                                </Typography>
+                                <Typography variant="body2">
+                                  $850 / $1,000
+                                </Typography>
+                              </Box>
+                              <LinearProgress
+                                variant="determinate"
+                                value={85}
+                              />
+                            </Box>
+                            <Box sx={{ mb: 2 }}>
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  justifyContent: "space-between",
+                                  mb: 1,
+                                }}
+                              >
+                                <Typography variant="body2">
+                                  Investment Target
+                                </Typography>
+                                <Typography variant="body2">
+                                  $5,200 / $10,000
+                                </Typography>
+                              </Box>
+                              <LinearProgress
+                                variant="determinate"
+                                value={52}
+                              />
+                            </Box>
+                            <Box>
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  justifyContent: "space-between",
+                                  mb: 1,
+                                }}
+                              >
+                                <Typography variant="body2">
+                                  Reward Points
+                                </Typography>
+                                <Typography variant="body2">
+                                  1,250 / 2,000
+                                </Typography>
+                              </Box>
+                              <LinearProgress
+                                variant="determinate"
+                                value={62.5}
+                              />
+                            </Box>
+                          </CardContent>
+                        </Card>
+                      </Fade>
+                    )}
+                  </Box>
+
+                  {/* Balance Distribution Chart */}
+                  <Box sx={{ flex: "1 1 100%", minWidth: 0 }}>
+                    {loading ? (
+                      <Card>
+                        <CardContent>
+                          <Skeleton
+                            variant="text"
+                            sx={{ fontSize: "1.5rem", mb: 2 }}
+                          />
+                          <Skeleton variant="rectangular" height={300} />
+                        </CardContent>
+                      </Card>
+                    ) : (
+                      <Fade in={!loading} timeout={4000}>
+                        <Card
+                          sx={{
+                            background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.grey[50]} 100%)`,
+                            transition:
+                              "transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out",
+                            "&:hover": {
+                              transform: "translateY(-4px)",
+                              boxShadow: (theme) => theme.shadows[8],
+                            },
+                          }}
+                          aria-label="Balance distribution chart"
+                        >
+                          <CardContent>
+                            <Typography variant="h6" gutterBottom>
+                              Balance Distribution
                             </Typography>
-                          </Box>
-                          <LinearProgress variant="determinate" value={85} />
-                        </Box>
-                        <Box sx={{ mb: 2 }}>
-                          <Box
-                            sx={{
-                              display: "flex",
-                              justifyContent: "space-between",
-                              mb: 1,
-                            }}
-                          >
-                            <Typography variant="body2">
-                              Investment Target
-                            </Typography>
-                            <Typography variant="body2">
-                              $5,200 / $10,000
-                            </Typography>
-                          </Box>
-                          <LinearProgress variant="determinate" value={52} />
-                        </Box>
-                        <Box>
-                          <Box
-                            sx={{
-                              display: "flex",
-                              justifyContent: "space-between",
-                              mb: 1,
-                            }}
-                          >
-                            <Typography variant="body2">
-                              Reward Points
-                            </Typography>
-                            <Typography variant="body2">
-                              1,250 / 2,000
-                            </Typography>
-                          </Box>
-                          <LinearProgress variant="determinate" value={62.5} />
-                        </Box>
-                      </CardContent>
-                    </Card>
+                            <Box sx={{ height: 300 }}>
+                              {mounted && (
+                                <ResponsiveContainer
+                                  width="100%"
+                                  height={300}
+                                  minWidth={0}
+                                >
+                                  <PieChart>
+                                    <Pie
+                                      data={balanceData}
+                                      cx="50%"
+                                      cy="50%"
+                                      labelLine={false}
+                                      label={({ name, percent }) =>
+                                        `${name} ${
+                                          percent
+                                            ? (percent * 100).toFixed(0)
+                                            : 0
+                                        }%`
+                                      }
+                                      outerRadius={80}
+                                      fill="#8884d8"
+                                      dataKey="value"
+                                    >
+                                      {balanceData.map((entry, index) => (
+                                        <Cell
+                                          key={`cell-${index}`}
+                                          fill={entry.color}
+                                        />
+                                      ))}
+                                    </Pie>
+                                    <Tooltip />
+                                  </PieChart>
+                                </ResponsiveContainer>
+                              )}
+                            </Box>
+                          </CardContent>
+                        </Card>
+                      </Fade>
+                    )}
                   </Box>
                 </Box>
               </Box>
@@ -817,4 +1200,4 @@ const AdminDashboard: React.FC = () => {
   );
 };
 
-export default AdminDashboard;
+export default React.memo(AdminDashboard);
