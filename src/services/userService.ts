@@ -1,11 +1,12 @@
 import { BASE_URL } from "../config/baseURL";
 import axios from "axios";
+import type { CreateUserRequest, UpdateUserRequest, User } from "../types/user";
 
 // Get all users
 const getAll = async () => {
   const token = localStorage.getItem("accessToken");
   try {
-    const response = await axios.get(`${BASE_URL}/api/users`, {
+    const response = await axios.get(`${BASE_URL}/User`, {
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
@@ -32,7 +33,7 @@ const findByQuery = async (parameters: Record<string, any>) => {
     });
 
     const response = await axios.get(
-      `${BASE_URL}/api/users/query?${params.toString()}`,
+      `${BASE_URL}/User/query?${params.toString()}`,
       {
         headers: {
           "Content-Type": "application/json",
@@ -53,7 +54,7 @@ const findByQuery = async (parameters: Record<string, any>) => {
 const get = async (id: number) => {
   const token = localStorage.getItem("accessToken");
   try {
-    const response = await axios.get(`${BASE_URL}/api/users/${id}`, {
+    const response = await axios.get(`${BASE_URL}/User/${id}`, {
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
@@ -69,10 +70,10 @@ const get = async (id: number) => {
 };
 
 // Create user
-const create = async (data: any) => {
+const create = async (data: CreateUserRequest): Promise<User> => {
   const token = localStorage.getItem("accessToken");
   try {
-    const response = await axios.post(`${BASE_URL}/api/users`, data, {
+    const response = await axios.post<User>(`${BASE_URL}/User`, data, {
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
@@ -91,7 +92,7 @@ const create = async (data: any) => {
 const update = async (id: number, data: any) => {
   const token = localStorage.getItem("accessToken");
   try {
-    const response = await axios.put(`${BASE_URL}/api/users/${id}`, data, {
+    const response = await axios.put(`${BASE_URL}/User/${id}`, data, {
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
@@ -110,7 +111,7 @@ const update = async (id: number, data: any) => {
 const remove = async (id: number) => {
   const token = localStorage.getItem("accessToken");
   try {
-    const response = await axios.delete(`${BASE_URL}/api/users/${id}`, {
+    const response = await axios.delete(`${BASE_URL}/User/${id}`, {
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
@@ -130,7 +131,7 @@ const adminResetPassword = async (id: number) => {
   const token = localStorage.getItem("accessToken");
   try {
     const response = await axios.post(
-      `${BASE_URL}/api/users/${id}/reset-password`,
+      `${BASE_URL}/User/${id}/reset-password`,
       {},
       {
         headers: {
@@ -151,6 +152,41 @@ const adminResetPassword = async (id: number) => {
 // Legacy functions for backward compatibility
 export const fetchUsersAPI = getAll;
 export const createUserAPI = create;
+export const updateUserAPI = async (data: UpdateUserRequest) => {
+  const token = localStorage.getItem("accessToken");
+  try {
+    const response = await axios.put(`${BASE_URL}/User/${data.id}`, data, {
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    console.log(response.status);
+    return response.data;
+  } catch (error: any) {
+    console.log(error.message);
+    throw error;
+  }
+};
+export const deleteUserAPI = async (id: number) => {
+  const token = localStorage.getItem("accessToken");
+  try {
+    const response = await axios.delete(`${BASE_URL}/User/${id}`, {
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    console.log(response.status);
+    return response.data;
+  } catch (error: any) {
+    console.log(error.message);
+    throw error;
+  }
+};
+export const adminResetPasswordAPI = adminResetPassword;
 
 // UserService object
 const UserService = {

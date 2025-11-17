@@ -33,6 +33,8 @@ import {
   Menu,
   MenuItem,
   Pagination,
+  FormControlLabel,
+  Checkbox,
 } from "@mui/material";
 import {
   DataGrid,
@@ -61,115 +63,40 @@ import {
   CheckCircle,
   Cancel,
   Save,
-  Search,
   Close,
 } from "@mui/icons-material";
 import { Link, useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import type { RootState, AppDispatch } from "../store/store";
 import { logoutUser } from "../store/authThunks";
+import type { User, CreateUserRequest, UpdateUserRequest } from "../types/user";
+import {
+  fetchUsers,
+  createUser,
+  updateUser,
+  deleteUser,
+  adminResetPassword,
+} from "../store/userSlice";
 
 const drawerWidth = 240;
 
-// Static user data
-const initialUsers = [
-  {
-    id: 1,
-    name: "John Doe",
-    firstName: "John",
-    lastName: "Doe",
-    email: "john.doe@example.com",
-    phone: "+1 (555) 123-4567",
-    role: "Administrator",
-    status: "Active",
-    department: "IT",
-    joinDate: "2023-01-15",
-    lastLogin: "2025-11-16",
-    avatar: "",
-  },
-  {
-    id: 2,
-    name: "Jane Smith",
-    firstName: "Jane",
-    lastName: "Smith",
-    email: "jane.smith@example.com",
-    phone: "+1 (555) 234-5678",
-    role: "User",
-    status: "Active",
-    department: "HR",
-    joinDate: "2023-03-20",
-    lastLogin: "2025-11-15",
-    avatar: "",
-  },
-  {
-    id: 3,
-    name: "Mike Johnson",
-    firstName: "Mike",
-    lastName: "Johnson",
-    email: "mike.johnson@example.com",
-    phone: "+1 (555) 345-6789",
-    role: "User",
-    status: "Inactive",
-    department: "Finance",
-    joinDate: "2023-05-10",
-    lastLogin: "2025-10-28",
-    avatar: "",
-  },
-  {
-    id: 4,
-    name: "Sarah Williams",
-    firstName: "Sarah",
-    lastName: "Williams",
-    email: "sarah.williams@example.com",
-    phone: "+1 (555) 456-7890",
-    role: "Moderator",
-    status: "Active",
-    department: "Marketing",
-    joinDate: "2023-07-05",
-    lastLogin: "2025-11-14",
-    avatar: "",
-  },
-  {
-    id: 5,
-    name: "David Brown",
-    firstName: "David",
-    lastName: "Brown",
-    email: "david.brown@example.com",
-    phone: "+1 (555) 567-8901",
-    role: "User",
-    status: "Active",
-    department: "Sales",
-    joinDate: "2023-09-12",
-    lastLogin: "2025-11-13",
-    avatar: "",
-  },
-];
+// Static user data removed, now using API
 
 const MOBILE_PAGE_SIZE = 5;
-const DATA_GRID_ROW_HEIGHT = 52;
+const DATA_GRID_ROW_HEIGHT = 56;
+const DATA_GRID_ROW_HEIGHT_COMPACT = 48;
 const DATA_GRID_HEADER_HEIGHT = 56;
+const DATA_GRID_HEADER_HEIGHT_COMPACT = 52;
 const DATA_GRID_FOOTER_HEIGHT = 52;
 const DATA_GRID_MIN_HEIGHT = 360;
 
 type DialogType = "view" | "create" | "edit" | "delete" | "reset";
 
-interface User {
-  id: number;
-  name: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  role: string;
-  status: string;
-  department: string;
-  joinDate: string;
-  lastLogin: string;
-  avatar: string;
-}
-
 const ManageUsers: React.FC = () => {
   const { user, accessToken } = useSelector((state: RootState) => state.auth);
+  const { users, loading, error } = useSelector(
+    (state: RootState) => state.users
+  );
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const theme = useTheme();
@@ -178,19 +105,17 @@ const ManageUsers: React.FC = () => {
   const isTablet = useMediaQuery(theme.breakpoints.between("sm", "lg"));
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [users, setUsers] = useState<User[]>(initialUsers);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogType, setDialogType] = useState<DialogType>("view");
-  const [formData, setFormData] = useState<Partial<User>>({});
+  const [formData, setFormData] = useState<any>({});
   const [filters, setFilters] = useState({
-    name: "",
+    firstName: "",
+    lastName: "",
     email: "",
     role: "",
-    status: "",
-    department: "",
+    isVerified: "",
   });
-  const [displayedUsers, setDisplayedUsers] = useState<User[]>(initialUsers);
   const [mobilePage, setMobilePage] = useState(1);
   const [paginationModel, setPaginationModel] = useState({
     page: 0,
@@ -201,18 +126,27 @@ const ManageUsers: React.FC = () => {
     (list: User[]) =>
       list.filter(
         (user) =>
-          (filters.name === "" ||
-            user.name.toLowerCase().includes(filters.name.toLowerCase())) &&
+          (filters.firstName === "" ||
+            user.firstName
+              .toLowerCase()
+              .includes(filters.firstName.toLowerCase())) &&
+          (filters.lastName === "" ||
+            user.lastName
+              .toLowerCase()
+              .includes(filters.lastName.toLowerCase())) &&
           (filters.email === "" ||
             user.email.toLowerCase().includes(filters.email.toLowerCase())) &&
-          (filters.role === "" || user.role === filters.role) &&
-          (filters.status === "" || user.status === filters.status) &&
-          (filters.department === "" ||
-            user.department
-              .toLowerCase()
-              .includes(filters.department.toLowerCase()))
+          (filters.role === "" || user.roleName === filters.role) &&
+          (filters.isVerified === "" ||
+            (user.isVerified ? "Verified" : "Unverified") ===
+              filters.isVerified)
       ),
     [filters]
+  );
+
+  const displayedUsers = useMemo(
+    () => filterUsers(users),
+    [users, filterUsers]
   );
 
   useEffect(() => {
@@ -246,7 +180,16 @@ const ManageUsers: React.FC = () => {
     return displayedUsers.slice(startIndex, startIndex + MOBILE_PAGE_SIZE);
   }, [displayedUsers, mobilePage]);
 
-  const visibleDesktopRowCount = useMemo(() => {
+  const gridRowHeight = isTablet
+    ? DATA_GRID_ROW_HEIGHT_COMPACT
+    : DATA_GRID_ROW_HEIGHT;
+  const gridHeaderHeight = isTablet
+    ? DATA_GRID_HEADER_HEIGHT_COMPACT
+    : DATA_GRID_HEADER_HEIGHT;
+  const showQuickFilter = !isSmall;
+  const gridContainerMinWidth = isTablet ? "100%" : 680;
+
+  const visibleRowCount = useMemo(() => {
     if (displayedUsers.length === 0) {
       return 0;
     }
@@ -256,12 +199,12 @@ const ManageUsers: React.FC = () => {
   }, [displayedUsers.length, paginationModel]);
 
   const dataGridHeight = useMemo(() => {
-    const rowsHeight = visibleDesktopRowCount * DATA_GRID_ROW_HEIGHT;
+    const rowsHeight = visibleRowCount * gridRowHeight;
     return Math.max(
       DATA_GRID_MIN_HEIGHT,
-      DATA_GRID_HEADER_HEIGHT + DATA_GRID_FOOTER_HEIGHT + rowsHeight
+      gridHeaderHeight + DATA_GRID_FOOTER_HEIGHT + rowsHeight
     );
-  }, [visibleDesktopRowCount]);
+  }, [gridHeaderHeight, gridRowHeight, visibleRowCount]);
 
   const [snackbar, setSnackbar] = useState({
     open: false,
@@ -322,12 +265,27 @@ const ManageUsers: React.FC = () => {
         ? [
             { label: "First Name", value: selectedUser.firstName },
             { label: "Last Name", value: selectedUser.lastName },
+            { label: "Username", value: selectedUser.username },
             { label: "Email", value: selectedUser.email },
-            { label: "Phone", value: selectedUser.phone || "Not provided" },
-            { label: "Department", value: selectedUser.department },
-            { label: "Status", value: selectedUser.status },
-            { label: "Join Date", value: selectedUser.joinDate },
-            { label: "Last Login", value: selectedUser.lastLogin },
+            {
+              label: "Company",
+              value: selectedUser.companyName || "Not provided",
+            },
+            { label: "Role", value: selectedUser.roleName || "N/A" },
+            {
+              label: "Status",
+              value: selectedUser.isVerified ? "Verified" : "Unverified",
+            },
+            {
+              label: "Created At",
+              value: new Date(selectedUser.createdAt).toLocaleDateString(),
+            },
+            {
+              label: "Updated At",
+              value: selectedUser.updatedAt
+                ? new Date(selectedUser.updatedAt).toLocaleDateString()
+                : "N/A",
+            },
           ]
         : [],
     [selectedUser]
@@ -336,34 +294,62 @@ const ManageUsers: React.FC = () => {
   const columnVisibilityModel = useMemo(() => {
     if (isSmall) {
       return {
-        avatar: false,
+        id: false,
+        firstName: true,
+        lastName: true,
+        username: false,
         email: false,
-        department: false,
-        lastLogin: false,
-        role: false,
+        roleName: false,
+        isVerified: true,
+        createdAt: false,
+        updatedAt: false,
       };
     }
 
     if (isTablet) {
       return {
-        avatar: true,
+        id: true,
+        firstName: true,
+        lastName: true,
+        username: false,
         email: false,
-        department: false,
-        lastLogin: false,
-        role: true,
+        roleName: true,
+        isVerified: true,
+        createdAt: false,
+        updatedAt: false,
       };
     }
 
     return {
-      avatar: true,
+      id: true,
+      firstName: true,
+      lastName: true,
+      username: true,
       email: true,
-      department: true,
-      lastLogin: true,
-      role: true,
+      roleName: true,
+      isVerified: true,
+      createdAt: true,
+      updatedAt: false,
     };
   }, [isSmall, isTablet]);
 
   const displayName = user ? `${user.firstName} ${user.lastName}` : "User";
+  const gridPageSizeOptions = useMemo(
+    () => (isTablet ? [5, 10, 25] : [10, 25, 50]),
+    [isTablet]
+  );
+  const gridDensity = isTablet ? "compact" : "standard";
+  const gridContainerMinHeight = dataGridHeight;
+
+  useEffect(() => {
+    dispatch(fetchUsers());
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (error) {
+      setSnackbar({ open: true, message: error, severity: "error" });
+    }
+  }, [error]);
 
   const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -392,21 +378,14 @@ const ManageUsers: React.FC = () => {
     setFilters({ ...filters, [field]: value });
   };
 
-  const handleSearch = () => {
-    const filtered = filterUsers(users);
-    setDisplayedUsers(filtered);
-    setMobilePage(1);
-  };
-
   const handleClearFilters = () => {
     setFilters({
-      name: "",
+      firstName: "",
+      lastName: "",
       email: "",
       role: "",
-      status: "",
-      department: "",
+      isVerified: "",
     });
-    setDisplayedUsers(users);
     setMobilePage(1);
   };
 
@@ -418,14 +397,12 @@ const ManageUsers: React.FC = () => {
 
   const handleCreate = () => {
     setFormData({
-      name: "",
       firstName: "",
       lastName: "",
+      companyName: "",
+      username: "",
       email: "",
-      phone: "",
-      role: "User",
-      status: "Active",
-      department: "",
+      roleId: 1,
     });
     setDialogType("create");
     setDialogOpen(true);
@@ -433,7 +410,16 @@ const ManageUsers: React.FC = () => {
 
   const handleEdit = (user: User) => {
     setSelectedUser(user);
-    setFormData({ ...user });
+    setFormData({
+      id: user.id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      companyName: user.companyName,
+      username: user.username,
+      email: user.email,
+      isVerified: user.isVerified,
+      roleId: user.roleId,
+    });
     setDialogType("edit");
     setDialogOpen(true);
   };
@@ -456,80 +442,46 @@ const ManageUsers: React.FC = () => {
     setFormData({});
   };
 
-  const handleFormSubmit = () => {
+  const handleFormSubmit = async () => {
     if (dialogType === "create") {
-      const nextId = users.length ? Math.max(...users.map((u) => u.id)) + 1 : 1;
-      const newUser: User = {
-        ...formData,
-        id: nextId,
-        name: `${formData.firstName || ""} ${formData.lastName || ""}`.trim(),
-        joinDate: new Date().toISOString().split("T")[0],
-        lastLogin: "Never",
-        avatar: "",
-      } as User;
-      const updatedUsers = [...users, newUser];
-      setUsers(updatedUsers);
-      setDisplayedUsers(filterUsers(updatedUsers));
-      setMobilePage(1);
+      await dispatch(createUser(formData as CreateUserRequest));
       setSnackbar({
         open: true,
-        message: "User created successfully!",
+        message:
+          "User created successfully. A verification email has been sent to the user's email address.",
         severity: "success",
       });
     } else if (dialogType === "edit" && selectedUser) {
-      const updatedUser = {
-        ...selectedUser,
-        ...formData,
-        name: `${formData.firstName || selectedUser.firstName} ${
-          formData.lastName || selectedUser.lastName
-        }`.trim(),
-      };
-      const updatedUsers = users.map((u) =>
-        u.id === selectedUser.id ? updatedUser : u
-      );
-      setUsers(updatedUsers);
-      setDisplayedUsers(filterUsers(updatedUsers));
-      setSnackbar({
-        open: true,
-        message: "User updated successfully!",
-        severity: "success",
-      });
+      dispatch(updateUser(formData as UpdateUserRequest));
     } else if (dialogType === "delete" && selectedUser) {
-      const updatedUsers = users.filter((u) => u.id !== selectedUser.id);
-      setUsers(updatedUsers);
-      setDisplayedUsers(filterUsers(updatedUsers));
-      setSnackbar({
-        open: true,
-        message: "User deleted successfully!",
-        severity: "success",
-      });
+      dispatch(deleteUser(selectedUser.id));
     } else if (dialogType === "reset" && selectedUser) {
-      // Simulate password reset
-      setSnackbar({
-        open: true,
-        message: `Password reset email sent to ${selectedUser.email}!`,
-        severity: "success",
-      });
+      dispatch(adminResetPassword(selectedUser.id));
     }
     handleDialogClose();
   };
 
   const columns: GridColDef[] = [
     {
-      field: "avatar",
-      headerName: "Avatar",
+      field: "id",
+      headerName: "ID",
       width: 60,
-      flex: 0,
-      renderCell: (params) => (
-        <Avatar sx={{ width: 32, height: 32 }}>
-          {params.row.firstName?.[0] || "?"}
-          {params.row.lastName?.[0] || ""}
-        </Avatar>
-      ),
     },
     {
-      field: "name",
-      headerName: "Name",
+      field: "firstName",
+      headerName: "First Name",
+      flex: 1,
+      minWidth: 100,
+    },
+    {
+      field: "lastName",
+      headerName: "Last Name",
+      flex: 1,
+      minWidth: 100,
+    },
+    {
+      field: "username",
+      headerName: "Username",
       flex: 1,
       minWidth: 100,
     },
@@ -540,13 +492,13 @@ const ManageUsers: React.FC = () => {
       minWidth: 120,
     },
     {
-      field: "role",
+      field: "roleName",
       headerName: "Role",
       flex: 0,
       minWidth: 100,
       renderCell: (params) => (
         <Chip
-          label={params.value}
+          label={params.value || "N/A"}
           color={
             params.value === "Administrator"
               ? "error"
@@ -559,29 +511,32 @@ const ManageUsers: React.FC = () => {
       ),
     },
     {
-      field: "status",
+      field: "isVerified",
       headerName: "Status",
       flex: 0,
       minWidth: 80,
       renderCell: (params) => (
         <Chip
-          label={params.value}
-          color={params.value === "Active" ? "success" : "error"}
+          label={params.value ? "Verified" : "Unverified"}
+          color={params.value ? "success" : "error"}
           size="small"
         />
       ),
     },
     {
-      field: "department",
-      headerName: "Department",
+      field: "createdAt",
+      headerName: "Created At",
       flex: 1,
       minWidth: 100,
+      renderCell: (params) => new Date(params.value).toLocaleDateString(),
     },
     {
-      field: "lastLogin",
-      headerName: "Last Login",
+      field: "updatedAt",
+      headerName: "Updated At",
       flex: 1,
       minWidth: 100,
+      renderCell: (params) =>
+        params.value ? new Date(params.value).toLocaleDateString() : "N/A",
     },
     {
       field: "actions",
@@ -661,13 +616,14 @@ const ManageUsers: React.FC = () => {
               justifyContent: "center",
             }}
           >
-            <Business sx={{ mr: 1, fontSize: 28 }} />
+            <Business sx={{ mr: 1, fontSize: { xs: 22, sm: 26, md: 28 } }} />
             <Typography
               variant="h6"
               component="div"
               sx={{
                 fontWeight: 600,
                 letterSpacing: 0.5,
+                fontSize: { xs: "1rem", sm: "1.15rem", md: "1.25rem" },
               }}
             >
               NSolutions
@@ -678,10 +634,11 @@ const ManageUsers: React.FC = () => {
           <Box
             sx={{
               display: "flex",
-              flexDirection: { xs: "column", sm: "row" },
-              alignItems: { xs: "flex-end", sm: "center" },
+              flexDirection: "row",
+              alignItems: "center",
               marginLeft: "auto",
-              gap: { xs: 0.5, sm: 1 },
+              gap: { xs: 0.75, sm: 1 },
+              flexWrap: "nowrap",
             }}
           >
             <Typography
@@ -689,9 +646,9 @@ const ManageUsers: React.FC = () => {
               noWrap
               sx={{
                 color: "white",
-                fontSize: { xs: "0.75rem", sm: "0.875rem" },
-                maxWidth: { xs: 120, sm: "none" },
-                textAlign: { xs: "right", sm: "left" },
+                fontSize: { xs: "0.7rem", sm: "0.875rem" },
+                maxWidth: { xs: 110, sm: "none" },
+                textAlign: "right",
               }}
             >
               Welcome, {displayName}
@@ -1010,14 +967,14 @@ const ManageUsers: React.FC = () => {
                         color="success.main"
                         sx={{ overflow: "hidden", textOverflow: "ellipsis" }}
                       >
-                        {users.filter((u) => u.status === "Active").length}
+                        {users.filter((u) => u.isVerified).length}
                       </Typography>
                       <Typography
                         variant="body2"
                         color="text.secondary"
                         sx={{ overflow: "hidden", textOverflow: "ellipsis" }}
                       >
-                        Active Users
+                        Verified Users
                       </Typography>
                     </Box>
                   </Box>
@@ -1055,7 +1012,10 @@ const ManageUsers: React.FC = () => {
                         color="warning.main"
                         sx={{ overflow: "hidden", textOverflow: "ellipsis" }}
                       >
-                        {users.filter((u) => u.role === "Administrator").length}
+                        {
+                          users.filter((u) => u.roleName === "Administrator")
+                            .length
+                        }
                       </Typography>
                       <Typography
                         variant="body2"
@@ -1100,14 +1060,14 @@ const ManageUsers: React.FC = () => {
                         color="error.main"
                         sx={{ overflow: "hidden", textOverflow: "ellipsis" }}
                       >
-                        {users.filter((u) => u.status === "Inactive").length}
+                        {users.filter((u) => !u.isVerified).length}
                       </Typography>
                       <Typography
                         variant="body2"
                         color="text.secondary"
                         sx={{ overflow: "hidden", textOverflow: "ellipsis" }}
                       >
-                        Inactive Users
+                        Unverified Users
                       </Typography>
                     </Box>
                   </Box>
@@ -1178,14 +1138,25 @@ const ManageUsers: React.FC = () => {
                   >
                     <TextField
                       fullWidth
-                      label="Name"
-                      value={filters.name}
+                      label="First Name"
+                      value={filters.firstName}
                       onChange={(e) =>
-                        handleFilterChange("name", e.target.value)
+                        handleFilterChange("firstName", e.target.value)
                       }
                       sx={{ minWidth: 0 }}
-                      id="filter-name"
-                      name="filter-name"
+                      id="filter-first-name"
+                      name="first-name"
+                    />
+                    <TextField
+                      fullWidth
+                      label="Last Name"
+                      value={filters.lastName}
+                      onChange={(e) =>
+                        handleFilterChange("lastName", e.target.value)
+                      }
+                      sx={{ minWidth: 0 }}
+                      id="filter-last-name"
+                      name="last-name"
                     />
                     <TextField
                       fullWidth
@@ -1219,29 +1190,18 @@ const ManageUsers: React.FC = () => {
                       fullWidth
                       select
                       label="Status"
-                      value={filters.status}
+                      value={filters.isVerified}
                       onChange={(e) =>
-                        handleFilterChange("status", e.target.value)
+                        handleFilterChange("isVerified", e.target.value)
                       }
                       sx={{ minWidth: 0 }}
-                      id="filter-status"
-                      name="filter-status"
+                      id="filter-is-verified"
+                      name="filter-is-verified"
                     >
                       <MenuItem value="">All</MenuItem>
-                      <MenuItem value="Active">Active</MenuItem>
-                      <MenuItem value="Inactive">Inactive</MenuItem>
+                      <MenuItem value="Verified">Verified</MenuItem>
+                      <MenuItem value="Unverified">Unverified</MenuItem>
                     </TextField>
-                    <TextField
-                      fullWidth
-                      label="Department"
-                      value={filters.department}
-                      onChange={(e) =>
-                        handleFilterChange("department", e.target.value)
-                      }
-                      sx={{ minWidth: 0 }}
-                      id="filter-department"
-                      name="filter-department"
-                    />
                   </Box>
                   <Box
                     sx={{
@@ -1251,26 +1211,6 @@ const ManageUsers: React.FC = () => {
                       alignItems: "center",
                     }}
                   >
-                    <Button
-                      variant="contained"
-                      startIcon={<Search />}
-                      onClick={handleSearch}
-                      sx={{
-                        minWidth: 140,
-                        borderRadius: 999,
-                        px: 3,
-                        background:
-                          "linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)",
-                        boxShadow: "0px 12px 24px rgba(37, 99, 235, 0.25)",
-                        "&:hover": {
-                          background:
-                            "linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%)",
-                          boxShadow: "0px 10px 20px rgba(30, 64, 175, 0.3)",
-                        },
-                      }}
-                    >
-                      Apply Filters
-                    </Button>
                     <Button
                       variant="outlined"
                       onClick={handleClearFilters}
@@ -1341,7 +1281,9 @@ const ManageUsers: React.FC = () => {
                               {user.lastName?.[0] || ""}
                             </Avatar>
                             <Box sx={{ flex: 1, minWidth: 160 }}>
-                              <Typography variant="h6">{user.name}</Typography>
+                              <Typography variant="h6">
+                                {user.firstName} {user.lastName}
+                              </Typography>
                               <Typography
                                 variant="body2"
                                 color="text.secondary"
@@ -1357,23 +1299,21 @@ const ManageUsers: React.FC = () => {
                                 }}
                               >
                                 <Chip
-                                  label={user.role}
+                                  label={user.roleName || "N/A"}
                                   color={
-                                    user.role === "Administrator"
+                                    user.roleName === "Administrator"
                                       ? "error"
-                                      : user.role === "Moderator"
+                                      : user.roleName === "Moderator"
                                       ? "warning"
                                       : "default"
                                   }
                                   size="small"
                                 />
                                 <Chip
-                                  label={user.status}
-                                  color={
-                                    user.status === "Active"
-                                      ? "success"
-                                      : "error"
+                                  label={
+                                    user.isVerified ? "Verified" : "Unverified"
                                   }
+                                  color={user.isVerified ? "success" : "error"}
                                   size="small"
                                 />
                               </Box>
@@ -1445,7 +1385,7 @@ const ManageUsers: React.FC = () => {
                   <Box sx={{ width: "100%", overflowX: "auto" }}>
                     <Box
                       sx={{
-                        minWidth: 680,
+                        minWidth: gridContainerMinWidth,
                         borderRadius: 3,
                         border: (theme) =>
                           `1px solid ${alpha(
@@ -1459,59 +1399,83 @@ const ManageUsers: React.FC = () => {
                             : alpha(theme.palette.background.paper, 0.9),
                         display: "flex",
                         flexDirection: "column",
-                        minHeight: dataGridHeight,
+                        minHeight: gridContainerMinHeight,
+                        height: gridContainerMinHeight,
                       }}
                     >
                       <DataGrid
                         rows={displayedUsers}
                         columns={columns}
+                        density={gridDensity}
+                        rowHeight={gridRowHeight}
+                        columnHeaderHeight={gridHeaderHeight}
                         showCellVerticalBorder
                         disableColumnResize
                         disableColumnFilter
                         disableColumnMenu
                         paginationModel={paginationModel}
                         onPaginationModelChange={setPaginationModel}
-                        pageSizeOptions={[5, 10, 25]}
-                        checkboxSelection
+                        pageSizeOptions={gridPageSizeOptions}
                         disableRowSelectionOnClick
-                        hideFooterSelectedRowCount
+                        // hideFooterSelectedRowCount
                         columnVisibilityModel={columnVisibilityModel}
-                        sx={{
+                        loading={loading}
+                        // showToolbar={showToolbar}
+                        slotProps={{
+                          toolbar: {
+                            showQuickFilter,
+                            quickFilterProps: { debounceMs: 300 },
+                          },
+                        }}
+                        sx={(theme) => ({
                           flexGrow: 1,
-                          minWidth: 680,
+                          width: "100%",
                           border: 0,
                           "& .MuiDataGrid-columnHeaders": {
-                            background: (theme) =>
-                              `linear-gradient(135deg, ${alpha(
-                                theme.palette.primary.main,
-                                0.08
-                              )} 0%, ${alpha(
-                                theme.palette.primary.main,
-                                0.18
-                              )} 100%)`,
+                            background: `linear-gradient(135deg, ${alpha(
+                              theme.palette.primary.main,
+                              0.08
+                            )} 0%, ${alpha(
+                              theme.palette.primary.main,
+                              0.18
+                            )} 100%)`,
                             backdropFilter: "blur(6px)",
-                            borderBottom: (theme) =>
-                              `1px solid ${alpha(
-                                theme.palette.primary.main,
-                                0.18
-                              )}`,
-                            color: (theme) => theme.palette.text.primary,
+                            borderBottom: `1px solid ${alpha(
+                              theme.palette.primary.main,
+                              0.18
+                            )}`,
+                            color: theme.palette.text.primary,
                             fontWeight: 600,
                           },
+                          "& .MuiDataGrid-columnHeaderTitle": {
+                            fontSize: "0.95rem",
+                            [theme.breakpoints.down("lg")]: {
+                              fontSize: "0.85rem",
+                            },
+                          },
                           "& .MuiDataGrid-columnSeparator": {
-                            color: (theme) =>
-                              alpha(theme.palette.primary.main, 0.25),
+                            color: alpha(theme.palette.primary.main, 0.25),
                           },
                           "& .MuiDataGrid-cell": {
-                            borderBottom: (theme) =>
-                              `1px solid ${alpha(theme.palette.divider, 0.6)}`,
+                            borderBottom: `1px solid ${alpha(
+                              theme.palette.divider,
+                              0.6
+                            )}`,
+                            fontSize: "0.95rem",
+                            paddingBlock: theme.spacing(1.25),
+                            [theme.breakpoints.down("lg")]: {
+                              fontSize: "0.85rem",
+                              paddingBlock: theme.spacing(0.75),
+                            },
                           },
                           "& .MuiDataGrid-cell:focus": {
                             outline: "none",
                           },
                           "& .MuiDataGrid-row:hover": {
-                            backgroundColor: (theme) =>
-                              alpha(theme.palette.primary.main, 0.06),
+                            backgroundColor: alpha(
+                              theme.palette.primary.main,
+                              0.06
+                            ),
                           },
                           "& .MuiDataGrid-virtualScroller": {
                             overflowX: "auto",
@@ -1519,15 +1483,19 @@ const ManageUsers: React.FC = () => {
                             backgroundColor: "transparent",
                           },
                           "& .MuiDataGrid-footerContainer": {
-                            borderTop: (theme) =>
-                              `1px solid ${alpha(
-                                theme.palette.primary.main,
-                                0.18
-                              )}`,
-                            backgroundColor: (theme) =>
-                              alpha(theme.palette.background.paper, 0.9),
+                            borderTop: `1px solid ${alpha(
+                              theme.palette.primary.main,
+                              0.18
+                            )}`,
+                            backgroundColor: alpha(
+                              theme.palette.background.paper,
+                              0.9
+                            ),
+                            "& .MuiTablePagination-displayedRows": {
+                              fontSize: "0.85rem",
+                            },
                           },
-                        }}
+                        })}
                       />
                     </Box>
                   </Box>
@@ -1684,9 +1652,9 @@ const ManageUsers: React.FC = () => {
                       {selectedUser.firstName} {selectedUser.lastName}
                     </Typography>
                     <Chip
-                      label={selectedUser.role}
+                      label={selectedUser.roleName || "N/A"}
                       color={
-                        selectedUser.role === "Administrator"
+                        selectedUser.roleName === "Administrator"
                           ? "error"
                           : "default"
                       }
@@ -1835,6 +1803,24 @@ const ManageUsers: React.FC = () => {
                 >
                   <TextField
                     fullWidth
+                    label="Username"
+                    value={formData.username || ""}
+                    onChange={(e) =>
+                      setFormData({ ...formData, username: e.target.value })
+                    }
+                    required
+                    id="form-username"
+                    name="username"
+                  />
+                </Box>
+                <Box
+                  sx={{
+                    flex: "1 1 120px",
+                    minWidth: { xs: "100%", sm: 120 },
+                  }}
+                >
+                  <TextField
+                    fullWidth
                     label="Email"
                     type="email"
                     value={formData.email || ""}
@@ -1854,13 +1840,13 @@ const ManageUsers: React.FC = () => {
                 >
                   <TextField
                     fullWidth
-                    label="Phone"
-                    value={formData.phone || ""}
+                    label="Company Name"
+                    value={formData.companyName || ""}
                     onChange={(e) =>
-                      setFormData({ ...formData, phone: e.target.value })
+                      setFormData({ ...formData, companyName: e.target.value })
                     }
-                    id="form-phone"
-                    name="phone"
+                    id="form-company-name"
+                    name="company-name"
                   />
                 </Box>
                 <Box
@@ -1873,51 +1859,44 @@ const ManageUsers: React.FC = () => {
                     fullWidth
                     select
                     label="Role"
-                    value={formData.role || "User"}
+                    value={formData.roleId || 1}
                     onChange={(e) =>
-                      setFormData({ ...formData, role: e.target.value })
+                      setFormData({
+                        ...formData,
+                        roleId: Number(e.target.value),
+                      })
                     }
-                    id="form-role"
-                    name="role"
+                    id="form-role-id"
+                    name="role-id"
                   >
-                    <MenuItem value="User">User</MenuItem>
-                    <MenuItem value="Moderator">Moderator</MenuItem>
-                    <MenuItem value="Administrator">Administrator</MenuItem>
+                    <MenuItem value={1}>User</MenuItem>
+                    <MenuItem value={2}>Moderator</MenuItem>
+                    <MenuItem value={3}>Administrator</MenuItem>
                   </TextField>
                 </Box>
-                <Box
-                  sx={{
-                    flex: "1 1 120px",
-                    minWidth: { xs: "100%", sm: 120 },
-                  }}
-                >
-                  <TextField
-                    fullWidth
-                    select
-                    label="Status"
-                    value={formData.status || "Active"}
-                    onChange={(e) =>
-                      setFormData({ ...formData, status: e.target.value })
-                    }
-                    id="form-status"
-                    name="status"
+                {dialogType === "edit" && (
+                  <Box
+                    sx={{
+                      flex: "1 1 120px",
+                      minWidth: { xs: "100%", sm: 120 },
+                    }}
                   >
-                    <MenuItem value="Active">Active</MenuItem>
-                    <MenuItem value="Inactive">Inactive</MenuItem>
-                  </TextField>
-                </Box>
-              </Box>
-              <Box sx={{ width: "100%" }}>
-                <TextField
-                  fullWidth
-                  label="Department"
-                  value={formData.department || ""}
-                  onChange={(e) =>
-                    setFormData({ ...formData, department: e.target.value })
-                  }
-                  id="form-department"
-                  name="department"
-                />
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={formData.isVerified || false}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              isVerified: e.target.checked,
+                            })
+                          }
+                        />
+                      }
+                      label="Verified"
+                    />
+                  </Box>
+                )}
               </Box>
             </Box>
           )}
