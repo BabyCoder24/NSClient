@@ -1,6 +1,10 @@
 import { BASE_URL } from "../config/baseURL";
 import axios from "axios";
-import type { CreateUserRequest, UpdateUserRequest, User } from "../types/user";
+import type {
+  CreateUserRequest,
+  UpdateUserRequest,
+  UserResponse,
+} from "../types/user";
 
 // Get all users
 const getAll = async () => {
@@ -70,10 +74,10 @@ const get = async (id: number) => {
 };
 
 // Create user
-const create = async (data: CreateUserRequest): Promise<User> => {
+const create = async (data: CreateUserRequest): Promise<UserResponse> => {
   const token = localStorage.getItem("accessToken");
   try {
-    const response = await axios.post<User>(`${BASE_URL}/User`, data, {
+    const response = await axios.post(`${BASE_URL}/User`, data, {
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",

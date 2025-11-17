@@ -17,6 +17,7 @@ import ManageUsers from "./pages/ManageUsers";
 import LoginForm from "./pages/LoginForm";
 import RegisterForm from "./pages/RegisterForm";
 import CompleteRegistrationForm from "./pages/CompleteRegistrationForm";
+import SetPasswordForm from "./pages/SetPasswordForm";
 import ForgotPasswordForm from "./components/ForgotPasswordForm";
 import ResetPasswordForm from "./components/ResetPasswordForm";
 import Unauthorized from "./pages/Unauthorized";
@@ -46,6 +47,7 @@ function App() {
               path="/complete-registration"
               element={<CompleteRegistrationForm />}
             />
+            <Route path="/set-password" element={<SetPasswordForm />} />
             <Route path="/forgot-password" element={<ForgotPasswordForm />} />
             <Route path="/reset-password" element={<ResetPasswordForm />} />
             <Route path="/unauthorized" element={<Unauthorized />} />

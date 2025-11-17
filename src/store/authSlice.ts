@@ -7,6 +7,7 @@ import {
   resetPassword,
   registerUser,
   completeRegistration,
+  setPassword,
   refreshToken,
   logoutUser,
 } from "./authThunks";
@@ -216,6 +217,21 @@ const authSlice = createSlice({
       })
       .addCase(completeRegistration.rejected, (state) => {
         state.loading = false;
+      })
+
+      // Set Password
+      .addCase(setPassword.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(setPassword.fulfilled, (state) => {
+        state.loading = false;
+        state.error = null;
+      })
+      .addCase(setPassword.rejected, (state, action) => {
+        state.loading = false;
+        state.error =
+          (action.payload as any)?.message || "Failed to set password";
       })
 
       // Refresh Token

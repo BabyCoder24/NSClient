@@ -444,13 +444,27 @@ const ManageUsers: React.FC = () => {
 
   const handleFormSubmit = async () => {
     if (dialogType === "create") {
-      await dispatch(createUser(formData as CreateUserRequest));
-      setSnackbar({
-        open: true,
-        message:
-          "User created successfully. A verification email has been sent to the user's email address.",
-        severity: "success",
-      });
+      try {
+        await dispatch(createUser(formData as CreateUserRequest)).unwrap();
+        setSnackbar({
+          open: true,
+          message:
+            "User created successfully. A set-password email has been sent to the user's email address.",
+          severity: "success",
+        });
+        handleDialogClose();
+      } catch (err: unknown) {
+        const errorMessage =
+          err instanceof Error
+            ? err.message
+            : "Failed to create user. Please try again.";
+        setSnackbar({
+          open: true,
+          message: errorMessage,
+          severity: "error",
+        });
+      }
+      return;
     } else if (dialogType === "edit" && selectedUser) {
       dispatch(updateUser(formData as UpdateUserRequest));
     } else if (dialogType === "delete" && selectedUser) {

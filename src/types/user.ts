@@ -23,6 +23,16 @@ export interface CreateUserRequest {
   clientId?: number;
 }
 
+export interface UserResponse {
+  id: number;
+  firstName: string;
+  lastName: string;
+  companyName?: string;
+  email: string;
+  isVerified: boolean;
+  createdAt: string;
+}
+
 export interface UpdateUserRequest {
   id: number;
   firstName: string;

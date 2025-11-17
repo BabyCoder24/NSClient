@@ -6,7 +6,12 @@ import {
   deleteUserAPI,
   adminResetPasswordAPI,
 } from "../services/userService";
-import type { User, CreateUserRequest, UpdateUserRequest } from "../types/user";
+import type {
+  User,
+  CreateUserRequest,
+  UpdateUserRequest,
+  UserResponse,
+} from "../types/user";
 
 //fetch users
 export const fetchUsers = createAsyncThunk("users/fetchUsers", async () => {
@@ -79,7 +84,22 @@ const userSlice = createSlice({
       })
       .addCase(createUser.fulfilled, (state, action) => {
         state.loading = false;
-        state.users.push(action.payload);
+        const userResponse: UserResponse = action.payload;
+        const user: User = {
+          id: userResponse.id,
+          firstName: userResponse.firstName,
+          lastName: userResponse.lastName,
+          companyName: userResponse.companyName,
+          username: "", // Not provided in response
+          email: userResponse.email,
+          roleId: 1, // Default, not provided
+          clientId: undefined,
+          isVerified: userResponse.isVerified,
+          createdAt: userResponse.createdAt,
+          updatedAt: undefined,
+          roleName: undefined,
+        };
+        state.users.push(user);
       })
       .addCase(createUser.rejected, (state, action) => {
         state.loading = false;

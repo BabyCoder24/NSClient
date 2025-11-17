@@ -54,3 +54,8 @@ export interface CompleteRegistrationRequest {
   CompanyName?: string;
   Email: string;
 }
+
+export interface SetPasswordRequest {
+  Token: string;
+  Password: string;
+}

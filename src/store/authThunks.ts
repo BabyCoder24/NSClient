@@ -6,6 +6,7 @@ import {
   forgotPasswordAPI,
   resetPasswordAPI,
   completeRegistrationAPI,
+  setPasswordAPI,
   refreshTokenAPI,
   logoutAPI,
 } from "../services/authService";
@@ -16,6 +17,7 @@ import type {
   ForgotPasswordRequest,
   ResetPasswordRequest,
   CompleteRegistrationRequest,
+  SetPasswordRequest,
   AuthUser,
 } from "../types/auth";
 import type { RootState } from "./store";
@@ -185,6 +187,34 @@ export const completeRegistration = createAsyncThunk(
         error?.__kind === "network"
           ? "Network error. Please check your connection."
           : error.response?.data?.message || "Failed to complete registration";
+      dispatch(showCrudMessage({ text: message, type: "error" }));
+      return rejectWithValue({
+        message: error.message,
+        status: error.__status,
+        kind: error.__kind,
+      });
+    }
+  }
+);
+
+// Set password thunk
+export const setPassword = createAsyncThunk(
+  "auth/setPassword",
+  async (data: SetPasswordRequest, { rejectWithValue, dispatch }) => {
+    try {
+      await setPasswordAPI(data);
+      dispatch(
+        showCrudMessage({
+          text: "Password set successfully! You can now log in.",
+          type: "update",
+        })
+      );
+      return true;
+    } catch (error: any) {
+      const message =
+        error?.__kind === "network"
+          ? "Network error. Please check your connection."
+          : error.response?.data?.message || "Failed to set password";
       dispatch(showCrudMessage({ text: message, type: "error" }));
       return rejectWithValue({
         message: error.message,
