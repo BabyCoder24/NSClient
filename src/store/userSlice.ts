@@ -50,8 +50,8 @@ export const deleteUser = createAsyncThunk(
 export const adminResetPassword = createAsyncThunk(
   "users/adminResetPassword",
   async (userId: number) => {
-    await adminResetPasswordAPI(userId);
-    return userId;
+    const response = await adminResetPasswordAPI(userId);
+    return response;
   }
 );
 
@@ -133,6 +133,17 @@ const userSlice = createSlice({
       .addCase(deleteUser.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || "Failed to delete user";
+      })
+      .addCase(adminResetPassword.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(adminResetPassword.fulfilled, (state) => {
+        state.loading = false;
+      })
+      .addCase(adminResetPassword.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || "Failed to reset password";
       });
   },
 });

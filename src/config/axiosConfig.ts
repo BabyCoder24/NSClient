@@ -104,6 +104,7 @@ axios.interceptors.response.use(
     let serverMsg = error?.response?.data?.message;
     if (!serverMsg) serverMsg = error?.response?.data?.detail;
     if (!serverMsg) serverMsg = error?.response?.data?.title;
+    if (!serverMsg) serverMsg = error?.response?.data?.error;
     if (!serverMsg && typeof error?.response?.data === "string")
       serverMsg = error.response.data;
     if (serverMsg && typeof serverMsg === "string") {

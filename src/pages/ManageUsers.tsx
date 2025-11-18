@@ -109,6 +109,7 @@ const ManageUsers: React.FC = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogType, setDialogType] = useState<DialogType>("view");
   const [formData, setFormData] = useState<any>({});
+  const [initialFormData, setInitialFormData] = useState<any>({});
   const [filters, setFilters] = useState({
     firstName: "",
     lastName: "",
@@ -259,11 +260,26 @@ const ManageUsers: React.FC = () => {
   }, [formData.email]);
 
   const isFormValid = useMemo(() => {
-    if (dialogType === "create") {
+    if (dialogType === "create" || dialogType === "edit") {
       return !firstNameError && !lastNameError && !emailError;
     }
     return true;
   }, [dialogType, firstNameError, lastNameError, emailError]);
+
+  const hasChanges = useMemo(() => {
+    if (dialogType === "create") return true;
+    if (dialogType === "edit") {
+      return (
+        initialFormData.firstName !== formData.firstName ||
+        initialFormData.lastName !== formData.lastName ||
+        initialFormData.username !== formData.username ||
+        initialFormData.email !== formData.email ||
+        initialFormData.companyName !== formData.companyName ||
+        initialFormData.roleId !== formData.roleId
+      );
+    }
+    return false;
+  }, [dialogType, initialFormData, formData]);
 
   const dialogHeaderStyles = useMemo(() => {
     switch (dialogType) {
@@ -433,7 +449,7 @@ const ManageUsers: React.FC = () => {
 
   const handleEdit = (user: User) => {
     setSelectedUser(user);
-    setFormData({
+    const data = {
       id: user.id,
       firstName: user.firstName,
       lastName: user.lastName,
@@ -442,7 +458,9 @@ const ManageUsers: React.FC = () => {
       email: user.email,
       isVerified: user.isVerified,
       roleId: user.roleId,
-    });
+    };
+    setFormData(data);
+    setInitialFormData(data);
     setDialogType("edit");
     setDialogOpen(true);
   };
@@ -463,6 +481,7 @@ const ManageUsers: React.FC = () => {
     setDialogOpen(false);
     setSelectedUser(null);
     setFormData({});
+    setInitialFormData({});
   };
 
   const handleFormSubmit = async () => {
@@ -477,19 +496,21 @@ const ManageUsers: React.FC = () => {
         return;
       }
       try {
-        await dispatch(createUser(formData as CreateUserRequest)).unwrap();
+        const result = await dispatch(
+          createUser(formData as CreateUserRequest)
+        ).unwrap();
         setSnackbar({
           open: true,
           message:
+            (result as any).message ||
             "User created successfully. A set-password email has been sent to the user's email address.",
           severity: "success",
         });
+        dispatch(fetchUsers());
         handleDialogClose();
       } catch (err: unknown) {
         const errorMessage =
-          err instanceof Error
-            ? err.message
-            : "Failed to create user. Please try again.";
+          (err as any)?.message || "Failed to create user. Please try again.";
         setSnackbar({
           open: true,
           message: errorMessage,
@@ -498,13 +519,63 @@ const ManageUsers: React.FC = () => {
       }
       return;
     } else if (dialogType === "edit" && selectedUser) {
-      dispatch(updateUser(formData as UpdateUserRequest));
+      if (!isFormValid) {
+        setSnackbar({
+          open: true,
+          message:
+            "Please resolve the highlighted validation errors before saving changes.",
+          severity: "error",
+        });
+        return;
+      }
+      try {
+        await dispatch(updateUser(formData as UpdateUserRequest)).unwrap();
+        setSnackbar({
+          open: true,
+          message: "User updated successfully.",
+          severity: "success",
+        });
+        dispatch(fetchUsers());
+        handleDialogClose();
+        return;
+      } catch (err: unknown) {
+        const errorMessage =
+          (err as any)?.message || "Failed to update user. Please try again.";
+        setSnackbar({
+          open: true,
+          message: errorMessage,
+          severity: "error",
+        });
+        return;
+      }
     } else if (dialogType === "delete" && selectedUser) {
       dispatch(deleteUser(selectedUser.id));
+      dispatch(fetchUsers());
+      handleDialogClose();
     } else if (dialogType === "reset" && selectedUser) {
-      dispatch(adminResetPassword(selectedUser.id));
+      try {
+        const result = await dispatch(
+          adminResetPassword(selectedUser.id)
+        ).unwrap();
+        setSnackbar({
+          open: true,
+          message:
+            (result as any)?.message ||
+            "Password reset email sent successfully.",
+          severity: "success",
+        });
+        dispatch(fetchUsers());
+        handleDialogClose();
+      } catch (err: unknown) {
+        const errorMessage =
+          (err as any)?.message || "Failed to send reset email.";
+        setSnackbar({
+          open: true,
+          message: errorMessage,
+          severity: "error",
+        });
+      }
     }
-    handleDialogClose();
   };
 
   const columns: GridColDef[] = [
@@ -1920,6 +1991,7 @@ const ManageUsers: React.FC = () => {
                               isVerified: e.target.checked,
                             })
                           }
+                          disabled
                         />
                       }
                       label="Verified"
@@ -1970,7 +2042,11 @@ const ManageUsers: React.FC = () => {
               onClick={handleFormSubmit}
               variant="contained"
               color={dialogType === "delete" ? "error" : "primary"}
-              disabled={loading || (dialogType === "create" && !isFormValid)}
+              disabled={
+                loading ||
+                ((dialogType === "create" || dialogType === "edit") &&
+                  (!isFormValid || (dialogType === "edit" && !hasChanges)))
+              }
               startIcon={
                 dialogType === "create" ? (
                   <Add />
@@ -1997,6 +2073,7 @@ const ManageUsers: React.FC = () => {
         open={snackbar.open}
         autoHideDuration={6000}
         onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
       >
         <Alert
           onClose={() => setSnackbar({ ...snackbar, open: false })}
