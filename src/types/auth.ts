@@ -57,5 +57,5 @@ export interface CompleteRegistrationRequest {
 
 export interface SetPasswordRequest {
   Token: string;
-  Password: string;
+  NewPassword: string;
 }

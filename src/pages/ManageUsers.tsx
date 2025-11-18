@@ -242,6 +242,29 @@ const ManageUsers: React.FC = () => {
 
   const activeDialogMeta = dialogMeta[dialogType];
 
+  const firstNameError = useMemo(() => {
+    return formData.firstName?.trim() ? "" : "First name is required";
+  }, [formData.firstName]);
+
+  const lastNameError = useMemo(() => {
+    return formData.lastName?.trim() ? "" : "Last name is required";
+  }, [formData.lastName]);
+
+  const emailError = useMemo(() => {
+    if (!formData.email?.trim()) {
+      return "Email is required";
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(formData.email) ? "" : "Invalid email format";
+  }, [formData.email]);
+
+  const isFormValid = useMemo(() => {
+    if (dialogType === "create") {
+      return !firstNameError && !lastNameError && !emailError;
+    }
+    return true;
+  }, [dialogType, firstNameError, lastNameError, emailError]);
+
   const dialogHeaderStyles = useMemo(() => {
     switch (dialogType) {
       case "delete":
@@ -402,7 +425,7 @@ const ManageUsers: React.FC = () => {
       companyName: "",
       username: "",
       email: "",
-      roleId: 1,
+      roleId: 2,
     });
     setDialogType("create");
     setDialogOpen(true);
@@ -444,6 +467,15 @@ const ManageUsers: React.FC = () => {
 
   const handleFormSubmit = async () => {
     if (dialogType === "create") {
+      if (!isFormValid) {
+        setSnackbar({
+          open: true,
+          message:
+            "Please resolve the highlighted validation errors before creating the user.",
+          severity: "error",
+        });
+        return;
+      }
       try {
         await dispatch(createUser(formData as CreateUserRequest)).unwrap();
         setSnackbar({
@@ -513,13 +545,7 @@ const ManageUsers: React.FC = () => {
       renderCell: (params) => (
         <Chip
           label={params.value || "N/A"}
-          color={
-            params.value === "Administrator"
-              ? "error"
-              : params.value === "Moderator"
-              ? "warning"
-              : "default"
-          }
+          color={params.value === "Administrator" ? "error" : "default"}
           size="small"
         />
       ),
@@ -1196,9 +1222,8 @@ const ManageUsers: React.FC = () => {
                       name="filter-role"
                     >
                       <MenuItem value="">All</MenuItem>
-                      <MenuItem value="User">User</MenuItem>
-                      <MenuItem value="Moderator">Moderator</MenuItem>
                       <MenuItem value="Administrator">Administrator</MenuItem>
+                      <MenuItem value="Standard User">Standard User</MenuItem>
                     </TextField>
                     <TextField
                       fullWidth
@@ -1317,8 +1342,6 @@ const ManageUsers: React.FC = () => {
                                   color={
                                     user.roleName === "Administrator"
                                       ? "error"
-                                      : user.roleName === "Moderator"
-                                      ? "warning"
                                       : "default"
                                   }
                                   size="small"
@@ -1766,133 +1789,125 @@ const ManageUsers: React.FC = () => {
                     : "inset 0 1px 0 rgba(255, 255, 255, 0.08)",
               }}
             >
+              <Typography
+                variant="subtitle2"
+                sx={{ color: "text.secondary", fontWeight: 600 }}
+              >
+                Account Details
+              </Typography>
               <Box
                 sx={{
-                  display: "flex",
-                  flexWrap: "wrap",
+                  display: "grid",
+                  gridTemplateColumns: {
+                    xs: "1fr",
+                    sm: "repeat(2, minmax(0, 1fr))",
+                    md: "repeat(3, minmax(0, 1fr))",
+                  },
                   gap: { xs: 1, sm: 2 },
                 }}
               >
-                <Box
+                <TextField
+                  fullWidth
+                  label="First Name"
+                  value={formData.firstName || ""}
+                  onChange={(e) =>
+                    setFormData({ ...formData, firstName: e.target.value })
+                  }
+                  required
+                  error={!!firstNameError}
+                  helperText={firstNameError || " "}
+                  id="form-first-name"
+                  name="first-name"
+                />
+                <TextField
+                  fullWidth
+                  label="Last Name"
+                  value={formData.lastName || ""}
+                  onChange={(e) =>
+                    setFormData({ ...formData, lastName: e.target.value })
+                  }
+                  required
+                  error={!!lastNameError}
+                  helperText={lastNameError || " "}
+                  id="form-last-name"
+                  name="last-name"
+                />
+                <TextField
+                  fullWidth
+                  label="Username"
+                  value={formData.username || ""}
+                  onChange={(e) =>
+                    setFormData({ ...formData, username: e.target.value })
+                  }
+                  // required
+                  id="form-username"
+                  name="username"
+                />
+                <TextField
+                  fullWidth
+                  label="Email"
+                  type="email"
+                  value={formData.email || ""}
+                  onChange={(e) =>
+                    setFormData({ ...formData, email: e.target.value })
+                  }
+                  required
+                  error={!!emailError}
+                  helperText={emailError || " "}
+                  id="form-email"
+                  name="email"
                   sx={{
-                    flex: "1 1 120px",
-                    minWidth: { xs: "100%", sm: 120 },
+                    gridColumn: {
+                      xs: "span 1",
+                      sm: "span 2",
+                      md: "span 3",
+                    },
                   }}
-                >
-                  <TextField
-                    fullWidth
-                    label="First Name"
-                    value={formData.firstName || ""}
-                    onChange={(e) =>
-                      setFormData({ ...formData, firstName: e.target.value })
-                    }
-                    required
-                    id="form-first-name"
-                    name="first-name"
-                  />
-                </Box>
-                <Box
+                />
+                <TextField
+                  fullWidth
+                  label="Company Name"
+                  value={formData.companyName || ""}
+                  onChange={(e) =>
+                    setFormData({ ...formData, companyName: e.target.value })
+                  }
+                  id="form-company-name"
+                  name="company-name"
                   sx={{
-                    flex: "1 1 120px",
-                    minWidth: { xs: "100%", sm: 120 },
+                    gridColumn: {
+                      xs: "span 1",
+                      sm: "span 2",
+                      md: "span 3",
+                    },
                   }}
+                />
+                <TextField
+                  fullWidth
+                  select
+                  label="Role"
+                  value={formData.roleId || 2}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      roleId: Number(e.target.value),
+                    })
+                  }
+                  id="form-role-id"
+                  name="role-id"
                 >
-                  <TextField
-                    fullWidth
-                    label="Last Name"
-                    value={formData.lastName || ""}
-                    onChange={(e) =>
-                      setFormData({ ...formData, lastName: e.target.value })
-                    }
-                    required
-                    id="form-last-name"
-                    name="last-name"
-                  />
-                </Box>
-                <Box
-                  sx={{
-                    flex: "1 1 120px",
-                    minWidth: { xs: "100%", sm: 120 },
-                  }}
-                >
-                  <TextField
-                    fullWidth
-                    label="Username"
-                    value={formData.username || ""}
-                    onChange={(e) =>
-                      setFormData({ ...formData, username: e.target.value })
-                    }
-                    required
-                    id="form-username"
-                    name="username"
-                  />
-                </Box>
-                <Box
-                  sx={{
-                    flex: "1 1 120px",
-                    minWidth: { xs: "100%", sm: 120 },
-                  }}
-                >
-                  <TextField
-                    fullWidth
-                    label="Email"
-                    type="email"
-                    value={formData.email || ""}
-                    onChange={(e) =>
-                      setFormData({ ...formData, email: e.target.value })
-                    }
-                    required
-                    id="form-email"
-                    name="email"
-                  />
-                </Box>
-                <Box
-                  sx={{
-                    flex: "1 1 120px",
-                    minWidth: { xs: "100%", sm: 120 },
-                  }}
-                >
-                  <TextField
-                    fullWidth
-                    label="Company Name"
-                    value={formData.companyName || ""}
-                    onChange={(e) =>
-                      setFormData({ ...formData, companyName: e.target.value })
-                    }
-                    id="form-company-name"
-                    name="company-name"
-                  />
-                </Box>
-                <Box
-                  sx={{
-                    flex: "1 1 120px",
-                    minWidth: { xs: "100%", sm: 120 },
-                  }}
-                >
-                  <TextField
-                    fullWidth
-                    select
-                    label="Role"
-                    value={formData.roleId || 1}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        roleId: Number(e.target.value),
-                      })
-                    }
-                    id="form-role-id"
-                    name="role-id"
-                  >
-                    <MenuItem value={1}>User</MenuItem>
-                    <MenuItem value={2}>Moderator</MenuItem>
-                    <MenuItem value={3}>Administrator</MenuItem>
-                  </TextField>
-                </Box>
+                  <MenuItem value={1}>Administrator</MenuItem>
+                  <MenuItem value={2}>Standard User</MenuItem>
+                </TextField>
                 {dialogType === "edit" && (
                   <Box
                     sx={{
-                      flex: "1 1 120px",
-                      minWidth: { xs: "100%", sm: 120 },
+                      display: "flex",
+                      alignItems: "center",
+                      gridColumn: {
+                        xs: "span 1",
+                        sm: "span 2",
+                        md: "span 3",
+                      },
                     }}
                   >
                     <FormControlLabel
@@ -1955,6 +1970,7 @@ const ManageUsers: React.FC = () => {
               onClick={handleFormSubmit}
               variant="contained"
               color={dialogType === "delete" ? "error" : "primary"}
+              disabled={loading || (dialogType === "create" && !isFormValid)}
               startIcon={
                 dialogType === "create" ? (
                   <Add />

@@ -92,7 +92,7 @@ const userSlice = createSlice({
           companyName: userResponse.companyName,
           username: "", // Not provided in response
           email: userResponse.email,
-          roleId: 1, // Default, not provided
+          roleId: 2, // Default to Standard User
           clientId: undefined,
           isVerified: userResponse.isVerified,
           createdAt: userResponse.createdAt,

@@ -202,14 +202,8 @@ export const setPassword = createAsyncThunk(
   "auth/setPassword",
   async (data: SetPasswordRequest, { rejectWithValue, dispatch }) => {
     try {
-      await setPasswordAPI(data);
-      dispatch(
-        showCrudMessage({
-          text: "Password set successfully! You can now log in.",
-          type: "update",
-        })
-      );
-      return true;
+      const response = await setPasswordAPI(data);
+      return response; // { message, email }
     } catch (error: any) {
       const message =
         error?.__kind === "network"

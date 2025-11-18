@@ -91,9 +91,13 @@ export const completeRegistrationAPI = async (
 // Set password API
 export const setPasswordAPI = async (
   data: SetPasswordRequest
-): Promise<void> => {
+): Promise<{ message: string; email: string }> => {
   try {
-    await axios.post(`${BASE_URL}/auth/set-password`, data);
+    const response = await axios.post<{ message: string; email: string }>(
+      `${BASE_URL}/auth/set-password`,
+      data
+    );
+    return response.data;
   } catch (error) {
     console.error("Error setting password:", error);
     throw error;

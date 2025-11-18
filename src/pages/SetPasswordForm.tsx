@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import type { RootState, AppDispatch } from "../store/store";
 import * as authThunks from "../store/authThunks";
 import { clearError } from "../store/authSlice";
+import { store } from "../store/store";
 import {
   Box,
   Paper,
@@ -13,6 +14,7 @@ import {
   Alert,
   InputAdornment,
   IconButton,
+  Snackbar,
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import Header from "../components/Header";
@@ -24,6 +26,11 @@ const SetPasswordForm: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "success" as "success" | "error",
+  });
 
   const token = new URLSearchParams(window.location.search).get("token");
 
@@ -67,7 +74,7 @@ const SetPasswordForm: React.FC = () => {
     return passwordError === "";
   };
 
-  const handleSubmit = (event: React.FormEvent) => {
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
 
     setFormError(null);
@@ -76,12 +83,32 @@ const SetPasswordForm: React.FC = () => {
       return;
     }
 
-    dispatch(authThunks.setPassword({ Token: token, Password: password }));
-
-    // Redirect to login after a short delay, assuming success
-    setTimeout(() => {
-      navigate("/login");
-    }, 3000);
+    try {
+      const result = await dispatch(
+        authThunks.setPassword({ Token: token, NewPassword: password })
+      ).unwrap();
+      setSnackbar({ open: true, message: result.message, severity: "success" });
+      // Wait for message to show
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      // Now login
+      await dispatch(
+        authThunks.loginUser({
+          UsernameOrEmail: result.email,
+          Password: password,
+          RememberMe: false,
+        })
+      ).unwrap();
+      // Get role
+      const { role } = store.getState().auth;
+      // Navigate
+      if (role === "Administrator") {
+        navigate("/admin-dashboard");
+      } else {
+        navigate("/dashboard");
+      }
+    } catch {
+      // Error is already handled in thunk
+    }
   };
 
   const handleClickShowPassword = () => setShowPassword((show) => !show);
@@ -187,18 +214,20 @@ const SetPasswordForm: React.FC = () => {
               onChange={(e) => setPassword(e.target.value)}
               required
               autoComplete="new-password"
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      aria-label="toggle password visibility"
-                      onClick={handleClickShowPassword}
-                      edge="end"
-                    >
-                      {showPassword ? <VisibilityOff /> : <Visibility />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
+              slotProps={{
+                input: {
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        aria-label="toggle password visibility"
+                        onClick={handleClickShowPassword}
+                        edge="end"
+                      >
+                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                },
               }}
             />
             <TextField
@@ -209,18 +238,24 @@ const SetPasswordForm: React.FC = () => {
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
               autoComplete="new-password"
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      aria-label="toggle confirm password visibility"
-                      onClick={handleClickShowConfirmPassword}
-                      edge="end"
-                    >
-                      {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
+              slotProps={{
+                input: {
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        aria-label="toggle confirm password visibility"
+                        onClick={handleClickShowConfirmPassword}
+                        edge="end"
+                      >
+                        {showConfirmPassword ? (
+                          <VisibilityOff />
+                        ) : (
+                          <Visibility />
+                        )}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                },
               }}
             />
             <Button
@@ -236,6 +271,21 @@ const SetPasswordForm: React.FC = () => {
         </Paper>
       </Box>
       <Footer />
+
+      {/* Snackbar for notifications */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+      >
+        <Alert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          severity={snackbar.severity}
+          sx={{ width: "100%" }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };
