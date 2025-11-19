@@ -14,7 +14,6 @@ import {
   Alert,
   InputAdornment,
   IconButton,
-  Snackbar,
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import Header from "../components/Header";
@@ -26,11 +25,7 @@ const SetPasswordForm: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
-  const [snackbar, setSnackbar] = useState({
-    open: false,
-    message: "",
-    severity: "success" as "success" | "error",
-  });
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const token = new URLSearchParams(window.location.search).get("token");
 
@@ -87,7 +82,7 @@ const SetPasswordForm: React.FC = () => {
       const result = await dispatch(
         authThunks.setPassword({ Token: token, NewPassword: password })
       ).unwrap();
-      setSnackbar({ open: true, message: result.message, severity: "success" });
+      setSuccessMessage(result.message);
       // Wait for message to show
       await new Promise((resolve) => setTimeout(resolve, 2000));
       // Now login
@@ -196,6 +191,12 @@ const SetPasswordForm: React.FC = () => {
             </Alert>
           )}
 
+          {successMessage && (
+            <Alert severity="success" sx={{ width: "100%", mb: 2 }}>
+              {successMessage}
+            </Alert>
+          )}
+
           <Box
             component="form"
             onSubmit={handleSubmit}
@@ -271,21 +272,6 @@ const SetPasswordForm: React.FC = () => {
         </Paper>
       </Box>
       <Footer />
-
-      {/* Snackbar for notifications */}
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={6000}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
-      >
-        <Alert
-          onClose={() => setSnackbar({ ...snackbar, open: false })}
-          severity={snackbar.severity}
-          sx={{ width: "100%" }}
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
     </Box>
   );
 };

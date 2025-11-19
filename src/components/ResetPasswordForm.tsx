@@ -8,6 +8,8 @@ import {
   Alert,
   CircularProgress,
   Link,
+  InputAdornment,
+  IconButton,
 } from "@mui/material";
 import {
   Link as RouterLink,
@@ -20,12 +22,15 @@ import { resetPassword } from "../store/authThunks";
 import { clearError } from "../store/authSlice";
 import Header from "./Header";
 import Footer from "./Footer";
+import { Visibility, VisibilityOff } from "@mui/icons-material";
 
 const ResetPasswordForm: React.FC = () => {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [success, setSuccess] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token");
@@ -80,12 +85,12 @@ const ResetPasswordForm: React.FC = () => {
         })
       ).unwrap();
 
-      setSuccess(true);
-
-      // Redirect to login after a short delay
+      setSuccessMessage(
+        "Your password has been reset successfully! Redirecting to login..."
+      );
       setTimeout(() => {
         navigate("/login");
-      }, 3000);
+      }, 2000);
     } catch (error: any) {
       if (error.status === 400 || error.status === 401) {
         setFormError(error.message);
@@ -96,61 +101,6 @@ const ResetPasswordForm: React.FC = () => {
       }
     }
   };
-
-  if (success) {
-    return (
-      <Box
-        sx={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}
-      >
-        <Header />
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            flexGrow: 1,
-            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-            p: 2,
-            pt: { xs: 10, md: 12 }, // Add top padding to account for fixed header
-            minHeight: "calc(100vh - 64px)", // Ensure full height minus header
-          }}
-        >
-          <Paper
-            elevation={3}
-            sx={{
-              p: 4,
-              width: "100%",
-              maxWidth: 400,
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-            }}
-          >
-            <Typography variant="h4" component="h1" gutterBottom>
-              Password Reset Successful
-            </Typography>
-
-            <Alert severity="success" sx={{ width: "100%", mb: 3 }}>
-              Your password has been reset successfully!
-            </Alert>
-
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              You will be redirected to the sign in page shortly...
-            </Typography>
-
-            <Button
-              fullWidth
-              variant="contained"
-              onClick={() => navigate("/login")}
-            >
-              Go to Sign In
-            </Button>
-          </Paper>
-        </Box>
-        <Footer />
-      </Box>
-    );
-  }
 
   if (!token) {
     return (
@@ -242,11 +192,17 @@ const ResetPasswordForm: React.FC = () => {
             </Alert>
           )}
 
+          {successMessage && (
+            <Alert severity="success" sx={{ width: "100%", mb: 2 }}>
+              {successMessage}
+            </Alert>
+          )}
+
           <Box component="form" onSubmit={handleSubmit} sx={{ width: "100%" }}>
             <TextField
               fullWidth
               label="New Password"
-              type="password"
+              type={showPassword ? "text" : "password"}
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               required
@@ -254,12 +210,25 @@ const ResetPasswordForm: React.FC = () => {
               variant="outlined"
               autoComplete="new-password"
               disabled={loading}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label="toggle password visibility"
+                      onClick={() => setShowPassword(!showPassword)}
+                      edge="end"
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
             />
 
             <TextField
               fullWidth
               label="Confirm Password"
-              type="password"
+              type={showConfirmPassword ? "text" : "password"}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
@@ -268,6 +237,21 @@ const ResetPasswordForm: React.FC = () => {
               autoComplete="new-password"
               disabled={loading}
               error={!!passwordError}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label="toggle password visibility"
+                      onClick={() =>
+                        setShowConfirmPassword(!showConfirmPassword)
+                      }
+                      edge="end"
+                    >
+                      {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
             />
 
             <Button

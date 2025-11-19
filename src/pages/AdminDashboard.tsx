@@ -445,13 +445,63 @@ const AdminDashboard: React.FC = () => {
             }}
             open={Boolean(anchorEl)}
             onClose={handleClose}
+            slotProps={{
+              paper: {
+                sx: {
+                  borderRadius: 2,
+                  boxShadow: (theme) => theme.shadows[8],
+                  backgroundColor: (theme) => theme.palette.background.paper,
+                  border: (theme) => `1px solid ${theme.palette.divider}`,
+                  minWidth: 180,
+                  mt: 1,
+                },
+              },
+              transition: {
+                timeout: 200,
+              },
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") handleClose();
+            }}
+            role="menu"
           >
-            <MenuItem onClick={handleSettings}>
-              <Settings sx={{ mr: 1 }} />
+            <MenuItem
+              onClick={handleSettings}
+              sx={{
+                py: 1.5,
+                px: 2,
+                "&:hover": {
+                  backgroundColor: (theme) => theme.palette.action.hover,
+                  transform: "translateX(4px)",
+                  transition: "all 0.2s ease-in-out",
+                },
+                "&:focus": {
+                  backgroundColor: (theme) => theme.palette.action.focus,
+                },
+              }}
+              role="menuitem"
+            >
+              <Settings sx={{ mr: 1.5, fontSize: 20 }} />
               Settings
             </MenuItem>
-            <MenuItem onClick={handleLogout}>
-              <Logout sx={{ mr: 1 }} />
+            <Divider sx={{ my: 0.5 }} />
+            <MenuItem
+              onClick={handleLogout}
+              sx={{
+                py: 1.5,
+                px: 2,
+                "&:hover": {
+                  backgroundColor: (theme) => theme.palette.action.hover,
+                  transform: "translateX(4px)",
+                  transition: "all 0.2s ease-in-out",
+                },
+                "&:focus": {
+                  backgroundColor: (theme) => theme.palette.action.focus,
+                },
+              }}
+              role="menuitem"
+            >
+              <Logout sx={{ mr: 1.5, fontSize: 20 }} />
               Logout
             </MenuItem>
           </Menu>
