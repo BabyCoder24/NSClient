@@ -36,16 +36,13 @@ const findByQuery = async (parameters: Record<string, any>) => {
       }
     });
 
-    const response = await axios.get(
-      `${BASE_URL}/User/query?${params.toString()}`,
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
+    const response = await axios.get(`${BASE_URL}/User?${params.toString()}`, {
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
     console.log(response.status);
     return response.data;
   } catch (error: any) {

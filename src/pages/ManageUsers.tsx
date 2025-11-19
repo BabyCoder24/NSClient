@@ -42,6 +42,8 @@ import {
   type GridColDef,
   GridActionsCellItem,
   type GridRowParams,
+  type GridSortModel,
+  type GridFilterModel,
 } from "@mui/x-data-grid";
 import { alpha } from "@mui/material/styles";
 import {
@@ -78,6 +80,7 @@ import {
   deleteUser,
   adminResetPassword,
 } from "../store/userSlice";
+import UserService from "../services/userService";
 
 const drawerWidth = 240;
 
@@ -115,14 +118,21 @@ const ManageUsers: React.FC = () => {
     firstName: "",
     lastName: "",
     email: "",
-    role: "",
-    isVerified: "",
+    role: "All",
+    isVerified: "All",
   });
   const [mobilePage, setMobilePage] = useState(1);
   const [paginationModel, setPaginationModel] = useState({
     page: 0,
     pageSize: 10,
   });
+  const [sortModel, setSortModel] = useState<GridSortModel>([]);
+  const [filterModel, setFilterModel] = useState<GridFilterModel>({
+    items: [],
+  });
+  const [dataGridRows, setDataGridRows] = useState<User[]>([]);
+  const [dataGridRowCount, setDataGridRowCount] = useState(0);
+  const [refetchTrigger, setRefetchTrigger] = useState(0);
 
   const filterUsers = useCallback(
     (list: User[]) =>
@@ -138,8 +148,8 @@ const ManageUsers: React.FC = () => {
               .includes(filters.lastName.toLowerCase())) &&
           (filters.email === "" ||
             user.email.toLowerCase().includes(filters.email.toLowerCase())) &&
-          (filters.role === "" || user.roleName === filters.role) &&
-          (filters.isVerified === "" ||
+          (filters.role === "All" || user.roleName === filters.role) &&
+          (filters.isVerified === "All" ||
             (user.isVerified ? "Verified" : "Unverified") ===
               filters.isVerified)
       ),
@@ -423,10 +433,44 @@ const ManageUsers: React.FC = () => {
       firstName: "",
       lastName: "",
       email: "",
-      role: "",
-      isVerified: "",
+      role: "All",
+      isVerified: "All",
     });
+    setFilterModel({ items: [] });
     setMobilePage(1);
+  };
+
+  const handleSearch = () => {
+    const items = [];
+    if (filters.firstName)
+      items.push({
+        field: "firstName",
+        operator: "contains",
+        value: filters.firstName,
+      });
+    if (filters.lastName)
+      items.push({
+        field: "lastName",
+        operator: "contains",
+        value: filters.lastName,
+      });
+    if (filters.email)
+      items.push({
+        field: "email",
+        operator: "contains",
+        value: filters.email,
+      });
+    if (filters.role && filters.role !== "All")
+      items.push({
+        field: "roleName",
+        operator: "contains",
+        value: filters.role,
+      });
+    if (filters.isVerified && filters.isVerified !== "All") {
+      const value = filters.isVerified === "Verified" ? "true" : "false";
+      items.push({ field: "isVerified", operator: "equals", value });
+    }
+    setFilterModel({ items });
   };
 
   const handleView = (user: User) => {
@@ -485,6 +529,49 @@ const ManageUsers: React.FC = () => {
     setInitialFormData({});
   };
 
+  const fetchData = useCallback(async () => {
+    try {
+      const params: Record<string, any> = {
+        skip: paginationModel.page * paginationModel.pageSize,
+        take: paginationModel.pageSize,
+      };
+
+      // Add sorting
+      if (sortModel.length > 0) {
+        sortModel.forEach((sort) => {
+          const field =
+            sort.field.charAt(0).toUpperCase() + sort.field.slice(1);
+          params[`sort[field]`] = field;
+          params[`sort[dir]`] = sort.sort;
+        });
+      }
+
+      // Add filtering
+      if (filterModel.items.length > 0) {
+        filterModel.items.forEach((filter) => {
+          const field =
+            filter.field.charAt(0).toUpperCase() + filter.field.slice(1);
+          params[field] = filter.value;
+        });
+      }
+
+      const response = await UserService.findByQuery(params);
+      setDataGridRows(response.records || []);
+      setDataGridRowCount(response.recordCount || 0);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      setSnackbar({
+        open: true,
+        message: "Failed to load users. Please try again.",
+        severity: "error",
+      });
+    }
+  }, [paginationModel, sortModel, filterModel, refetchTrigger]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
   const handleFormSubmit = async () => {
     if (dialogType === "create") {
       if (!isFormValid) {
@@ -500,6 +587,7 @@ const ManageUsers: React.FC = () => {
         const result = await dispatch(
           createUser(formData as CreateUserRequest)
         ).unwrap();
+        setRefetchTrigger((prev) => prev + 1);
         setSnackbar({
           open: true,
           message:
@@ -531,6 +619,7 @@ const ManageUsers: React.FC = () => {
       }
       try {
         await dispatch(updateUser(formData as UpdateUserRequest)).unwrap();
+        setRefetchTrigger((prev) => prev + 1);
         setSnackbar({
           open: true,
           message: "User updated successfully.",
@@ -552,6 +641,7 @@ const ManageUsers: React.FC = () => {
     } else if (dialogType === "delete" && selectedUser) {
       try {
         const result = await dispatch(deleteUser(selectedUser.id)).unwrap();
+        setRefetchTrigger((prev) => prev + 1);
         setSnackbar({
           open: true,
           message: result.message || "User deleted successfully.",
@@ -572,6 +662,7 @@ const ManageUsers: React.FC = () => {
         const result = await dispatch(
           adminResetPassword(selectedUser.id)
         ).unwrap();
+        setRefetchTrigger((prev) => prev + 1);
         setSnackbar({
           open: true,
           message:
@@ -1233,10 +1324,10 @@ const ManageUsers: React.FC = () => {
               >
                 <Box>
                   <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                    Smart Filters
+                    User Filters
                   </Typography>
                   <Typography variant="body2" sx={{ opacity: 0.85 }}>
-                    Quickly narrow down users by name, contact, role, or status.
+                    Quickly narrow down users by name, role, or status.
                   </Typography>
                 </Box>
                 <Box
@@ -1307,7 +1398,7 @@ const ManageUsers: React.FC = () => {
                       id="filter-role"
                       name="filter-role"
                     >
-                      <MenuItem value="">All</MenuItem>
+                      <MenuItem value="All">All</MenuItem>
                       <MenuItem value="Administrator">Administrator</MenuItem>
                       <MenuItem value="Standard User">Standard User</MenuItem>
                     </TextField>
@@ -1323,7 +1414,7 @@ const ManageUsers: React.FC = () => {
                       id="filter-is-verified"
                       name="filter-is-verified"
                     >
-                      <MenuItem value="">All</MenuItem>
+                      <MenuItem value="All">All</MenuItem>
                       <MenuItem value="Verified">Verified</MenuItem>
                       <MenuItem value="Unverified">Unverified</MenuItem>
                     </TextField>
@@ -1336,6 +1427,17 @@ const ManageUsers: React.FC = () => {
                       alignItems: "center",
                     }}
                   >
+                    <Button
+                      variant="contained"
+                      onClick={handleSearch}
+                      sx={{
+                        minWidth: 140,
+                        borderRadius: 999,
+                        px: 3,
+                      }}
+                    >
+                      Search
+                    </Button>
                     <Button
                       variant="outlined"
                       onClick={handleClearFilters}
@@ -1527,7 +1629,7 @@ const ManageUsers: React.FC = () => {
                       }}
                     >
                       <DataGrid
-                        rows={displayedUsers}
+                        rows={dataGridRows}
                         columns={columns}
                         density={gridDensity}
                         rowHeight={gridRowHeight}
@@ -1536,8 +1638,16 @@ const ManageUsers: React.FC = () => {
                         disableColumnResize
                         disableColumnFilter
                         disableColumnMenu
+                        paginationMode="server"
+                        sortingMode="server"
+                        filterMode="server"
                         paginationModel={paginationModel}
                         onPaginationModelChange={setPaginationModel}
+                        sortModel={sortModel}
+                        onSortModelChange={setSortModel}
+                        filterModel={filterModel}
+                        onFilterModelChange={setFilterModel}
+                        rowCount={dataGridRowCount}
                         pageSizeOptions={gridPageSizeOptions}
                         disableRowSelectionOnClick
                         // hideFooterSelectedRowCount
