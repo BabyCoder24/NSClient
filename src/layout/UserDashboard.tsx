@@ -104,7 +104,7 @@ const recentActivities = [
   },
 ];
 
-const Dashboard: React.FC = () => {
+const UserDashboard: React.FC = () => {
   const { user, role } = useSelector((state: RootState) => state.auth);
 
   const displayName = user ? `${user.firstName} ${user.lastName}` : "User";
@@ -524,4 +524,4 @@ const Dashboard: React.FC = () => {
   );
 };
 
-export default Dashboard;
+export default UserDashboard;

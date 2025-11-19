@@ -57,7 +57,7 @@ export default function Header() {
       <Box
         sx={{
           p: 3,
-          background: "linear-gradient(135deg, #1976d2 0%, #1565c0 100%)",
+          background: "linear-gradient(135deg, #2c3e50 0%, #58b8c7 100%)",
           color: "white",
         }}
       >
@@ -97,7 +97,7 @@ export default function Header() {
             >
               <ListItemText
                 primary={item.label}
-                primaryTypographyProps={{ fontWeight: 500 }}
+                slotProps={{ primary: { fontWeight: 500 } }}
               />
             </ListItemButton>
           </ListItem>
@@ -124,9 +124,11 @@ export default function Header() {
               >
                 <ListItemText
                   primary="Login"
-                  primaryTypographyProps={{
-                    fontWeight: 600,
-                    color: "white",
+                  slotProps={{
+                    primary: {
+                      fontWeight: 600,
+                      color: "white",
+                    },
                   }}
                 />
               </ListItemButton>
@@ -153,7 +155,7 @@ export default function Header() {
               >
                 <ListItemText
                   primary="Register"
-                  primaryTypographyProps={{ fontWeight: 600, color: "white" }}
+                  slotProps={{ primary: { fontWeight: 600, color: "white" } }}
                 />
               </ListItemButton>
             </ListItem>
@@ -180,7 +182,7 @@ export default function Header() {
             >
               <ListItemText
                 primary="Logout"
-                primaryTypographyProps={{ fontWeight: 600 }}
+                slotProps={{ primary: { fontWeight: 600 } }}
               />
             </ListItemButton>
           </ListItem>
@@ -196,7 +198,7 @@ export default function Header() {
         component="nav"
         elevation={2}
         sx={{
-          background: "linear-gradient(135deg, #1976d2 0%, #1565c0 100%)",
+          background: "linear-gradient(135deg, #2c3e50 0%, #58b8c7 100%)",
           backdropFilter: "blur(10px)",
         }}
       >

@@ -6,7 +6,7 @@ const Footer: React.FC = () => {
   return (
     <Box
       sx={{
-        bgcolor: "primary.main",
+        background: "linear-gradient(135deg, #00366b 0%, #1a7196 100%)",
         color: "primary.contrastText",
         p: 4,
         mt: "auto",

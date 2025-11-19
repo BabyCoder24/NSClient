@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Box,
-  Container,
   Typography,
   Card,
   CardContent,
@@ -15,16 +14,6 @@ import {
   IconButton,
   useMediaQuery,
   useTheme,
-  Drawer,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-  AppBar,
-  Toolbar,
-  Breadcrumbs,
-  Link as MuiLink,
   Avatar,
   Paper,
   Divider,
@@ -47,16 +36,9 @@ import {
 } from "@mui/x-data-grid";
 import { alpha } from "@mui/material/styles";
 import {
-  Dashboard as DashboardIcon,
   People as PeopleIcon,
   Settings as SettingsIcon,
   Logout,
-  FiberManualRecord,
-  Menu as MenuIcon,
-  Business,
-  Home,
-  NavigateNext,
-  AccountCircle,
   Add,
   Edit,
   Delete,
@@ -68,7 +50,7 @@ import {
   Save,
   Close,
 } from "@mui/icons-material";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import type { RootState, AppDispatch } from "../store/store";
 import { logoutUser } from "../store/authThunks";
@@ -82,10 +64,6 @@ import {
 } from "../store/userSlice";
 import UserService from "../services/userService";
 
-const drawerWidth = 240;
-
-// Static user data removed, now using API
-
 const MOBILE_PAGE_SIZE = 5;
 const DATA_GRID_ROW_HEIGHT = 56;
 const DATA_GRID_ROW_HEIGHT_COMPACT = 48;
@@ -97,18 +75,15 @@ const DATA_GRID_MIN_HEIGHT = 360;
 type DialogType = "view" | "create" | "edit" | "delete" | "reset";
 
 const ManageUsers: React.FC = () => {
-  const { user, accessToken } = useSelector((state: RootState) => state.auth);
   const { users, loading, error } = useSelector(
     (state: RootState) => state.users
   );
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const isSmall = useMediaQuery(theme.breakpoints.down("sm"));
   const isTablet = useMediaQuery(theme.breakpoints.between("sm", "lg"));
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [mobileOpen, setMobileOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogType, setDialogType] = useState<DialogType>("view");
@@ -199,7 +174,7 @@ const ManageUsers: React.FC = () => {
     ? DATA_GRID_HEADER_HEIGHT_COMPACT
     : DATA_GRID_HEADER_HEIGHT;
   const showQuickFilter = !isSmall;
-  const gridContainerMinWidth = isTablet ? "100%" : 680;
+  const gridContainerMinWidth = isTablet ? "100%" : "auto";
 
   const visibleRowCount = useMemo(() => {
     if (displayedUsers.length === 0) {
@@ -383,7 +358,6 @@ const ManageUsers: React.FC = () => {
     };
   }, [isSmall, isTablet]);
 
-  const displayName = user ? `${user.firstName} ${user.lastName}` : "User";
   const gridPageSizeOptions = useMemo(
     () => (isTablet ? [5, 10, 25] : [10, 25, 50]),
     [isTablet]
@@ -401,16 +375,8 @@ const ManageUsers: React.FC = () => {
     }
   }, [error]);
 
-  const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget);
-  };
-
   const handleClose = () => {
     setAnchorEl(null);
-  };
-
-  const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen);
   };
 
   const handleLogout = async () => {
@@ -790,954 +756,692 @@ const ManageUsers: React.FC = () => {
     },
   ];
 
-  const sidebarItems = [
-    { text: "Dashboard", icon: <DashboardIcon />, path: "/admin-dashboard" },
-    { text: "Manage Users", icon: <PeopleIcon />, path: "/manage-users" },
-  ];
-
   return (
-    <Box>
-      {/* Admin Header */}
-      <AppBar
-        position="fixed"
-        elevation={2}
-        sx={{
-          background: "linear-gradient(135deg, #1976d2 0%, #1565c0 100%)",
-          backdropFilter: "blur(10px)",
-          zIndex: (theme) => theme.zIndex.drawer + 1,
+    <>
+      {/* User Menu */}
+      <Menu
+        id="user-menu"
+        anchorEl={anchorEl}
+        anchorOrigin={{
+          vertical: "top",
+          horizontal: "right",
         }}
+        keepMounted
+        transformOrigin={{
+          vertical: "top",
+          horizontal: "right",
+        }}
+        open={Boolean(anchorEl)}
+        onClose={handleClose}
       >
-        <Toolbar sx={{ minHeight: 64 }}>
-          {/* Mobile Menu Button - only show when sidebar is temporary */}
-          {isMobile && (
-            <IconButton
-              color="inherit"
-              aria-label="open drawer"
-              edge="start"
-              onClick={handleDrawerToggle}
-              sx={{
-                mr: 2,
-                "&:hover": { backgroundColor: "rgba(255, 255, 255, 0.1)" },
-              }}
-            >
-              <MenuIcon />
-            </IconButton>
-          )}
+        <MenuItem onClick={handleSettings}>
+          <SettingsIcon sx={{ mr: 1 }} />
+          Settings
+        </MenuItem>
+        <MenuItem onClick={handleLogout}>
+          <Logout sx={{ mr: 1 }} />
+          Logout
+        </MenuItem>
+      </Menu>
 
-          {/* Company Branding - Mobile Only */}
-          <Box
-            sx={{
-              flexGrow: { xs: 1, md: 0 },
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Business sx={{ mr: 1, fontSize: { xs: 22, sm: 26, md: 28 } }} />
-            <Typography
-              variant="h6"
-              component="div"
-              sx={{
-                fontWeight: 600,
-                letterSpacing: 0.5,
-                fontSize: { xs: "1rem", sm: "1.15rem", md: "1.25rem" },
-              }}
-            >
-              NSolutions
-            </Typography>
-          </Box>
-
-          {/* User Menu */}
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: "row",
-              alignItems: "center",
-              marginLeft: "auto",
-              gap: { xs: 0.75, sm: 1 },
-              flexWrap: "nowrap",
-            }}
-          >
-            <Typography
-              variant="body2"
-              noWrap
-              sx={{
-                color: "white",
-                fontSize: { xs: "0.7rem", sm: "0.875rem" },
-                maxWidth: { xs: 110, sm: "none" },
-                textAlign: "right",
-              }}
-            >
-              Welcome, {displayName}
-            </Typography>
-            <IconButton
-              color="inherit"
-              onClick={handleMenu}
-              sx={{
-                "&:hover": { backgroundColor: "rgba(255, 255, 255, 0.1)" },
-              }}
-            >
-              <AccountCircle />
-            </IconButton>
-          </Box>
-        </Toolbar>
-      </AppBar>
-
-      {/* Main Layout with Sidebar and Content */}
-      <Box sx={{ display: "flex" }}>
-        {/* Sidebar */}
-        <Drawer
+      <>
+        {/* Header Section */}
+        <Box
           sx={{
-            width: drawerWidth,
-            flexShrink: 0,
-            "& .MuiDrawer-paper": {
-              width: drawerWidth,
-              boxSizing: "border-box",
-              background: "linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%)",
-              display: "flex",
-              flexDirection: "column",
+            background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
+            borderRadius: 3,
+            p: { xs: 0.5, sm: 1, md: 2 },
+            mb: 4,
+            color: "white",
+            position: "relative",
+            overflow: "hidden",
+            "&::before": {
+              content: '""',
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: "rgba(255, 255, 255, 0.1)",
+              borderRadius: 3,
             },
           }}
-          variant={isMobile ? "temporary" : "permanent"}
-          open={isMobile ? mobileOpen : true}
-          onClose={handleDrawerToggle}
-          anchor="left"
-          ModalProps={{
-            keepMounted: true, // Better open performance on mobile.
-          }}
         >
-          {/* Sidebar Header */}
-          <Box
-            sx={{
-              p: 2,
-              background: "linear-gradient(135deg, #1976d2 0%, #1565c0 100%)",
-              color: "white",
-              display: "flex",
-              alignItems: "center",
-            }}
-          >
-            <Business sx={{ mr: 1 }} />
-            <Typography variant="h6" sx={{ fontWeight: 600 }}>
-              NSolutions
+          <Box sx={{ position: "relative", zIndex: 1 }}>
+            <Typography
+              variant={{ xs: "h4", sm: "h4", md: "h4" } as any}
+              component="h1"
+              gutterBottom
+              sx={{ fontWeight: 700 }}
+            >
+              User Management
+            </Typography>
+            <Typography variant="h6" sx={{ mb: 2, opacity: 0.9 }}>
+              Manage user accounts, roles, and permissions across the system.
             </Typography>
           </Box>
+        </Box>
 
-          <Divider />
-
-          {/* Navigation Menu */}
-          <List sx={{ flexGrow: 1 }}>
-            {sidebarItems.map((item) => (
-              <ListItem key={item.text} disablePadding>
-                <ListItemButton
-                  component={Link}
-                  to={item.path}
-                  onClick={isMobile ? handleDrawerToggle : undefined}
-                >
-                  <ListItemIcon>{item.icon}</ListItemIcon>
-                  <ListItemText primary={item.text} />
-                </ListItemButton>
-              </ListItem>
-            ))}
-          </List>
-
-          {/* Settings Icon at Bottom of Menu */}
-          <Box sx={{ p: 2, mt: "auto" }}>
-            <IconButton
-              onClick={handleMenu}
-              sx={{
-                width: "100%",
-                height: 48,
-                borderRadius: 1,
-                backgroundColor: "rgba(25, 118, 210, 0.1)",
-                "&:hover": {
-                  backgroundColor: "rgba(25, 118, 210, 0.2)",
-                },
-              }}
-            >
-              <SettingsIcon sx={{ fontSize: 24, color: "primary.main" }} />
-            </IconButton>
-          </Box>
-
-          <Divider />
-
-          {/* Footer at Bottom */}
-          <Box
+        {/* Stats Cards - Using CSS Grid for responsive layout */}
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+            gap: { xs: 2, sm: 3, md: 4 },
+            alignItems: "stretch",
+            mb: 4,
+          }}
+        >
+          <Card
             sx={{
-              p: 2,
-              background: "linear-gradient(135deg, #2c3e50 0%, #34495e 100%)",
-              color: "white",
-              textAlign: "center",
+              background: "linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)",
+              "&:hover": {
+                transform: "translateY(-4px)",
+                transition: "0.3s",
+              },
+              height: "100%",
             }}
           >
+            <CardContent>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  flexWrap: "wrap",
+                }}
+              >
+                <PeopleIcon
+                  sx={{
+                    fontSize: { xs: 30, md: 40 },
+                    color: "primary.main",
+                    mr: 2,
+                  }}
+                />
+                <Box>
+                  <Typography
+                    variant={isSmall ? "h5" : "h4"}
+                    color="primary"
+                    sx={{ overflow: "hidden", textOverflow: "ellipsis" }}
+                  >
+                    {users.length}
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ overflow: "hidden", textOverflow: "ellipsis" }}
+                  >
+                    Total Users
+                  </Typography>
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
+          <Card
+            sx={{
+              background: "linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%)",
+              "&:hover": {
+                transform: "translateY(-4px)",
+                transition: "0.3s",
+              },
+              height: "100%",
+            }}
+          >
+            <CardContent>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  flexWrap: "wrap",
+                }}
+              >
+                <CheckCircle
+                  sx={{
+                    fontSize: { xs: 30, md: 40 },
+                    color: "success.main",
+                    mr: 2,
+                  }}
+                />
+                <Box>
+                  <Typography
+                    variant={isSmall ? "h5" : "h4"}
+                    color="success.main"
+                    sx={{ overflow: "hidden", textOverflow: "ellipsis" }}
+                  >
+                    {users.filter((u) => u.isVerified).length}
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ overflow: "hidden", textOverflow: "ellipsis" }}
+                  >
+                    Verified Users
+                  </Typography>
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
+          <Card
+            sx={{
+              background: "linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%)",
+              "&:hover": {
+                transform: "translateY(-4px)",
+                transition: "0.3s",
+              },
+              height: "100%",
+            }}
+          >
+            <CardContent>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  flexWrap: "wrap",
+                }}
+              >
+                <Work
+                  sx={{
+                    fontSize: { xs: 30, md: 40 },
+                    color: "warning.main",
+                    mr: 2,
+                  }}
+                />
+                <Box>
+                  <Typography
+                    variant={isSmall ? "h5" : "h4"}
+                    color="warning.main"
+                    sx={{ overflow: "hidden", textOverflow: "ellipsis" }}
+                  >
+                    {users.filter((u) => u.roleName === "Administrator").length}
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ overflow: "hidden", textOverflow: "ellipsis" }}
+                  >
+                    Administrators
+                  </Typography>
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
+          <Card
+            sx={{
+              background: "linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%)",
+              "&:hover": {
+                transform: "translateY(-4px)",
+                transition: "0.3s",
+              },
+              height: "100%",
+            }}
+          >
+            <CardContent>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  flexWrap: "wrap",
+                }}
+              >
+                <Cancel
+                  sx={{
+                    fontSize: { xs: 30, md: 40 },
+                    color: "error.main",
+                    mr: 2,
+                  }}
+                />
+                <Box>
+                  <Typography
+                    variant={isSmall ? "h5" : "h4"}
+                    color="error.main"
+                    sx={{ overflow: "hidden", textOverflow: "ellipsis" }}
+                  >
+                    {users.filter((u) => !u.isVerified).length}
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ overflow: "hidden", textOverflow: "ellipsis" }}
+                  >
+                    Unverified Users
+                  </Typography>
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
+        </Box>
+
+        {/* Filters Card */}
+        <Card
+          sx={{
+            mb: 3,
+            borderRadius: 3,
+            position: "relative",
+            overflow: "hidden",
+            color: "common.white",
+            background:
+              "linear-gradient(135deg, #1e3c72 0%, #2a5298 45%, #38a3d1 100%)",
+            boxShadow: "0px 18px 42px rgba(30, 64, 175, 0.22)",
+            "&::before": {
+              content: '""',
+              position: "absolute",
+              inset: 0,
+              background:
+                "linear-gradient(180deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0) 70%)",
+            },
+          }}
+        >
+          <CardContent
+            sx={{
+              position: "relative",
+              zIndex: 1,
+              p: { xs: 2, sm: 3 },
+              display: "flex",
+              flexDirection: "column",
+              gap: { xs: 2, sm: 2.5 },
+            }}
+          >
+            <Box>
+              <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                User Filters
+              </Typography>
+              <Typography variant="body2" sx={{ opacity: 0.85 }}>
+                Quickly narrow down users by name, role, or status.
+              </Typography>
+            </Box>
+            <Box
+              sx={{
+                backgroundColor: (theme) =>
+                  alpha(theme.palette.common.white, 0.92),
+                borderRadius: 2,
+                p: { xs: 1.5, sm: 2.5 },
+                boxShadow: "0 12px 32px rgba(15, 23, 42, 0.15)",
+                display: "flex",
+                flexDirection: "column",
+                gap: { xs: 1.5, sm: 2 },
+                color: "text.primary",
+              }}
+            >
+              <Box
+                sx={{
+                  display: "grid",
+                  gap: { xs: 1, sm: 1.5, md: 2 },
+                  gridTemplateColumns: {
+                    xs: "1fr",
+                    sm: "repeat(auto-fit, minmax(200px, 1fr))",
+                  },
+                }}
+              >
+                <TextField
+                  fullWidth
+                  label="First Name"
+                  value={filters.firstName}
+                  onChange={(e) =>
+                    handleFilterChange("firstName", e.target.value)
+                  }
+                  sx={{ minWidth: 0 }}
+                  id="filter-first-name"
+                  name="first-name"
+                />
+                <TextField
+                  fullWidth
+                  label="Last Name"
+                  value={filters.lastName}
+                  onChange={(e) =>
+                    handleFilterChange("lastName", e.target.value)
+                  }
+                  sx={{ minWidth: 0 }}
+                  id="filter-last-name"
+                  name="last-name"
+                />
+                <TextField
+                  fullWidth
+                  label="Email"
+                  value={filters.email}
+                  onChange={(e) => handleFilterChange("email", e.target.value)}
+                  sx={{ minWidth: 0 }}
+                  id="filter-email"
+                  name="filter-email"
+                />
+                <TextField
+                  fullWidth
+                  select
+                  label="Role"
+                  value={filters.role}
+                  onChange={(e) => handleFilterChange("role", e.target.value)}
+                  sx={{ minWidth: 0 }}
+                  id="filter-role"
+                  name="filter-role"
+                >
+                  <MenuItem value="All">All</MenuItem>
+                  <MenuItem value="Administrator">Administrator</MenuItem>
+                  <MenuItem value="Standard User">Standard User</MenuItem>
+                </TextField>
+                <TextField
+                  fullWidth
+                  select
+                  label="Status"
+                  value={filters.isVerified}
+                  onChange={(e) =>
+                    handleFilterChange("isVerified", e.target.value)
+                  }
+                  sx={{ minWidth: 0 }}
+                  id="filter-is-verified"
+                  name="filter-is-verified"
+                >
+                  <MenuItem value="All">All</MenuItem>
+                  <MenuItem value="Verified">Verified</MenuItem>
+                  <MenuItem value="Unverified">Unverified</MenuItem>
+                </TextField>
+              </Box>
+              <Box
+                sx={{
+                  display: "flex",
+                  gap: 1.5,
+                  flexWrap: "wrap",
+                  alignItems: "center",
+                }}
+              >
+                <Button
+                  variant="contained"
+                  onClick={handleSearch}
+                  sx={{
+                    minWidth: 140,
+                    borderRadius: 999,
+                    px: 3,
+                  }}
+                >
+                  Search
+                </Button>
+                <Button
+                  variant="outlined"
+                  onClick={handleClearFilters}
+                  sx={{
+                    minWidth: 140,
+                    borderRadius: 999,
+                    px: 3,
+                    color: "text.primary",
+                    borderColor: (theme) =>
+                      alpha(theme.palette.primary.main, 0.4),
+                    "&:hover": {
+                      borderColor: (theme) => theme.palette.primary.main,
+                      backgroundColor: (theme) =>
+                        alpha(theme.palette.primary.main, 0.08),
+                    },
+                  }}
+                >
+                  Reset
+                </Button>
+              </Box>
+            </Box>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent>
             <Box
               sx={{
                 display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                mb: 1,
-              }}
-            >
-              <FiberManualRecord
-                sx={{
-                  color: accessToken ? "success.main" : "error.main",
-                  fontSize: 12,
-                  mr: 0.5,
-                }}
-              />
-              <Typography variant="body2">NSolutions</Typography>
-            </Box>
-            <Typography variant="caption">
-              © 2025 All rights reserved
-            </Typography>
-          </Box>
-        </Drawer>
-
-        {/* Main content */}
-        <Box component="main" sx={{ flexGrow: 1, width: "100%", pt: 8 }}>
-          {/* User Menu */}
-          <Menu
-            id="user-menu"
-            anchorEl={anchorEl}
-            anchorOrigin={{
-              vertical: "top",
-              horizontal: "right",
-            }}
-            keepMounted
-            transformOrigin={{
-              vertical: "top",
-              horizontal: "right",
-            }}
-            open={Boolean(anchorEl)}
-            onClose={handleClose}
-          >
-            <MenuItem onClick={handleSettings}>
-              <SettingsIcon sx={{ mr: 1 }} />
-              Settings
-            </MenuItem>
-            <MenuItem onClick={handleLogout}>
-              <Logout sx={{ mr: 1 }} />
-              Logout
-            </MenuItem>
-          </Menu>
-
-          <Container maxWidth="xl" sx={{ py: 2, px: { xs: 2, sm: 3, md: 4 } }}>
-            {/* Breadcrumb Navigation */}
-            <Breadcrumbs
-              separator={<NavigateNext fontSize="small" />}
-              sx={{ mb: 3 }}
-              aria-label="breadcrumb"
-            >
-              <MuiLink
-                component={Link}
-                to="/"
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  textDecoration: "none",
-                  color: "text.secondary",
-                  "&:hover": { color: "primary.main" },
-                }}
-              >
-                <Home sx={{ mr: 0.5 }} fontSize="inherit" />
-                Home
-              </MuiLink>
-              <MuiLink
-                component={Link}
-                to="/admin-dashboard"
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  textDecoration: "none",
-                  color: "text.secondary",
-                  "&:hover": { color: "primary.main" },
-                }}
-              >
-                Admin Dashboard
-              </MuiLink>
-              <Typography color="text.primary">Manage Users</Typography>
-            </Breadcrumbs>
-          </Container>
-
-          <Container maxWidth="xl" sx={{ py: 4, px: { xs: 2, sm: 3, md: 4 } }}>
-            {/* Header Section */}
-            <Box
-              sx={{
-                background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
-                borderRadius: 3,
-                p: { xs: 0.5, sm: 1, md: 2 },
-                mb: 4,
-                color: "white",
-                position: "relative",
-                overflow: "hidden",
-                "&::before": {
-                  content: '""',
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  background: "rgba(255, 255, 255, 0.1)",
-                  borderRadius: 3,
-                },
-              }}
-            >
-              <Box sx={{ position: "relative", zIndex: 1 }}>
-                <Typography
-                  variant={{ xs: "h4", sm: "h4", md: "h4" } as any}
-                  component="h1"
-                  gutterBottom
-                  sx={{ fontWeight: 700 }}
-                >
-                  User Management
-                </Typography>
-                <Typography variant="h6" sx={{ mb: 2, opacity: 0.9 }}>
-                  Manage user accounts, roles, and permissions across the
-                  system.
-                </Typography>
-              </Box>
-            </Box>
-
-            {/* Stats Cards - Using CSS Grid for responsive layout */}
-            <Box
-              sx={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-                gap: { xs: 2, sm: 3, md: 4 },
-                alignItems: "stretch",
-                mb: 4,
-              }}
-            >
-              <Card
-                sx={{
-                  background:
-                    "linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)",
-                  "&:hover": {
-                    transform: "translateY(-4px)",
-                    transition: "0.3s",
-                  },
-                  height: "100%",
-                }}
-              >
-                <CardContent>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      flexWrap: "wrap",
-                    }}
-                  >
-                    <PeopleIcon
-                      sx={{
-                        fontSize: { xs: 30, md: 40 },
-                        color: "primary.main",
-                        mr: 2,
-                      }}
-                    />
-                    <Box>
-                      <Typography
-                        variant={isSmall ? "h5" : "h4"}
-                        color="primary"
-                        sx={{ overflow: "hidden", textOverflow: "ellipsis" }}
-                      >
-                        {users.length}
-                      </Typography>
-                      <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        sx={{ overflow: "hidden", textOverflow: "ellipsis" }}
-                      >
-                        Total Users
-                      </Typography>
-                    </Box>
-                  </Box>
-                </CardContent>
-              </Card>
-              <Card
-                sx={{
-                  background:
-                    "linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%)",
-                  "&:hover": {
-                    transform: "translateY(-4px)",
-                    transition: "0.3s",
-                  },
-                  height: "100%",
-                }}
-              >
-                <CardContent>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      flexWrap: "wrap",
-                    }}
-                  >
-                    <CheckCircle
-                      sx={{
-                        fontSize: { xs: 30, md: 40 },
-                        color: "success.main",
-                        mr: 2,
-                      }}
-                    />
-                    <Box>
-                      <Typography
-                        variant={isSmall ? "h5" : "h4"}
-                        color="success.main"
-                        sx={{ overflow: "hidden", textOverflow: "ellipsis" }}
-                      >
-                        {users.filter((u) => u.isVerified).length}
-                      </Typography>
-                      <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        sx={{ overflow: "hidden", textOverflow: "ellipsis" }}
-                      >
-                        Verified Users
-                      </Typography>
-                    </Box>
-                  </Box>
-                </CardContent>
-              </Card>
-              <Card
-                sx={{
-                  background:
-                    "linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%)",
-                  "&:hover": {
-                    transform: "translateY(-4px)",
-                    transition: "0.3s",
-                  },
-                  height: "100%",
-                }}
-              >
-                <CardContent>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      flexWrap: "wrap",
-                    }}
-                  >
-                    <Work
-                      sx={{
-                        fontSize: { xs: 30, md: 40 },
-                        color: "warning.main",
-                        mr: 2,
-                      }}
-                    />
-                    <Box>
-                      <Typography
-                        variant={isSmall ? "h5" : "h4"}
-                        color="warning.main"
-                        sx={{ overflow: "hidden", textOverflow: "ellipsis" }}
-                      >
-                        {
-                          users.filter((u) => u.roleName === "Administrator")
-                            .length
-                        }
-                      </Typography>
-                      <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        sx={{ overflow: "hidden", textOverflow: "ellipsis" }}
-                      >
-                        Administrators
-                      </Typography>
-                    </Box>
-                  </Box>
-                </CardContent>
-              </Card>
-              <Card
-                sx={{
-                  background:
-                    "linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%)",
-                  "&:hover": {
-                    transform: "translateY(-4px)",
-                    transition: "0.3s",
-                  },
-                  height: "100%",
-                }}
-              >
-                <CardContent>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      flexWrap: "wrap",
-                    }}
-                  >
-                    <Cancel
-                      sx={{
-                        fontSize: { xs: 30, md: 40 },
-                        color: "error.main",
-                        mr: 2,
-                      }}
-                    />
-                    <Box>
-                      <Typography
-                        variant={isSmall ? "h5" : "h4"}
-                        color="error.main"
-                        sx={{ overflow: "hidden", textOverflow: "ellipsis" }}
-                      >
-                        {users.filter((u) => !u.isVerified).length}
-                      </Typography>
-                      <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        sx={{ overflow: "hidden", textOverflow: "ellipsis" }}
-                      >
-                        Unverified Users
-                      </Typography>
-                    </Box>
-                  </Box>
-                </CardContent>
-              </Card>
-            </Box>
-
-            {/* Filters Card */}
-            <Card
-              sx={{
+                justifyContent: "space-between",
+                alignItems: { xs: "stretch", md: "center" },
+                flexDirection: { xs: "column", md: "row" },
+                gap: { xs: 1.5, md: 2 },
                 mb: 3,
-                borderRadius: 3,
-                position: "relative",
-                overflow: "hidden",
-                color: "common.white",
-                background:
-                  "linear-gradient(135deg, #1e3c72 0%, #2a5298 45%, #38a3d1 100%)",
-                boxShadow: "0px 18px 42px rgba(30, 64, 175, 0.22)",
-                "&::before": {
-                  content: '""',
-                  position: "absolute",
-                  inset: 0,
-                  background:
-                    "linear-gradient(180deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0) 70%)",
-                },
               }}
             >
-              <CardContent
+              <Typography variant="h6">Users</Typography>
+              <Button
+                variant="contained"
+                startIcon={<Add />}
+                onClick={handleCreate}
                 sx={{
-                  position: "relative",
-                  zIndex: 1,
-                  p: { xs: 2, sm: 3 },
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: { xs: 2, sm: 2.5 },
+                  borderRadius: 2,
+                  width: { xs: "100%", md: "auto" },
+                  alignSelf: { xs: "stretch", md: "center" },
                 }}
               >
-                <Box>
-                  <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                    User Filters
-                  </Typography>
-                  <Typography variant="body2" sx={{ opacity: 0.85 }}>
-                    Quickly narrow down users by name, role, or status.
-                  </Typography>
-                </Box>
-                <Box
-                  sx={{
-                    backgroundColor: (theme) =>
-                      alpha(theme.palette.common.white, 0.92),
-                    borderRadius: 2,
-                    p: { xs: 1.5, sm: 2.5 },
-                    boxShadow: "0 12px 32px rgba(15, 23, 42, 0.15)",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: { xs: 1.5, sm: 2 },
-                    color: "text.primary",
-                  }}
-                >
-                  <Box
-                    sx={{
-                      display: "grid",
-                      gap: { xs: 1, sm: 1.5, md: 2 },
-                      gridTemplateColumns: {
-                        xs: "1fr",
-                        sm: "repeat(auto-fit, minmax(200px, 1fr))",
-                      },
-                    }}
-                  >
-                    <TextField
-                      fullWidth
-                      label="First Name"
-                      value={filters.firstName}
-                      onChange={(e) =>
-                        handleFilterChange("firstName", e.target.value)
-                      }
-                      sx={{ minWidth: 0 }}
-                      id="filter-first-name"
-                      name="first-name"
-                    />
-                    <TextField
-                      fullWidth
-                      label="Last Name"
-                      value={filters.lastName}
-                      onChange={(e) =>
-                        handleFilterChange("lastName", e.target.value)
-                      }
-                      sx={{ minWidth: 0 }}
-                      id="filter-last-name"
-                      name="last-name"
-                    />
-                    <TextField
-                      fullWidth
-                      label="Email"
-                      value={filters.email}
-                      onChange={(e) =>
-                        handleFilterChange("email", e.target.value)
-                      }
-                      sx={{ minWidth: 0 }}
-                      id="filter-email"
-                      name="filter-email"
-                    />
-                    <TextField
-                      fullWidth
-                      select
-                      label="Role"
-                      value={filters.role}
-                      onChange={(e) =>
-                        handleFilterChange("role", e.target.value)
-                      }
-                      sx={{ minWidth: 0 }}
-                      id="filter-role"
-                      name="filter-role"
-                    >
-                      <MenuItem value="All">All</MenuItem>
-                      <MenuItem value="Administrator">Administrator</MenuItem>
-                      <MenuItem value="Standard User">Standard User</MenuItem>
-                    </TextField>
-                    <TextField
-                      fullWidth
-                      select
-                      label="Status"
-                      value={filters.isVerified}
-                      onChange={(e) =>
-                        handleFilterChange("isVerified", e.target.value)
-                      }
-                      sx={{ minWidth: 0 }}
-                      id="filter-is-verified"
-                      name="filter-is-verified"
-                    >
-                      <MenuItem value="All">All</MenuItem>
-                      <MenuItem value="Verified">Verified</MenuItem>
-                      <MenuItem value="Unverified">Unverified</MenuItem>
-                    </TextField>
-                  </Box>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      gap: 1.5,
-                      flexWrap: "wrap",
-                      alignItems: "center",
-                    }}
-                  >
-                    <Button
-                      variant="contained"
-                      onClick={handleSearch}
-                      sx={{
-                        minWidth: 140,
-                        borderRadius: 999,
-                        px: 3,
-                      }}
-                    >
-                      Search
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      onClick={handleClearFilters}
-                      sx={{
-                        minWidth: 140,
-                        borderRadius: 999,
-                        px: 3,
-                        color: "text.primary",
-                        borderColor: (theme) =>
-                          alpha(theme.palette.primary.main, 0.4),
-                        "&:hover": {
-                          borderColor: (theme) => theme.palette.primary.main,
-                          backgroundColor: (theme) =>
-                            alpha(theme.palette.primary.main, 0.08),
-                        },
-                      }}
-                    >
-                      Reset
-                    </Button>
-                  </Box>
-                </Box>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent>
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: { xs: "stretch", md: "center" },
-                    flexDirection: { xs: "column", md: "row" },
-                    gap: { xs: 1.5, md: 2 },
-                    mb: 3,
-                  }}
-                >
-                  <Typography variant="h6">Users</Typography>
-                  <Button
-                    variant="contained"
-                    startIcon={<Add />}
-                    onClick={handleCreate}
-                    sx={{
-                      borderRadius: 2,
-                      width: { xs: "100%", md: "auto" },
-                      alignSelf: { xs: "stretch", md: "center" },
-                    }}
-                  >
-                    Add User
-                  </Button>
-                </Box>
-                {isSmall ? (
-                  <Box
-                    sx={{ display: "flex", flexDirection: "column", gap: 2 }}
-                  >
-                    {mobilePaginatedUsers.length > 0 ? (
-                      mobilePaginatedUsers.map((user) => (
-                        <Card key={user.id} sx={{ p: 2 }}>
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 2,
-                              flexWrap: "wrap",
-                            }}
-                          >
-                            <Avatar sx={{ width: 40, height: 40 }}>
-                              {user.firstName?.[0] || "?"}
-                              {user.lastName?.[0] || ""}
-                            </Avatar>
-                            <Box sx={{ flex: 1, minWidth: 160 }}>
-                              <Typography variant="h6">
-                                {user.firstName} {user.lastName}
-                              </Typography>
-                              <Typography
-                                variant="body2"
-                                color="text.secondary"
-                              >
-                                {user.email}
-                              </Typography>
-                              <Box
-                                sx={{
-                                  display: "flex",
-                                  gap: 1,
-                                  mt: 1,
-                                  flexWrap: "wrap",
-                                }}
-                              >
-                                <Chip
-                                  label={user.roleName || "N/A"}
-                                  color={
-                                    user.roleName === "Administrator"
-                                      ? "error"
-                                      : "default"
-                                  }
-                                  size="small"
-                                />
-                                <Chip
-                                  label={
-                                    user.isVerified ? "Verified" : "Unverified"
-                                  }
-                                  color={user.isVerified ? "success" : "error"}
-                                  size="small"
-                                />
-                              </Box>
-                            </Box>
-                            <Box
-                              sx={{
-                                display: "flex",
-                                gap: 1,
-                                flexWrap: "wrap",
-                                justifyContent: "flex-end",
-                              }}
-                            >
-                              <IconButton
-                                size="small"
-                                onClick={() => handleView(user)}
-                              >
-                                <Visibility />
-                              </IconButton>
-                              <IconButton
-                                size="small"
-                                onClick={() => handleEdit(user)}
-                              >
-                                <Edit />
-                              </IconButton>
-                              <IconButton
-                                size="small"
-                                onClick={() => handlePasswordReset(user)}
-                              >
-                                <LockReset />
-                              </IconButton>
-                              <IconButton
-                                size="small"
-                                onClick={() => handleDelete(user)}
-                              >
-                                <Delete />
-                              </IconButton>
-                            </Box>
-                          </Box>
-                        </Card>
-                      ))
-                    ) : (
-                      <Paper sx={{ p: 3, textAlign: "center" }}>
-                        <Typography variant="body2" color="text.secondary">
-                          No users found with the selected filters.
-                        </Typography>
-                      </Paper>
-                    )}
-                    {mobileTotalPages > 1 && (
+                Add User
+              </Button>
+            </Box>
+            {isSmall ? (
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                {mobilePaginatedUsers.length > 0 ? (
+                  mobilePaginatedUsers.map((user) => (
+                    <Card key={user.id} sx={{ p: 2 }}>
                       <Box
                         sx={{
                           display: "flex",
-                          justifyContent: "center",
-                          mt: 1,
+                          alignItems: "center",
+                          gap: 2,
+                          flexWrap: "wrap",
                         }}
                       >
-                        <Pagination
-                          count={mobileTotalPages}
-                          page={mobilePage}
-                          onChange={(_, value) => setMobilePage(value)}
-                          size="small"
-                          color="primary"
-                          showFirstButton
-                          showLastButton
-                        />
+                        <Avatar sx={{ width: 40, height: 40 }}>
+                          {user.firstName?.[0] || "?"}
+                          {user.lastName?.[0] || ""}
+                        </Avatar>
+                        <Box sx={{ flex: 1, minWidth: 160 }}>
+                          <Typography variant="h6">
+                            {user.firstName} {user.lastName}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            {user.email}
+                          </Typography>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              gap: 1,
+                              mt: 1,
+                              flexWrap: "wrap",
+                            }}
+                          >
+                            <Chip
+                              label={user.roleName || "N/A"}
+                              color={
+                                user.roleName === "Administrator"
+                                  ? "error"
+                                  : "default"
+                              }
+                              size="small"
+                            />
+                            <Chip
+                              label={
+                                user.isVerified ? "Verified" : "Unverified"
+                              }
+                              color={user.isVerified ? "success" : "error"}
+                              size="small"
+                            />
+                          </Box>
+                        </Box>
+                        <Box
+                          sx={{
+                            display: "flex",
+                            gap: 1,
+                            flexWrap: "wrap",
+                            justifyContent: "flex-end",
+                          }}
+                        >
+                          <IconButton
+                            size="small"
+                            onClick={() => handleView(user)}
+                          >
+                            <Visibility />
+                          </IconButton>
+                          <IconButton
+                            size="small"
+                            onClick={() => handleEdit(user)}
+                          >
+                            <Edit />
+                          </IconButton>
+                          <IconButton
+                            size="small"
+                            onClick={() => handlePasswordReset(user)}
+                          >
+                            <LockReset />
+                          </IconButton>
+                          <IconButton
+                            size="small"
+                            onClick={() => handleDelete(user)}
+                          >
+                            <Delete />
+                          </IconButton>
+                        </Box>
                       </Box>
-                    )}
-                  </Box>
+                    </Card>
+                  ))
                 ) : (
-                  <Box sx={{ width: "100%", overflowX: "auto" }}>
-                    <Box
-                      sx={{
-                        minWidth: gridContainerMinWidth,
-                        borderRadius: 3,
-                        border: (theme) =>
-                          `1px solid ${alpha(
-                            theme.palette.primary.main,
-                            0.18
-                          )}`,
-                        boxShadow: "0px 22px 48px rgba(15, 23, 42, 0.16)",
-                        backgroundColor: (theme) =>
-                          theme.palette.mode === "light"
-                            ? theme.palette.background.paper
-                            : alpha(theme.palette.background.paper, 0.9),
-                        display: "flex",
-                        flexDirection: "column",
-                        minHeight: gridContainerMinHeight,
-                        height: gridContainerMinHeight,
-                      }}
-                    >
-                      <DataGrid
-                        rows={dataGridRows}
-                        columns={columns}
-                        density={gridDensity}
-                        rowHeight={gridRowHeight}
-                        columnHeaderHeight={gridHeaderHeight}
-                        showCellVerticalBorder
-                        disableColumnResize
-                        disableColumnFilter
-                        disableColumnMenu
-                        paginationMode="server"
-                        sortingMode="server"
-                        filterMode="server"
-                        paginationModel={paginationModel}
-                        onPaginationModelChange={setPaginationModel}
-                        sortModel={sortModel}
-                        onSortModelChange={setSortModel}
-                        filterModel={filterModel}
-                        onFilterModelChange={setFilterModel}
-                        rowCount={dataGridRowCount}
-                        pageSizeOptions={gridPageSizeOptions}
-                        disableRowSelectionOnClick
-                        // hideFooterSelectedRowCount
-                        columnVisibilityModel={columnVisibilityModel}
-                        loading={loading}
-                        // showToolbar={showToolbar}
-                        slotProps={{
-                          toolbar: {
-                            showQuickFilter,
-                            quickFilterProps: { debounceMs: 300 },
-                          },
-                        }}
-                        sx={(theme) => ({
-                          flexGrow: 1,
-                          width: "100%",
-                          border: 0,
-                          "& .MuiDataGrid-columnHeaders": {
-                            background: `linear-gradient(135deg, ${alpha(
-                              theme.palette.primary.main,
-                              0.08
-                            )} 0%, ${alpha(
-                              theme.palette.primary.main,
-                              0.18
-                            )} 100%)`,
-                            backdropFilter: "blur(6px)",
-                            borderBottom: `1px solid ${alpha(
-                              theme.palette.primary.main,
-                              0.18
-                            )}`,
-                            color: theme.palette.text.primary,
-                            fontWeight: 600,
-                          },
-                          "& .MuiDataGrid-columnHeaderTitle": {
-                            fontSize: "0.95rem",
-                            [theme.breakpoints.down("lg")]: {
-                              fontSize: "0.85rem",
-                            },
-                          },
-                          "& .MuiDataGrid-columnSeparator": {
-                            color: alpha(theme.palette.primary.main, 0.25),
-                          },
-                          "& .MuiDataGrid-cell": {
-                            borderBottom: `1px solid ${alpha(
-                              theme.palette.divider,
-                              0.6
-                            )}`,
-                            fontSize: "0.95rem",
-                            paddingBlock: theme.spacing(1.25),
-                            [theme.breakpoints.down("lg")]: {
-                              fontSize: "0.85rem",
-                              paddingBlock: theme.spacing(0.75),
-                            },
-                          },
-                          "& .MuiDataGrid-cell:focus": {
-                            outline: "none",
-                          },
-                          "& .MuiDataGrid-row:hover": {
-                            backgroundColor: alpha(
-                              theme.palette.primary.main,
-                              0.06
-                            ),
-                          },
-                          "& .MuiDataGrid-virtualScroller": {
-                            overflowX: "auto",
-                            overflowY: "auto",
-                            backgroundColor: "transparent",
-                          },
-                          "& .MuiDataGrid-footerContainer": {
-                            borderTop: `1px solid ${alpha(
-                              theme.palette.primary.main,
-                              0.18
-                            )}`,
-                            backgroundColor: alpha(
-                              theme.palette.background.paper,
-                              0.9
-                            ),
-                            "& .MuiTablePagination-displayedRows": {
-                              fontSize: "0.85rem",
-                            },
-                          },
-                        })}
-                      />
-                    </Box>
+                  <Paper sx={{ p: 3, textAlign: "center" }}>
+                    <Typography variant="body2" color="text.secondary">
+                      No users found with the selected filters.
+                    </Typography>
+                  </Paper>
+                )}
+                {mobileTotalPages > 1 && (
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "center",
+                      mt: 1,
+                    }}
+                  >
+                    <Pagination
+                      count={mobileTotalPages}
+                      page={mobilePage}
+                      onChange={(_, value) => setMobilePage(value)}
+                      size="small"
+                      color="primary"
+                      showFirstButton
+                      showLastButton
+                    />
                   </Box>
                 )}
-              </CardContent>
-            </Card>
-          </Container>
-        </Box>
-      </Box>
+              </Box>
+            ) : (
+              <Box sx={{ width: "100%", overflowX: "auto" }}>
+                <Box
+                  sx={{
+                    minWidth: gridContainerMinWidth,
+                    borderRadius: 3,
+                    border: (theme) =>
+                      `1px solid ${alpha(theme.palette.primary.main, 0.18)}`,
+                    boxShadow: "0px 22px 48px rgba(15, 23, 42, 0.16)",
+                    backgroundColor: (theme) =>
+                      theme.palette.mode === "light"
+                        ? theme.palette.background.paper
+                        : alpha(theme.palette.background.paper, 0.9),
+                    display: "flex",
+                    flexDirection: "column",
+                    minHeight: gridContainerMinHeight,
+                    height: gridContainerMinHeight,
+                  }}
+                >
+                  <DataGrid
+                    rows={dataGridRows}
+                    columns={columns}
+                    density={gridDensity}
+                    rowHeight={gridRowHeight}
+                    columnHeaderHeight={gridHeaderHeight}
+                    showCellVerticalBorder
+                    disableColumnResize
+                    disableColumnFilter
+                    disableColumnMenu
+                    paginationMode="server"
+                    sortingMode="server"
+                    filterMode="server"
+                    paginationModel={paginationModel}
+                    onPaginationModelChange={setPaginationModel}
+                    sortModel={sortModel}
+                    onSortModelChange={setSortModel}
+                    filterModel={filterModel}
+                    onFilterModelChange={setFilterModel}
+                    rowCount={dataGridRowCount}
+                    pageSizeOptions={gridPageSizeOptions}
+                    disableRowSelectionOnClick
+                    // hideFooterSelectedRowCount
+                    columnVisibilityModel={columnVisibilityModel}
+                    loading={loading}
+                    // showToolbar={showToolbar}
+                    slotProps={{
+                      toolbar: {
+                        showQuickFilter,
+                        quickFilterProps: { debounceMs: 300 },
+                      },
+                    }}
+                    sx={(theme) => ({
+                      flexGrow: 1,
+                      width: "100%",
+                      border: 0,
+                      "& .MuiDataGrid-columnHeaders": {
+                        background: `linear-gradient(135deg, ${alpha(
+                          theme.palette.primary.main,
+                          0.08
+                        )} 0%, ${alpha(
+                          theme.palette.primary.main,
+                          0.18
+                        )} 100%)`,
+                        backdropFilter: "blur(6px)",
+                        borderBottom: `1px solid ${alpha(
+                          theme.palette.primary.main,
+                          0.18
+                        )}`,
+                        color: theme.palette.text.primary,
+                        fontWeight: 600,
+                      },
+                      "& .MuiDataGrid-columnHeaderTitle": {
+                        fontSize: "0.95rem",
+                        [theme.breakpoints.down("lg")]: {
+                          fontSize: "0.85rem",
+                        },
+                      },
+                      "& .MuiDataGrid-columnSeparator": {
+                        color: alpha(theme.palette.primary.main, 0.25),
+                      },
+                      "& .MuiDataGrid-cell": {
+                        borderBottom: `1px solid ${alpha(
+                          theme.palette.divider,
+                          0.6
+                        )}`,
+                        fontSize: "0.95rem",
+                        paddingBlock: theme.spacing(1.25),
+                        [theme.breakpoints.down("lg")]: {
+                          fontSize: "0.85rem",
+                          paddingBlock: theme.spacing(0.75),
+                        },
+                      },
+                      "& .MuiDataGrid-cell:focus": {
+                        outline: "none",
+                      },
+                      "& .MuiDataGrid-row:hover": {
+                        backgroundColor: alpha(
+                          theme.palette.primary.main,
+                          0.06
+                        ),
+                      },
+                      "& .MuiDataGrid-virtualScroller": {
+                        overflowX: "auto",
+                        overflowY: "auto",
+                        backgroundColor: "transparent",
+                      },
+                      "& .MuiDataGrid-footerContainer": {
+                        borderTop: `1px solid ${alpha(
+                          theme.palette.primary.main,
+                          0.18
+                        )}`,
+                        backgroundColor: alpha(
+                          theme.palette.background.paper,
+                          0.9
+                        ),
+                        "& .MuiTablePagination-displayedRows": {
+                          fontSize: "0.85rem",
+                        },
+                      },
+                    })}
+                  />
+                </Box>
+              </Box>
+            )}
+          </CardContent>
+        </Card>
+      </>
 
       {/* User Dialog */}
       <Dialog
@@ -1750,6 +1454,7 @@ const ManageUsers: React.FC = () => {
         }}
         maxWidth="md"
         fullWidth
+        fullScreen={isSmall}
         disableEscapeKeyDown
         PaperProps={{
           sx: {
@@ -2212,7 +1917,7 @@ const ManageUsers: React.FC = () => {
           {snackbar.message}
         </Alert>
       </Snackbar>
-    </Box>
+    </>
   );
 };
 

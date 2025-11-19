@@ -161,7 +161,7 @@ const SetPasswordForm: React.FC = () => {
           justifyContent: "center",
           alignItems: "center",
           flexGrow: 1,
-          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+          background: "linear-gradient(135deg, #a0d1ff 0%, #0d6abf 100%)",
           p: 2,
           pt: { xs: 10, md: 12 },
           minHeight: "calc(100vh - 64px)",
