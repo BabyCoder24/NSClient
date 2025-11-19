@@ -35,6 +35,7 @@ import {
   Pagination,
   FormControlLabel,
   Checkbox,
+  CircularProgress,
 } from "@mui/material";
 import {
   DataGrid,
@@ -549,9 +550,23 @@ const ManageUsers: React.FC = () => {
         return;
       }
     } else if (dialogType === "delete" && selectedUser) {
-      dispatch(deleteUser(selectedUser.id));
-      dispatch(fetchUsers());
-      handleDialogClose();
+      try {
+        const result = await dispatch(deleteUser(selectedUser.id)).unwrap();
+        setSnackbar({
+          open: true,
+          message: result.message || "User deleted successfully.",
+          severity: "success",
+        });
+        dispatch(fetchUsers());
+        handleDialogClose();
+      } catch (err: unknown) {
+        const errorMessage = (err as any)?.message || "Failed to delete user.";
+        setSnackbar({
+          open: true,
+          message: errorMessage,
+          severity: "error",
+        });
+      }
     } else if (dialogType === "reset" && selectedUser) {
       try {
         const result = await dispatch(
@@ -2059,10 +2074,14 @@ const ManageUsers: React.FC = () => {
                 )
               }
             >
-              {dialogType === "create" && "Create User"}
-              {dialogType === "edit" && "Save Changes"}
-              {dialogType === "delete" && "Delete User"}
-              {dialogType === "reset" && "Send Reset Email"}
+              {loading ? (
+                <CircularProgress size={24} color="inherit" />
+              ) : (
+                (dialogType === "create" && "Create User") ||
+                (dialogType === "edit" && "Save Changes") ||
+                (dialogType === "delete" && "Delete User") ||
+                (dialogType === "reset" && "Send Reset Email")
+              )}
             </Button>
           )}
         </DialogActions>

@@ -41,8 +41,8 @@ export const updateUser = createAsyncThunk(
 export const deleteUser = createAsyncThunk(
   "users/deleteUser",
   async (id: number) => {
-    await deleteUserAPI(id);
-    return id;
+    const response = await deleteUserAPI(id);
+    return { id, message: response };
   }
 );
 
@@ -128,7 +128,9 @@ const userSlice = createSlice({
       })
       .addCase(deleteUser.fulfilled, (state, action) => {
         state.loading = false;
-        state.users = state.users.filter((user) => user.id !== action.payload);
+        state.users = state.users.filter(
+          (user) => user.id !== action.payload.id
+        );
       })
       .addCase(deleteUser.rejected, (state, action) => {
         state.loading = false;
