@@ -21,6 +21,7 @@ import ForgotPasswordForm from "./components/ForgotPasswordForm";
 import ResetPasswordForm from "./components/ResetPasswordForm";
 import Unauthorized from "./pages/Unauthorized";
 import ProtectedRoute from "./components/ProtectedRoute";
+import CrudDashboard from "./CrudDashboard";
 
 // Store
 import { store } from "./store/store";
@@ -36,6 +37,7 @@ function App() {
           <Routes>
             {/* Public routes */}
             <Route path="/" element={<Home />} />
+            <Route path="/crud-dashboard/*" element={<CrudDashboard />} />
             <Route path="/about" element={<About />} />
             <Route path="/products" element={<Products />} />
             <Route path="/services" element={<Services />} />
@@ -53,7 +55,7 @@ function App() {
 
             {/* Protected routes */}
             <Route
-              path="/admin-dashboard"
+              path="/admin-dashboard/*"
               element={
                 <ProtectedRoute requiredRole="Administrator">
                   <AdminDashboard />

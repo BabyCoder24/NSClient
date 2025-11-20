@@ -22,6 +22,7 @@ import { logoutUser } from "../store/authThunks";
 const drawerWidth = 240;
 const navItems = [
   { label: "Home", to: "/" },
+  { label: "CRUD Dashboard", to: "/crud-dashboard" },
   { label: "About", to: "/about" },
   { label: "Products", to: "/products" },
   { label: "Services", to: "/services" },
