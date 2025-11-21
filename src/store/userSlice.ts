@@ -95,6 +95,7 @@ const userSlice = createSlice({
           roleId: 2, // Default to Standard User
           clientId: undefined,
           isVerified: userResponse.isVerified,
+          isActive: userResponse.isActive,
           createdAt: userResponse.createdAt,
           updatedAt: undefined,
           roleName: undefined,

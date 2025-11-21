@@ -26,6 +26,7 @@ import DevicesIcon from "@mui/icons-material/Devices";
 import LogoutIcon from "@mui/icons-material/Logout";
 import ShieldOutlinedIcon from "@mui/icons-material/ShieldOutlined";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import CancelIcon from "@mui/icons-material/Cancel";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import type { RootState, AppDispatch } from "../store/store";
@@ -225,9 +226,13 @@ const Settings: React.FC = () => {
                 Status
               </Typography>
               <Stack direction="row" spacing={1} alignItems="center">
-                <CheckCircleIcon fontSize="small" />
+                {user?.isActive ? (
+                  <CheckCircleIcon fontSize="small" />
+                ) : (
+                  <CancelIcon fontSize="small" sx={{ color: "error.main" }} />
+                )}
                 <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                  Active
+                  {user?.isActive ? "Active" : "Inactive"}
                 </Typography>
               </Stack>
             </Grid>

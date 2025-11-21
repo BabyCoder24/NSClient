@@ -11,6 +11,7 @@ export interface User {
   createdAt: string; // ISO date string
   updatedAt?: string;
   roleName?: string;
+  isActive: boolean;
 }
 
 export interface CreateUserRequest {
@@ -31,6 +32,7 @@ export interface UserResponse {
   email: string;
   isVerified: boolean;
   createdAt: string;
+  isActive: boolean;
 }
 
 export interface UpdateUserRequest {
@@ -43,4 +45,5 @@ export interface UpdateUserRequest {
   isVerified?: boolean;
   roleId: number;
   clientId?: number;
+  isActive?: boolean;
 }

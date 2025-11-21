@@ -120,6 +120,7 @@ const authSlice = createSlice({
               ] === "User"
                 ? 2
                 : 0,
+            isActive: true,
           };
         } catch (error) {
           // If token is invalid, clear it

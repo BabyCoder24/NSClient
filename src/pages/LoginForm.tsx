@@ -76,7 +76,12 @@ const LoginForm: React.FC = () => {
       // Navigation handled by useEffect on role change
     } catch (error: any) {
       console.error("Login error:", error);
-      if (error.status === 400 || error.status === 401) {
+      if (error.message === "Account is deactivated.") {
+        console.log("Deactivated account login attempt:", usernameOrEmail);
+        setFormError(
+          "Your account has been deactivated. Please contact support."
+        );
+      } else if (error.status === 400 || error.status === 401) {
         setFormError(error.message);
       } else if (error.kind === "network") {
         setFormError(error.message);

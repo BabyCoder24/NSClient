@@ -50,6 +50,7 @@ import {
   Cancel,
   Save,
   Close,
+  Person,
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
@@ -98,6 +99,7 @@ const ManageUsers: React.FC = () => {
     email: "",
     role: "All",
     isVerified: "All",
+    isActive: "All",
   });
   const [mobilePage, setMobilePage] = useState(1);
   const [paginationModel, setPaginationModel] = useState({
@@ -129,7 +131,9 @@ const ManageUsers: React.FC = () => {
           (filters.role === "All" || user.roleName === filters.role) &&
           (filters.isVerified === "All" ||
             (user.isVerified ? "Verified" : "Unverified") ===
-              filters.isVerified)
+              filters.isVerified) &&
+          (filters.isActive === "All" ||
+            (user.isActive ? "Active" : "Inactive") === filters.isActive)
       ),
     [filters]
   );
@@ -266,7 +270,8 @@ const ManageUsers: React.FC = () => {
         initialFormData.username !== formData.username ||
         initialFormData.email !== formData.email ||
         initialFormData.companyName !== formData.companyName ||
-        initialFormData.roleId !== formData.roleId
+        initialFormData.roleId !== formData.roleId ||
+        initialFormData.isActive !== formData.isActive
       );
     }
     return false;
@@ -307,6 +312,10 @@ const ManageUsers: React.FC = () => {
               value: selectedUser.isVerified ? "Verified" : "Unverified",
             },
             {
+              label: "Active",
+              value: selectedUser.isActive ? "Active" : "Inactive",
+            },
+            {
               label: "Created At",
               value: new Date(selectedUser.createdAt).toLocaleDateString(),
             },
@@ -331,6 +340,7 @@ const ManageUsers: React.FC = () => {
         email: false,
         roleName: false,
         isVerified: true,
+        isActive: true,
         createdAt: false,
         updatedAt: false,
       };
@@ -345,6 +355,7 @@ const ManageUsers: React.FC = () => {
         email: false,
         roleName: true,
         isVerified: true,
+        isActive: true,
         createdAt: false,
         updatedAt: false,
       };
@@ -358,6 +369,7 @@ const ManageUsers: React.FC = () => {
       email: true,
       roleName: true,
       isVerified: true,
+      isActive: true,
       createdAt: true,
       updatedAt: false,
     };
@@ -406,6 +418,7 @@ const ManageUsers: React.FC = () => {
       email: "",
       role: "All",
       isVerified: "All",
+      isActive: "All",
     });
     setFilterModel({ items: [] });
     setMobilePage(1);
@@ -441,6 +454,10 @@ const ManageUsers: React.FC = () => {
       const value = filters.isVerified === "Verified" ? "true" : "false";
       items.push({ field: "isVerified", operator: "equals", value });
     }
+    if (filters.isActive && filters.isActive !== "All") {
+      const value = filters.isActive === "Active" ? "true" : "false";
+      items.push({ field: "isActive", operator: "equals", value });
+    }
     setFilterModel({ items });
   };
 
@@ -473,6 +490,7 @@ const ManageUsers: React.FC = () => {
       username: user.username,
       email: user.email,
       isVerified: user.isVerified,
+      isActive: user.isActive,
       roleId: user.roleId,
     };
     setFormData(data);
@@ -712,6 +730,19 @@ const ManageUsers: React.FC = () => {
       ),
     },
     {
+      field: "isActive",
+      headerName: "Active",
+      flex: 0,
+      minWidth: 80,
+      renderCell: (params) => (
+        <Chip
+          label={params.value ? "Active" : "Inactive"}
+          color={params.value ? "success" : "error"}
+          size="small"
+        />
+      ),
+    },
+    {
       field: "createdAt",
       headerName: "Created At",
       flex: 1,
@@ -933,6 +964,50 @@ const ManageUsers: React.FC = () => {
             </Card>
             <Card
               sx={{
+                background: "linear-gradient(135deg, #e1f5fe 0%, #b3e5fc 100%)",
+                "&:hover": {
+                  transform: "translateY(-4px)",
+                  transition: "0.3s",
+                },
+                height: "100%",
+              }}
+            >
+              <CardContent>
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <Person
+                    sx={{
+                      fontSize: { xs: 30, md: 40 },
+                      color: "info.main",
+                      mr: 2,
+                    }}
+                  />
+                  <Box>
+                    <Typography
+                      variant={isSmall ? "h5" : "h4"}
+                      color="info.main"
+                      sx={{ overflow: "hidden", textOverflow: "ellipsis" }}
+                    >
+                      {users.filter((u) => u.isActive).length}
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ overflow: "hidden", textOverflow: "ellipsis" }}
+                    >
+                      Active Users
+                    </Typography>
+                  </Box>
+                </Box>
+              </CardContent>
+            </Card>
+            <Card
+              sx={{
                 background: "linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%)",
                 "&:hover": {
                   transform: "translateY(-4px)",
@@ -1147,6 +1222,22 @@ const ManageUsers: React.FC = () => {
                     <MenuItem value="Verified">Verified</MenuItem>
                     <MenuItem value="Unverified">Unverified</MenuItem>
                   </TextField>
+                  <TextField
+                    fullWidth
+                    select
+                    label="Active"
+                    value={filters.isActive}
+                    onChange={(e) =>
+                      handleFilterChange("isActive", e.target.value)
+                    }
+                    sx={{ minWidth: 0 }}
+                    id="filter-is-active"
+                    name="filter-is-active"
+                  >
+                    <MenuItem value="All">All</MenuItem>
+                    <MenuItem value="Active">Active</MenuItem>
+                    <MenuItem value="Inactive">Inactive</MenuItem>
+                  </TextField>
                 </Box>
                 <Box
                   sx={{
@@ -1264,6 +1355,11 @@ const ManageUsers: React.FC = () => {
                                   user.isVerified ? "Verified" : "Unverified"
                                 }
                                 color={user.isVerified ? "success" : "error"}
+                                size="small"
+                              />
+                              <Chip
+                                label={user.isActive ? "Active" : "Inactive"}
+                                color={user.isActive ? "success" : "error"}
                                 size="small"
                               />
                             </Box>
@@ -1851,6 +1947,21 @@ const ManageUsers: React.FC = () => {
                         />
                       }
                       label="Verified"
+                    />
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={formData.isActive || false}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              isActive: e.target.checked,
+                            })
+                          }
+                        />
+                      }
+                      label="Active"
+                      sx={{ ml: 2 }}
                     />
                   </Box>
                 )}

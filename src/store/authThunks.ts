@@ -53,6 +53,7 @@ export const loginUser = createAsyncThunk(
           ] === "User"
             ? 2
             : 0, // Map role to ID
+        isActive: true,
       };
 
       const role =
@@ -247,6 +248,7 @@ export const refreshToken = createAsyncThunk(
           ] === "User"
             ? 2
             : 0,
+        isActive: true,
       };
 
       const role =

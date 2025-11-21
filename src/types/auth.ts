@@ -7,6 +7,7 @@ export interface AuthUser {
   lastName?: string;
   companyName?: string;
   roleId?: number;
+  isActive?: boolean;
 }
 
 export interface AuthState {
