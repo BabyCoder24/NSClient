@@ -20,6 +20,12 @@ import AdminSidebarNavigation from "../components/adminDashboard/AdminSidebarNav
 import AdminSidebarFooter from "../components/adminDashboard/AdminSidebarFooter";
 import ManageUsers from "./ManageUsers";
 import Dashboard from "./Dashboard";
+import Settings from "./Settings";
+import PageContainer from "../components/PageContainer";
+import {
+  ADMIN_DASHBOARD_OVERVIEW_PATH,
+  ADMIN_DASHBOARD_SETTINGS_PATH,
+} from "../constants";
 
 const AdminDashboard: React.FC = () => {
   const { user, accessToken, role } = useSelector(
@@ -51,7 +57,7 @@ const AdminDashboard: React.FC = () => {
   };
 
   const handleSettings = () => {
-    navigate("/settings");
+    navigate(ADMIN_DASHBOARD_SETTINGS_PATH);
     handleMenuClose();
   };
 
@@ -137,6 +143,26 @@ const AdminDashboard: React.FC = () => {
             <Route index element={<Navigate to="overview" replace />} />
             <Route path="overview" element={<Dashboard />} />
             <Route path="manage-users" element={<ManageUsers />} />
+            <Route
+              path="settings"
+              element={
+                <PageContainer
+                  title="Settings"
+                  maxWidth="xl"
+                  breadcrumbs={[
+                    {
+                      title: "Admin Dashboard",
+                      path: ADMIN_DASHBOARD_OVERVIEW_PATH,
+                    },
+                    { title: "Settings" },
+                  ]}
+                >
+                  <Stack spacing={4} sx={{ my: 0 }}>
+                    <Settings />
+                  </Stack>
+                </PageContainer>
+              }
+            />
             <Route path="*" element={<Navigate to="overview" replace />} />
           </Route>
         </Routes>

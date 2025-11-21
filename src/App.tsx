@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import { Provider } from "react-redux";
@@ -12,7 +12,6 @@ import Services from "./pages/Services";
 import Contact from "./pages/Contact";
 import UserDashboard from "./layout/UserDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
-import Settings from "./pages/Settings";
 import LoginForm from "./pages/LoginForm";
 import RegisterForm from "./pages/RegisterForm";
 import CompleteRegistrationForm from "./pages/CompleteRegistrationForm";
@@ -90,7 +89,7 @@ function App() {
               path="/settings"
               element={
                 <ProtectedRoute>
-                  <Settings />
+                  <Navigate to="/admin-dashboard/settings" replace />
                 </ProtectedRoute>
               }
             />

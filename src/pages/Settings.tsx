@@ -1,455 +1,491 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
+  Avatar,
   Box,
-  Container,
-  Typography,
+  Button,
   Card,
   CardContent,
-  TextField,
-  Button,
-  Avatar,
+  Chip,
   Divider,
-  Grid,
-  Switch,
   FormControlLabel,
-  Drawer,
+  Grid,
   List,
   ListItem,
-  ListItemButton,
-  ListItemIcon,
+  ListItemAvatar,
   ListItemText,
-  IconButton,
-  Menu,
-  MenuItem,
-  Breadcrumbs,
-  Link as MuiLink,
-  useMediaQuery,
-  useTheme,
-  AppBar,
-  Toolbar,
+  Stack,
+  Switch,
+  TextField,
+  Typography,
 } from "@mui/material";
-import {
-  Dashboard as DashboardIcon,
-  People as PeopleIcon,
-  Person,
-  Settings as SettingsIcon,
-  Logout,
-  FiberManualRecord,
-  Menu as MenuIcon,
-  Business,
-  Home,
-  NavigateNext,
-  AccountCircle,
-} from "@mui/icons-material";
-import { Link, useNavigate } from "react-router-dom";
+import SaveIcon from "@mui/icons-material/Save";
+import PersonIcon from "@mui/icons-material/Person";
+import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
+import LockResetIcon from "@mui/icons-material/LockReset";
+import DevicesIcon from "@mui/icons-material/Devices";
+import LogoutIcon from "@mui/icons-material/Logout";
+import ShieldOutlinedIcon from "@mui/icons-material/ShieldOutlined";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import { useSelector, useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import type { RootState, AppDispatch } from "../store/store";
 import { logoutUser } from "../store/authThunks";
 
-const drawerWidth = 240;
+type PreferenceKey =
+  | "emailNotifications"
+  | "smsNotifications"
+  | "pushNotifications"
+  | "darkMode"
+  | "twoFactor";
 
 const Settings: React.FC = () => {
-  const { user, role, accessToken } = useSelector(
-    (state: RootState) => state.auth
-  );
+  const { user, role } = useSelector((state: RootState) => state.auth);
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [mobileOpen, setMobileOpen] = useState(false);
 
   const displayName = user ? `${user.firstName} ${user.lastName}` : "User";
+  const avatarInitials = useMemo(() => {
+    if (!user) {
+      return "U";
+    }
+    return (
+      `${user.firstName?.[0] ?? ""}${user.lastName?.[0] ?? ""}`.toUpperCase() ||
+      "U"
+    );
+  }, [user]);
 
-  const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget);
+  const [profileForm, setProfileForm] = useState({
+    firstName: user?.firstName ?? "",
+    lastName: user?.lastName ?? "",
+    email: user?.email ?? "",
+    username: user?.username ?? "",
+    companyName: user?.companyName ?? "",
+  });
+
+  useEffect(() => {
+    setProfileForm({
+      firstName: user?.firstName ?? "",
+      lastName: user?.lastName ?? "",
+      email: user?.email ?? "",
+      username: user?.username ?? "",
+      companyName: user?.companyName ?? "",
+    });
+  }, [user]);
+
+  const [profileSaving, setProfileSaving] = useState(false);
+  const handleProfileInputChange =
+    (field: keyof typeof profileForm) =>
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      setProfileForm((prev) => ({ ...prev, [field]: event.target.value }));
+    };
+
+  const handleProfileSave = () => {
+    setProfileSaving(true);
+    window.setTimeout(() => setProfileSaving(false), 900);
   };
 
-  const handleClose = () => {
-    setAnchorEl(null);
-  };
+  const [preferences, setPreferences] = useState<
+    Record<PreferenceKey, boolean>
+  >({
+    emailNotifications: true,
+    smsNotifications: false,
+    pushNotifications: true,
+    darkMode: false,
+    twoFactor: true,
+  });
 
-  const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen);
-  };
+  const handlePreferenceToggle =
+    (key: PreferenceKey) =>
+    (_event: React.ChangeEvent<HTMLInputElement>, checked: boolean) => {
+      setPreferences((prev) => ({ ...prev, [key]: checked }));
+    };
+
+  const activeSessions = useMemo(
+    () => [
+      {
+        id: 1,
+        device: "MacBook Pro",
+        location: "Lagos, Nigeria",
+        lastActive: "2 minutes ago",
+        current: true,
+      },
+      {
+        id: 2,
+        device: "iPhone 15",
+        location: "Abuja, Nigeria",
+        lastActive: "1 hour ago",
+        current: false,
+      },
+      {
+        id: 3,
+        device: "Windows Desktop",
+        location: "London, UK",
+        lastActive: "Yesterday",
+        current: false,
+      },
+    ],
+    []
+  );
 
   const handleLogout = async () => {
     await dispatch(logoutUser());
     navigate("/login");
-    handleClose();
   };
 
-  const handleSettings = () => {
-    navigate("/settings");
-    handleClose();
-  };
-
-  const sidebarItems = [
-    { text: "Dashboard", icon: <DashboardIcon />, path: "/admin-dashboard" },
-    { text: "Manage Users", icon: <PeopleIcon />, path: "/manage-users" },
-  ];
+  const lastLoginLabel = user ? "Moments ago" : "Just now";
 
   return (
-    <Box>
-      {/* Admin Header */}
-      <AppBar
-        position="fixed"
-        elevation={2}
+    <Stack spacing={4} sx={{ width: "100%" }}>
+      <Card
         sx={{
-          background: "linear-gradient(135deg, #1976d2 0%, #1565c0 100%)",
-          backdropFilter: "blur(10px)",
-          zIndex: (theme) => theme.zIndex.drawer + 1,
+          borderRadius: 3,
+          background: (theme) =>
+            `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 90%)`,
+          color: "common.white",
+          overflow: "hidden",
         }}
       >
-        <Toolbar sx={{ minHeight: 64 }}>
-          {/* Mobile Menu Button - only show when sidebar is temporary */}
-          {isMobile && (
-            <IconButton
-              color="inherit"
-              aria-label="open drawer"
-              edge="start"
-              onClick={handleDrawerToggle}
-              sx={{
-                mr: 2,
-                "&:hover": { backgroundColor: "rgba(255, 255, 255, 0.1)" },
-              }}
-            >
-              <MenuIcon />
-            </IconButton>
-          )}
-
-          {/* Company Branding - Mobile Only */}
-          <Box
-            sx={{
-              flexGrow: { xs: 1, md: 0 },
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
+        <CardContent sx={{ p: { xs: 3, md: 4 } }}>
+          <Stack
+            direction={{ xs: "column", md: "row" }}
+            spacing={3}
+            alignItems={{ xs: "flex-start", md: "center" }}
           >
-            <Business sx={{ mr: 1, fontSize: 28 }} />
-            <Typography
-              variant="h6"
-              component="div"
-              sx={{
-                fontWeight: 600,
-                letterSpacing: 0.5,
-              }}
-            >
-              NSolutions
-            </Typography>
-          </Box>
-
-          {/* User Menu */}
-          <Box
-            sx={{ display: "flex", alignItems: "center", marginLeft: "auto" }}
-          >
-            <Typography
-              variant="body1"
-              sx={{
-                mr: 1,
-                color: "white",
-              }}
-            >
-              Welcome, {displayName}
-            </Typography>
-            <IconButton
-              color="inherit"
-              onClick={handleMenu}
-              sx={{
-                "&:hover": { backgroundColor: "rgba(255, 255, 255, 0.1)" },
-              }}
-            >
-              <AccountCircle />
-            </IconButton>
-          </Box>
-        </Toolbar>
-      </AppBar>
-
-      {/* Main Layout with Sidebar and Content */}
-      <Box sx={{ display: "flex" }}>
-        {/* Sidebar */}
-        <Drawer
-          sx={{
-            width: drawerWidth,
-            flexShrink: 0,
-            "& .MuiDrawer-paper": {
-              width: drawerWidth,
-              boxSizing: "border-box",
-              background: "linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%)",
-              display: "flex",
-              flexDirection: "column",
-            },
-          }}
-          variant={isMobile ? "temporary" : "permanent"}
-          open={isMobile ? mobileOpen : true}
-          onClose={handleDrawerToggle}
-          anchor="left"
-          ModalProps={{
-            keepMounted: true,
-          }}
-        >
-          {/* Sidebar Header */}
-          <Box
-            sx={{
-              p: 2,
-              background: "linear-gradient(135deg, #1976d2 0%, #1565c0 100%)",
-              color: "white",
-              display: "flex",
-              alignItems: "center",
-            }}
-          >
-            <Business sx={{ mr: 1 }} />
-            <Typography variant="h6" sx={{ fontWeight: 600 }}>
-              NSolutions
-            </Typography>
-          </Box>
-
-          <Divider />
-
-          {/* Navigation Menu */}
-          <List sx={{ flexGrow: 1 }}>
-            {sidebarItems.map((item) => (
-              <ListItem key={item.text} disablePadding>
-                <ListItemButton
-                  component={Link}
-                  to={item.path}
-                  onClick={isMobile ? handleDrawerToggle : undefined}
-                >
-                  <ListItemIcon>{item.icon}</ListItemIcon>
-                  <ListItemText primary={item.text} />
-                </ListItemButton>
-              </ListItem>
-            ))}
-          </List>
-
-          {/* Settings Icon at Bottom of Menu */}
-          <Box sx={{ p: 2, mt: "auto" }}>
-            <IconButton
-              onClick={handleMenu}
-              sx={{
-                width: "100%",
-                height: 48,
-                borderRadius: 1,
-                backgroundColor: "rgba(25, 118, 210, 0.1)",
-                "&:hover": {
-                  backgroundColor: "rgba(25, 118, 210, 0.2)",
-                },
-              }}
-            >
-              <SettingsIcon sx={{ fontSize: 24, color: "primary.main" }} />
-            </IconButton>
-          </Box>
-
-          <Divider />
-
-          {/* Footer at Bottom */}
-          <Box
-            sx={{
-              p: 2,
-              background: "linear-gradient(135deg, #2c3e50 0%, #34495e 100%)",
-              color: "white",
-              textAlign: "center",
-            }}
-          >
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                mb: 1,
-              }}
-            >
-              <FiberManualRecord
+            <Stack direction="row" spacing={2} alignItems="center">
+              <Avatar
                 sx={{
-                  color: accessToken ? "success.main" : "error.main",
-                  fontSize: 12,
-                  mr: 0.5,
-                }}
-              />
-              <Typography variant="body2">NSolutions</Typography>
-            </Box>
-            <Typography variant="caption">
-              © 2025 All rights reserved
-            </Typography>
-          </Box>
-        </Drawer>
-
-        {/* Main content */}
-        <Box component="main" sx={{ flexGrow: 1, p: isMobile ? 1 : 3, pt: 8 }}>
-          {/* User Menu */}
-          <Menu
-            id="user-menu"
-            anchorEl={anchorEl}
-            anchorOrigin={{
-              vertical: "top",
-              horizontal: "right",
-            }}
-            keepMounted
-            transformOrigin={{
-              vertical: "top",
-              horizontal: "right",
-            }}
-            open={Boolean(anchorEl)}
-            onClose={handleClose}
-          >
-            <MenuItem onClick={handleSettings}>
-              <SettingsIcon sx={{ mr: 1 }} />
-              Settings
-            </MenuItem>
-            <MenuItem onClick={handleLogout}>
-              <Logout sx={{ mr: 1 }} />
-              Logout
-            </MenuItem>
-          </Menu>
-
-          <Container maxWidth="lg" sx={{ py: 2 }}>
-            {/* Breadcrumb Navigation */}
-            <Breadcrumbs
-              separator={<NavigateNext fontSize="small" />}
-              sx={{ mb: 3 }}
-              aria-label="breadcrumb"
-            >
-              <MuiLink
-                component={Link}
-                to="/"
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  textDecoration: "none",
-                  color: "text.secondary",
-                  "&:hover": { color: "primary.main" },
+                  width: 72,
+                  height: 72,
+                  bgcolor: "common.white",
+                  color: "primary.main",
                 }}
               >
-                <Home sx={{ mr: 0.5 }} fontSize="inherit" />
-                Home
-              </MuiLink>
-              <MuiLink
-                component={Link}
-                to="/admin-dashboard"
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  textDecoration: "none",
-                  color: "text.secondary",
-                  "&:hover": { color: "primary.main" },
-                }}
+                {avatarInitials}
+              </Avatar>
+              <Box>
+                <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                  {displayName}
+                </Typography>
+                <Typography variant="body2" sx={{ opacity: 0.8 }}>
+                  {user?.email || "user@example.com"}
+                </Typography>
+                <Chip
+                  sx={{
+                    mt: 1,
+                    color: "common.white",
+                    borderColor: "rgba(255,255,255,0.6)",
+                  }}
+                  variant="outlined"
+                  label={role ?? "User"}
+                />
+              </Box>
+            </Stack>
+            <Stack
+              direction={{ xs: "column", sm: "row" }}
+              spacing={1.5}
+              ml={{ md: "auto" }}
+            >
+              <Button
+                variant="contained"
+                color="secondary"
+                startIcon={<NotificationsActiveIcon />}
+                sx={{ color: "common.white" }}
               >
-                Admin Dashboard
-              </MuiLink>
-              <Typography color="text.primary">Settings</Typography>
-            </Breadcrumbs>
-          </Container>
+                Enable Alerts
+              </Button>
+              <Button
+                variant="outlined"
+                color="inherit"
+                startIcon={<PersonIcon />}
+              >
+                Update Avatar
+              </Button>
+            </Stack>
+          </Stack>
+          <Divider sx={{ my: 3, borderColor: "rgba(255,255,255,0.35)" }} />
+          <Grid container spacing={2}>
+            <Grid size={{ xs: 12, sm: 4 }}>
+              <Typography variant="body2" sx={{ opacity: 0.7 }}>
+                Account Plan
+              </Typography>
+              <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                Enterprise
+              </Typography>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 4 }}>
+              <Typography variant="body2" sx={{ opacity: 0.7 }}>
+                Last Active
+              </Typography>
+              <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                {lastLoginLabel}
+              </Typography>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 4 }}>
+              <Typography variant="body2" sx={{ opacity: 0.7 }}>
+                Status
+              </Typography>
+              <Stack direction="row" spacing={1} alignItems="center">
+                <CheckCircleIcon fontSize="small" />
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  Active
+                </Typography>
+              </Stack>
+            </Grid>
+          </Grid>
+        </CardContent>
+      </Card>
 
-          <Container maxWidth="md" sx={{ py: 4, flex: 1 }}>
-            <Typography variant="h4" component="h1" gutterBottom>
-              User Settings
-            </Typography>
-            <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
-              Manage your account settings and preferences.
-            </Typography>
-
-            <Grid container spacing={4}>
-              {/* Profile Information */}
-              <Grid size={{ xs: 12, md: 6 }}>
-                <Card>
-                  <CardContent>
-                    <Typography variant="h6" gutterBottom>
-                      Profile Information
-                    </Typography>
-                    <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
-                      <Avatar sx={{ width: 80, height: 80, mr: 3 }}>
-                        <Person sx={{ fontSize: 40 }} />
-                      </Avatar>
-                      <Box>
-                        <Typography variant="h6">{displayName}</Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          {role === "Administrator" ? "Administrator" : "User"}
-                        </Typography>
-                      </Box>
-                    </Box>
+      <Grid container spacing={3}>
+        <Grid size={{ xs: 12, md: 7 }}>
+          <Card sx={{ height: "100%", borderRadius: 3 }}>
+            <CardContent sx={{ p: { xs: 2.5, md: 3.5 } }}>
+              <Stack spacing={2}>
+                <Box>
+                  <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                    Profile Information
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Keep your personal details up to date so your teammates can
+                    recognize you.
+                  </Typography>
+                </Box>
+                <Divider />
+                <Grid container spacing={2}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField
                       fullWidth
                       label="First Name"
-                      defaultValue={user?.firstName || ""}
-                      sx={{ mb: 2 }}
+                      value={profileForm.firstName}
+                      onChange={handleProfileInputChange("firstName")}
                     />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField
                       fullWidth
                       label="Last Name"
-                      defaultValue={user?.lastName || ""}
-                      sx={{ mb: 2 }}
+                      value={profileForm.lastName}
+                      onChange={handleProfileInputChange("lastName")}
                     />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField
                       fullWidth
                       label="Email"
-                      defaultValue={user?.email || ""}
-                      sx={{ mb: 2 }}
+                      value={profileForm.email}
+                      onChange={handleProfileInputChange("email")}
                     />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField
                       fullWidth
                       label="Username"
-                      defaultValue={user?.username || ""}
-                      sx={{ mb: 2 }}
+                      value={profileForm.username}
+                      onChange={handleProfileInputChange("username")}
                     />
+                  </Grid>
+                  <Grid size={12}>
                     <TextField
                       fullWidth
                       label="Company"
-                      defaultValue={user?.companyName || ""}
-                      sx={{ mb: 3 }}
+                      value={profileForm.companyName}
+                      onChange={handleProfileInputChange("companyName")}
                     />
-                    <Button variant="contained" color="primary">
-                      Save Changes
-                    </Button>
-                  </CardContent>
-                </Card>
-              </Grid>
+                  </Grid>
+                </Grid>
+                <Stack
+                  direction={{ xs: "column", sm: "row" }}
+                  spacing={1.5}
+                  justifyContent="flex-end"
+                >
+                  <Button variant="text" color="inherit">
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="contained"
+                    startIcon={<SaveIcon />}
+                    onClick={handleProfileSave}
+                    disabled={profileSaving}
+                  >
+                    {profileSaving ? "Saving..." : "Save Changes"}
+                  </Button>
+                </Stack>
+              </Stack>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid size={{ xs: 12, md: 5 }}>
+          <Card sx={{ height: "100%", borderRadius: 3 }}>
+            <CardContent sx={{ p: { xs: 2.5, md: 3 } }}>
+              <Stack spacing={2}>
+                <Box>
+                  <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                    Preferences
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Customize how and when we contact you.
+                  </Typography>
+                </Box>
+                <Divider />
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={preferences.emailNotifications}
+                      onChange={handlePreferenceToggle("emailNotifications")}
+                    />
+                  }
+                  label="Email Notifications"
+                />
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={preferences.smsNotifications}
+                      onChange={handlePreferenceToggle("smsNotifications")}
+                    />
+                  }
+                  label="SMS Notifications"
+                />
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={preferences.pushNotifications}
+                      onChange={handlePreferenceToggle("pushNotifications")}
+                    />
+                  }
+                  label="In-app Alerts"
+                />
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={preferences.darkMode}
+                      onChange={handlePreferenceToggle("darkMode")}
+                    />
+                  }
+                  label="Dark Mode"
+                />
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={preferences.twoFactor}
+                      onChange={handlePreferenceToggle("twoFactor")}
+                    />
+                  }
+                  label="Two-Factor Authentication"
+                />
+              </Stack>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
 
-              {/* Preferences */}
-              <Grid size={{ xs: 12, md: 6 }}>
-                <Card>
-                  <CardContent>
-                    <Typography variant="h6" gutterBottom>
-                      Preferences
-                    </Typography>
-                    <FormControlLabel
-                      control={<Switch defaultChecked />}
-                      label="Email Notifications"
-                      sx={{ mb: 2 }}
+      <Grid container spacing={3}>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Card sx={{ borderRadius: 3, height: "100%" }}>
+            <CardContent sx={{ p: { xs: 2.5, md: 3 } }}>
+              <Stack spacing={2}>
+                <Box>
+                  <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                    Security
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Manage authentication and account safety.
+                  </Typography>
+                </Box>
+                <Divider />
+                <List dense>
+                  <ListItem disableGutters sx={{ py: 1 }}>
+                    <ListItemAvatar>
+                      <Avatar>
+                        <LockResetIcon />
+                      </Avatar>
+                    </ListItemAvatar>
+                    <ListItemText
+                      primary="Update Password"
+                      secondary="Last changed 45 days ago"
                     />
-                    <FormControlLabel
-                      control={<Switch defaultChecked />}
-                      label="SMS Notifications"
-                      sx={{ mb: 2 }}
+                    <Button variant="text">Change</Button>
+                  </ListItem>
+                  <ListItem disableGutters sx={{ py: 1 }}>
+                    <ListItemAvatar>
+                      <Avatar>
+                        <ShieldOutlinedIcon />
+                      </Avatar>
+                    </ListItemAvatar>
+                    <ListItemText
+                      primary="Two-factor"
+                      secondary={
+                        preferences.twoFactor ? "Enabled for email" : "Disabled"
+                      }
                     />
-                    <FormControlLabel
-                      control={<Switch />}
-                      label="Dark Mode"
-                      sx={{ mb: 2 }}
+                    <Chip
+                      color={preferences.twoFactor ? "success" : "default"}
+                      label={preferences.twoFactor ? "On" : "Off"}
+                      size="small"
                     />
-                    <FormControlLabel
-                      control={<Switch defaultChecked />}
-                      label="Two-Factor Authentication"
-                      sx={{ mb: 3 }}
-                    />
-                    <Divider sx={{ mb: 3 }} />
-                    <Typography variant="h6" gutterBottom>
-                      Security
-                    </Typography>
-                    <Button variant="outlined" color="secondary" sx={{ mb: 2 }}>
-                      Change Password
-                    </Button>
-                    <Button variant="outlined" color="error">
-                      Delete Account
-                    </Button>
-                  </CardContent>
-                </Card>
-              </Grid>
-            </Grid>
-          </Container>
-        </Box>
-      </Box>
-    </Box>
+                  </ListItem>
+                </List>
+                <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
+                  <Button
+                    variant="outlined"
+                    startIcon={<DevicesIcon />}
+                    sx={{ flex: 1 }}
+                  >
+                    Sign out other devices
+                  </Button>
+                  <Button
+                    variant="contained"
+                    color="error"
+                    startIcon={<LogoutIcon />}
+                    onClick={handleLogout}
+                    sx={{ flex: 1 }}
+                  >
+                    Sign out
+                  </Button>
+                </Stack>
+              </Stack>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Card sx={{ borderRadius: 3, height: "100%" }}>
+            <CardContent sx={{ p: { xs: 2.5, md: 3 } }}>
+              <Stack spacing={2}>
+                <Box>
+                  <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                    Active Sessions
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Review devices that recently accessed your account.
+                  </Typography>
+                </Box>
+                <Divider />
+                <List dense>
+                  {activeSessions.map((session) => (
+                    <ListItem key={session.id} disableGutters sx={{ py: 1.25 }}>
+                      <ListItemAvatar>
+                        <Avatar>
+                          <DevicesIcon />
+                        </Avatar>
+                      </ListItemAvatar>
+                      <ListItemText
+                        primary={session.device}
+                        secondary={`${session.location} · ${session.lastActive}`}
+                      />
+                      {session.current ? (
+                        <Chip label="Current" color="primary" size="small" />
+                      ) : (
+                        <Button variant="text" size="small">
+                          Revoke
+                        </Button>
+                      )}
+                    </ListItem>
+                  ))}
+                </List>
+              </Stack>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+    </Stack>
   );
 };
 

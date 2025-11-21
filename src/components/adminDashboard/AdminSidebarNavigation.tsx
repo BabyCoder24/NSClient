@@ -7,6 +7,7 @@ import {
   ADMIN_DASHBOARD_BASE_PATH,
   ADMIN_DASHBOARD_MANAGE_USERS_PATH,
   ADMIN_DASHBOARD_OVERVIEW_PATH,
+  ADMIN_DASHBOARD_SETTINGS_PATH,
 } from "../../constants";
 import DashboardSidebarHeaderItem from "../DashboardSidebarHeaderItem";
 import DashboardSidebarPageItem from "../DashboardSidebarPageItem";
@@ -60,8 +61,8 @@ export default function AdminSidebarNavigation() {
         id="admin-settings"
         title="Settings"
         icon={<SettingsIcon />}
-        href="/settings"
-        selected={isPathActive(pathname, "/settings")}
+        href={ADMIN_DASHBOARD_SETTINGS_PATH}
+        selected={isPathActive(pathname, ADMIN_DASHBOARD_SETTINGS_PATH)}
       />
     </React.Fragment>
   );

@@ -13,6 +13,7 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import { Link as RouterLink } from "react-router-dom";
 import DashboardSidebarContext from "../../context/DashboardSidebarContext";
+import { ADMIN_DASHBOARD_SETTINGS_PATH } from "../../constants";
 
 interface AdminSidebarFooterProps {
   isOnline: boolean;
@@ -80,7 +81,7 @@ export default function AdminSidebarFooter({
       </Typography>
       <Button
         component={RouterLink}
-        to="/settings"
+        to={ADMIN_DASHBOARD_SETTINGS_PATH}
         variant="outlined"
         size="small"
         startIcon={<SettingsIcon fontSize="small" />}

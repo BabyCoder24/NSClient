@@ -122,6 +122,9 @@ export default function DashboardSidebar({
   const hasDrawerTransitions =
     isOverSmViewport && (!disableCollapsibleSidebar || isOverMdViewport);
 
+  const shouldUseTemporaryDrawer =
+    !isOverSmViewport || (!isOverMdViewport && disableCollapsibleSidebar);
+
   const defaultNavigationContent = (
     <React.Fragment>
       <DashboardSidebarHeaderItem>Main items</DashboardSidebarHeaderItem>
@@ -269,7 +272,7 @@ export default function DashboardSidebar({
       <Drawer
         container={container}
         variant="temporary"
-        open={expanded}
+        open={shouldUseTemporaryDrawer && expanded}
         onClose={handleSetSidebarExpanded(false)}
         ModalProps={{
           keepMounted: true,

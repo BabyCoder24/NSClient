@@ -68,7 +68,8 @@ import PageContainer from "../components/PageContainer";
 
 const MOBILE_PAGE_SIZE = 5;
 const DATA_GRID_ROW_HEIGHT = 56;
-const DATA_GRID_ROW_HEIGHT_COMPACT = 48;
+const DATA_GRID_ROW_HEIGHT_SMALL = 64;
+const DATA_GRID_ROW_HEIGHT_TABLET = 60;
 const DATA_GRID_HEADER_HEIGHT = 56;
 const DATA_GRID_HEADER_HEIGHT_COMPACT = 52;
 const DATA_GRID_FOOTER_HEIGHT = 52;
@@ -169,8 +170,10 @@ const ManageUsers: React.FC = () => {
     return displayedUsers.slice(startIndex, startIndex + MOBILE_PAGE_SIZE);
   }, [displayedUsers, mobilePage]);
 
-  const gridRowHeight = isTablet
-    ? DATA_GRID_ROW_HEIGHT_COMPACT
+  const gridRowHeight = isSmall
+    ? DATA_GRID_ROW_HEIGHT_SMALL
+    : isTablet
+    ? DATA_GRID_ROW_HEIGHT_TABLET
     : DATA_GRID_ROW_HEIGHT;
   const gridHeaderHeight = isTablet
     ? DATA_GRID_HEADER_HEIGHT_COMPACT
@@ -1470,17 +1473,26 @@ const ManageUsers: React.FC = () => {
         fullWidth
         fullScreen={isSmall}
         disableEscapeKeyDown
-        PaperProps={{
-          sx: {
-            borderRadius: { xs: 3, sm: 4 },
-            width: "100%",
-            maxWidth: isSmall ? "92vw" : 720,
-            maxHeight: isSmall ? "86vh" : "80vh",
-            display: "flex",
-            flexDirection: "column",
-            overflow: "hidden",
-            boxShadow: "0px 24px 48px rgba(15, 23, 42, 0.2)",
-            backgroundImage: `linear-gradient(180deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`,
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: { xs: 0, sm: 4 },
+              width: "100%",
+              maxWidth: isSmall ? "100%" : 720,
+              maxHeight: isSmall ? "100vh" : "80vh",
+              display: "flex",
+              flexDirection: "column",
+              overflow: "hidden",
+              border: `1px solid ${alpha(theme.palette.primary.main, 0.08)}`,
+              boxShadow: "0px 32px 60px rgba(15, 23, 42, 0.35)",
+              backgroundImage: `linear-gradient(180deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`,
+            },
+          },
+          backdrop: {
+            sx: {
+              backdropFilter: "blur(6px)",
+              backgroundColor: "rgba(15, 23, 42, 0.6)",
+            },
           },
         }}
       >
