@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import {
   Box,
   TextField,
@@ -24,9 +24,21 @@ const RegisterForm: React.FC = () => {
 
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-  const { loading } = useSelector((state: RootState) => state.auth);
+  const { loading, error: authError } = useSelector(
+    (state: RootState) => state.auth
+  );
 
   const isDisabled = useMemo(() => loading || !email.trim(), [loading, email]);
+
+  const timeoutRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -50,7 +62,7 @@ const RegisterForm: React.FC = () => {
       setEmail("");
 
       // Redirect to login after a delay
-      setTimeout(() => {
+      timeoutRef.current = window.setTimeout(() => {
         navigate("/login");
       }, 3000);
     } catch (error: any) {
@@ -109,9 +121,14 @@ const RegisterForm: React.FC = () => {
             </Box>
           ) : (
             <>
-              {formError && (
-                <Alert severity="error" sx={{ width: "100%", mb: 2 }}>
-                  {formError}
+              {(formError || authError) && (
+                <Alert
+                  severity="error"
+                  sx={{ width: "100%", mb: 2 }}
+                  role="alert"
+                  aria-live="assertive"
+                >
+                  {formError || authError}
                 </Alert>
               )}
 
@@ -131,13 +148,14 @@ const RegisterForm: React.FC = () => {
                   variant="outlined"
                   autoComplete="email"
                   disabled={loading}
+                  autoFocus
                 />
                 <Button
                   type="submit"
                   fullWidth
                   variant="contained"
                   sx={{ mt: 3, mb: 2, py: 1.5 }}
-                  disabled={isDisabled}
+                  disabled={isDisabled || success}
                 >
                   {loading ? (
                     <CircularProgress size={24} color="inherit" />

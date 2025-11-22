@@ -51,6 +51,8 @@ import {
   Save,
   Close,
   Person,
+  Email,
+  Replay,
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
@@ -63,6 +65,8 @@ import {
   updateUser,
   deleteUser,
   adminResetPassword,
+  resendVerificationEmail,
+  resendPasswordResetEmail,
 } from "../store/userSlice";
 import UserService from "../services/userService";
 import PageContainer from "../components/PageContainer";
@@ -76,7 +80,14 @@ const DATA_GRID_HEADER_HEIGHT_COMPACT = 52;
 const DATA_GRID_FOOTER_HEIGHT = 52;
 const DATA_GRID_MIN_HEIGHT = 360;
 
-type DialogType = "view" | "create" | "edit" | "delete" | "reset";
+type DialogType =
+  | "view"
+  | "create"
+  | "edit"
+  | "delete"
+  | "reset"
+  | "resendVerification"
+  | "resendPassword";
 
 const ManageUsers: React.FC = () => {
   const { users, loading, error } = useSelector(
@@ -231,6 +242,16 @@ const ManageUsers: React.FC = () => {
       reset: {
         title: "Reset Password",
         subtitle: "Send the user a secure password reset link via email.",
+      },
+      resendVerification: {
+        title: "Resend Verification",
+        subtitle:
+          "Send another verification email so the user can activate their account.",
+      },
+      resendPassword: {
+        title: "Resend Password Link",
+        subtitle:
+          "Send the user their pending password reset link again without creating a new one.",
       },
     }),
     []
@@ -511,6 +532,18 @@ const ManageUsers: React.FC = () => {
     setDialogOpen(true);
   };
 
+  const handleResendVerification = (user: User) => {
+    setSelectedUser(user);
+    setDialogType("resendVerification");
+    setDialogOpen(true);
+  };
+
+  const handleResendPasswordLink = (user: User) => {
+    setSelectedUser(user);
+    setDialogType("resendPassword");
+    setDialogOpen(true);
+  };
+
   const handleDialogClose = () => {
     setDialogOpen(false);
     setSelectedUser(null);
@@ -670,6 +703,50 @@ const ManageUsers: React.FC = () => {
           severity: "error",
         });
       }
+    } else if (dialogType === "resendVerification" && selectedUser) {
+      try {
+        const result = await dispatch(
+          resendVerificationEmail(selectedUser.id)
+        ).unwrap();
+        setSnackbar({
+          open: true,
+          message:
+            (result as any)?.message ||
+            "Verification email resent successfully.",
+          severity: "success",
+        });
+        handleDialogClose();
+      } catch (err: unknown) {
+        const errorMessage =
+          (err as any)?.message || "Failed to resend verification email.";
+        setSnackbar({
+          open: true,
+          message: errorMessage,
+          severity: "error",
+        });
+      }
+    } else if (dialogType === "resendPassword" && selectedUser) {
+      try {
+        const result = await dispatch(
+          resendPasswordResetEmail(selectedUser.id)
+        ).unwrap();
+        setSnackbar({
+          open: true,
+          message:
+            (result as any)?.message ||
+            "Password reset link resent successfully.",
+          severity: "success",
+        });
+        handleDialogClose();
+      } catch (err: unknown) {
+        const errorMessage =
+          (err as any)?.message || "Failed to resend password reset link.";
+        setSnackbar({
+          open: true,
+          message: errorMessage,
+          severity: "error",
+        });
+      }
     }
   };
 
@@ -763,32 +840,55 @@ const ManageUsers: React.FC = () => {
       headerName: "Actions",
       flex: 0,
       minWidth: 120,
-      getActions: (params: GridRowParams) => [
-        <GridActionsCellItem
-          icon={<Visibility />}
-          label="View"
-          onClick={() => handleView(params.row)}
-          showInMenu
-        />,
-        <GridActionsCellItem
-          icon={<Edit />}
-          label="Edit"
-          onClick={() => handleEdit(params.row)}
-          showInMenu
-        />,
-        <GridActionsCellItem
-          icon={<LockReset />}
-          label="Reset Password"
-          onClick={() => handlePasswordReset(params.row)}
-          showInMenu
-        />,
-        <GridActionsCellItem
-          icon={<Delete />}
-          label="Delete"
-          onClick={() => handleDelete(params.row)}
-          showInMenu
-        />,
-      ],
+      getActions: (params: GridRowParams) => {
+        const actions = [
+          <GridActionsCellItem
+            icon={<Visibility />}
+            label="View"
+            onClick={() => handleView(params.row)}
+            showInMenu
+          />,
+          <GridActionsCellItem
+            icon={<Edit />}
+            label="Edit"
+            onClick={() => handleEdit(params.row)}
+            showInMenu
+          />,
+          <GridActionsCellItem
+            icon={<LockReset />}
+            label="Reset Password"
+            onClick={() => handlePasswordReset(params.row)}
+            showInMenu
+          />,
+          <GridActionsCellItem
+            icon={<Replay />}
+            label="Resend Password Link"
+            onClick={() => handleResendPasswordLink(params.row)}
+            showInMenu
+          />,
+          <GridActionsCellItem
+            icon={<Delete />}
+            label="Delete"
+            onClick={() => handleDelete(params.row)}
+            showInMenu
+          />,
+        ];
+
+        if (!params.row.isVerified) {
+          actions.splice(
+            2,
+            0,
+            <GridActionsCellItem
+              icon={<Email />}
+              label="Resend Verification"
+              onClick={() => handleResendVerification(params.row)}
+              showInMenu
+            />
+          );
+        }
+
+        return actions;
+      },
     },
   ];
 
@@ -1384,11 +1484,25 @@ const ManageUsers: React.FC = () => {
                             >
                               <Edit />
                             </IconButton>
+                            {!user.isVerified && (
+                              <IconButton
+                                size="small"
+                                onClick={() => handleResendVerification(user)}
+                              >
+                                <Email />
+                              </IconButton>
+                            )}
                             <IconButton
                               size="small"
                               onClick={() => handlePasswordReset(user)}
                             >
                               <LockReset />
+                            </IconButton>
+                            <IconButton
+                              size="small"
+                              onClick={() => handleResendPasswordLink(user)}
+                            >
+                              <Replay />
                             </IconButton>
                             <IconButton
                               size="small"
@@ -1983,6 +2097,19 @@ const ManageUsers: React.FC = () => {
               email.
             </Alert>
           )}
+          {dialogType === "resendVerification" && selectedUser && (
+            <Alert severity="info" sx={{ mb: 2 }}>
+              This will resend the verification email to {selectedUser.email}.
+              The user will receive a fresh link to complete their account
+              activation.
+            </Alert>
+          )}
+          {dialogType === "resendPassword" && selectedUser && (
+            <Alert severity="info" sx={{ mb: 2 }}>
+              This will resend the previously requested password reset link to
+              {selectedUser.email}. No new token will be generated for the user.
+            </Alert>
+          )}
         </DialogContent>
         <DialogActions
           sx={{
@@ -2021,6 +2148,10 @@ const ManageUsers: React.FC = () => {
                   <Save />
                 ) : dialogType === "delete" ? (
                   <Delete />
+                ) : dialogType === "resendVerification" ? (
+                  <Email />
+                ) : dialogType === "resendPassword" ? (
+                  <Replay />
                 ) : (
                   <LockReset />
                 )
@@ -2032,7 +2163,10 @@ const ManageUsers: React.FC = () => {
                 (dialogType === "create" && "Create User") ||
                 (dialogType === "edit" && "Save Changes") ||
                 (dialogType === "delete" && "Delete User") ||
-                (dialogType === "reset" && "Send Reset Email")
+                (dialogType === "reset" && "Send Reset Email") ||
+                (dialogType === "resendVerification" &&
+                  "Resend Verification") ||
+                (dialogType === "resendPassword" && "Resend Password Link")
               )}
             </Button>
           )}

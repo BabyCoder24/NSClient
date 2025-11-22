@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   TextField,
@@ -22,6 +22,9 @@ import { clearError } from "../store/authSlice";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 
+const REMEMBERED_IDENTIFIER_KEY = "nsclient_login_identifier";
+const REMEMBER_ME_KEY = "nsclient_remember_me";
+
 const LoginForm: React.FC = () => {
   const [usernameOrEmail, setUsernameOrEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -31,29 +34,51 @@ const LoginForm: React.FC = () => {
 
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-  const { loading, role } = useSelector((state: RootState) => state.auth);
+  const {
+    loading,
+    role,
+    user,
+    error: authError,
+  } = useSelector((state: RootState) => state.auth);
 
-  const isDisabled = useMemo(
-    () => loading || !usernameOrEmail.trim() || !password.trim(),
-    [loading, usernameOrEmail, password]
-  );
+  const isAuthenticated = Boolean(role && user);
+  const isDisabled = loading || !usernameOrEmail.trim() || !password.trim();
+  const errorMessage = formError || authError;
 
   useEffect(() => {
-    if (role) {
-      if (role === "Administrator") {
-        navigate("/admin-dashboard");
-      } else if (role === "Standard User") {
-        navigate("/user-dashboard");
-      } else {
-        navigate("/dashboard"); // fallback
-      }
+    if (!isAuthenticated || !role) {
+      return;
     }
-  }, [role, navigate]);
+
+    if (role === "Administrator") {
+      navigate("/admin-dashboard");
+    } else if (role === "Standard User") {
+      navigate("/user-dashboard");
+    } else {
+      navigate("/dashboard"); // fallback
+    }
+  }, [isAuthenticated, role, navigate]);
 
   useEffect(() => {
     // Clear any previous errors when component mounts
     dispatch(clearError());
+    return () => {
+      dispatch(clearError());
+    };
   }, [dispatch]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const remembered = localStorage.getItem(REMEMBER_ME_KEY) === "true";
+    const storedIdentifier = localStorage.getItem(REMEMBERED_IDENTIFIER_KEY);
+    setRememberMe(remembered);
+    if (remembered && storedIdentifier) {
+      setUsernameOrEmail(storedIdentifier);
+    }
+  }, []);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -72,6 +97,14 @@ const LoginForm: React.FC = () => {
           RememberMe: rememberMe,
         })
       ).unwrap();
+
+      if (rememberMe) {
+        localStorage.setItem(REMEMBERED_IDENTIFIER_KEY, usernameOrEmail.trim());
+        localStorage.setItem(REMEMBER_ME_KEY, "true");
+      } else {
+        localStorage.removeItem(REMEMBERED_IDENTIFIER_KEY);
+        localStorage.removeItem(REMEMBER_ME_KEY);
+      }
 
       // Navigation handled by useEffect on role change
     } catch (error: any) {
@@ -126,9 +159,14 @@ const LoginForm: React.FC = () => {
             Welcome back! Please sign in to your account.
           </Typography>
 
-          {formError && (
-            <Alert severity="error" sx={{ width: "100%", mb: 2 }}>
-              {formError}
+          {errorMessage && (
+            <Alert
+              severity="error"
+              sx={{ width: "100%", mb: 2 }}
+              role="alert"
+              aria-live="assertive"
+            >
+              {errorMessage}
             </Alert>
           )}
 
@@ -144,6 +182,7 @@ const LoginForm: React.FC = () => {
               variant="outlined"
               autoComplete="username"
               disabled={loading}
+              autoFocus
             />
 
             <TextField
@@ -166,6 +205,7 @@ const LoginForm: React.FC = () => {
                         onClick={handleClickShowPassword}
                         edge="end"
                         disabled={loading}
+                        aria-pressed={showPassword}
                       >
                         {showPassword ? <VisibilityOff /> : <Visibility />}
                       </IconButton>

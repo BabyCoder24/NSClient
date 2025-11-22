@@ -37,31 +37,38 @@ const ResetPasswordForm: React.FC = () => {
 
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-  const { loading } = useSelector((state: RootState) => state.auth);
-
-  const isDisabled = useMemo(
-    () => loading || !newPassword.trim() || !confirmPassword.trim(),
-    [loading, newPassword, confirmPassword]
+  const { loading, error: authError } = useSelector(
+    (state: RootState) => state.auth
   );
 
+  const [hasTouchedConfirm, setHasTouchedConfirm] = useState(false);
+
   const passwordError = useMemo(() => {
-    if (newPassword.length < 6) {
+    if (newPassword.length && newPassword.length < 6) {
       return "Password must be at least 6 characters long";
     }
-    if (newPassword !== confirmPassword) {
+    if (hasTouchedConfirm && newPassword !== confirmPassword) {
       return "Passwords do not match";
     }
     return "";
-  }, [newPassword, confirmPassword]);
+  }, [newPassword, confirmPassword, hasTouchedConfirm]);
+
+  const isDisabled =
+    loading ||
+    !newPassword.trim() ||
+    !confirmPassword.trim() ||
+    Boolean(passwordError);
 
   useEffect(() => {
-    // Clear any previous errors when component mounts
     dispatch(clearError());
 
-    // Check if token exists
     if (!token) {
       navigate("/login");
     }
+
+    return () => {
+      dispatch(clearError());
+    };
   }, [dispatch, token, navigate]);
 
   const validatePasswords = () => {
@@ -186,14 +193,23 @@ const ResetPasswordForm: React.FC = () => {
             Enter your new password below.
           </Typography>
 
-          {(formError || passwordError) && (
-            <Alert severity="error" sx={{ width: "100%", mb: 2 }}>
-              {formError || passwordError}
+          {(formError || passwordError || authError) && (
+            <Alert
+              severity="error"
+              sx={{ width: "100%", mb: 2 }}
+              role="alert"
+              aria-live="assertive"
+            >
+              {formError || passwordError || authError}
             </Alert>
           )}
 
           {successMessage && (
-            <Alert severity="success" sx={{ width: "100%", mb: 2 }}>
+            <Alert
+              severity="success"
+              sx={{ width: "100%", mb: 2 }}
+              role="status"
+            >
               {successMessage}
             </Alert>
           )}
@@ -210,6 +226,7 @@ const ResetPasswordForm: React.FC = () => {
               variant="outlined"
               autoComplete="new-password"
               disabled={loading}
+              autoFocus
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
@@ -217,6 +234,7 @@ const ResetPasswordForm: React.FC = () => {
                       aria-label="toggle password visibility"
                       onClick={() => setShowPassword(!showPassword)}
                       edge="end"
+                      aria-pressed={showPassword}
                     >
                       {showPassword ? <VisibilityOff /> : <Visibility />}
                     </IconButton>
@@ -236,7 +254,8 @@ const ResetPasswordForm: React.FC = () => {
               variant="outlined"
               autoComplete="new-password"
               disabled={loading}
-              error={!!passwordError}
+              error={Boolean(passwordError)}
+              onBlur={() => setHasTouchedConfirm(true)}
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
@@ -246,6 +265,7 @@ const ResetPasswordForm: React.FC = () => {
                         setShowConfirmPassword(!showConfirmPassword)
                       }
                       edge="end"
+                      aria-pressed={showConfirmPassword}
                     >
                       {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
                     </IconButton>

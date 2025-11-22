@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
   Box,
   TextField,
@@ -9,7 +9,11 @@ import {
   CircularProgress,
   Link,
 } from "@mui/material";
-import { Link as RouterLink, useNavigate } from "react-router-dom";
+import {
+  Link as RouterLink,
+  useNavigate,
+  useSearchParams,
+} from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "../store/store";
 import { completeRegistration } from "../store/authThunks";
@@ -28,11 +32,27 @@ const CompleteRegistrationForm: React.FC = () => {
   const [success, setSuccess] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
-  const token = new URLSearchParams(window.location.search).get("token");
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get("token");
 
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-  const { loading } = useSelector((state: RootState) => state.auth);
+  const { loading, error: authError } = useSelector(
+    (state: RootState) => state.auth
+  );
+
+  const redirectTimeoutRef = useRef<number | null>(null);
+  const [confirmTouched, setConfirmTouched] = useState(false);
+
+  const passwordError = useMemo(() => {
+    if (password.length && password.length < 6) {
+      return "Password must be at least 6 characters long";
+    }
+    if (confirmTouched && password !== confirmPassword) {
+      return "Passwords do not match";
+    }
+    return "";
+  }, [password, confirmPassword, confirmTouched]);
 
   const isDisabled = useMemo(
     () =>
@@ -41,19 +61,18 @@ const CompleteRegistrationForm: React.FC = () => {
       !confirmPassword.trim() ||
       !firstName.trim() ||
       !lastName.trim() ||
-      !email.trim(),
-    [loading, password, confirmPassword, firstName, lastName, email]
+      !email.trim() ||
+      Boolean(passwordError),
+    [
+      loading,
+      password,
+      confirmPassword,
+      firstName,
+      lastName,
+      email,
+      passwordError,
+    ]
   );
-
-  const passwordError = useMemo(() => {
-    if (password.length < 6) {
-      return "Password must be at least 6 characters long";
-    }
-    if (password !== confirmPassword) {
-      return "Passwords do not match";
-    }
-    return "";
-  }, [password, confirmPassword]);
 
   useEffect(() => {
     // Clear any previous errors when component mounts
@@ -63,6 +82,12 @@ const CompleteRegistrationForm: React.FC = () => {
     if (!token) {
       navigate("/login");
     }
+    return () => {
+      dispatch(clearError());
+      if (redirectTimeoutRef.current) {
+        clearTimeout(redirectTimeoutRef.current);
+      }
+    };
   }, [dispatch, token, navigate]);
 
   const validatePasswords = () => {
@@ -98,7 +123,7 @@ const CompleteRegistrationForm: React.FC = () => {
       setSuccess(true);
 
       // Redirect to login after a short delay
-      setTimeout(() => {
+      redirectTimeoutRef.current = window.setTimeout(() => {
         navigate("/login");
       }, 3000);
     } catch (error: any) {
@@ -145,7 +170,11 @@ const CompleteRegistrationForm: React.FC = () => {
               Registration Completed
             </Typography>
 
-            <Alert severity="success" sx={{ width: "100%", mb: 3 }}>
+            <Alert
+              severity="success"
+              sx={{ width: "100%", mb: 3 }}
+              role="status"
+            >
               Your registration has been completed successfully!
             </Alert>
 
@@ -200,7 +229,12 @@ const CompleteRegistrationForm: React.FC = () => {
               Invalid Registration Link
             </Typography>
 
-            <Alert severity="error" sx={{ width: "100%", mb: 3 }}>
+            <Alert
+              severity="error"
+              sx={{ width: "100%", mb: 3 }}
+              role="alert"
+              aria-live="assertive"
+            >
               The registration link is invalid or has expired.
             </Alert>
 
@@ -252,9 +286,14 @@ const CompleteRegistrationForm: React.FC = () => {
             registration.
           </Typography>
 
-          {(formError || passwordError) && (
-            <Alert severity="error" sx={{ width: "100%", mb: 2 }}>
-              {formError || passwordError}
+          {(formError || passwordError || authError) && (
+            <Alert
+              severity="error"
+              sx={{ width: "100%", mb: 2 }}
+              role="alert"
+              aria-live="assertive"
+            >
+              {formError || passwordError || authError}
             </Alert>
           )}
 
@@ -279,6 +318,7 @@ const CompleteRegistrationForm: React.FC = () => {
                 variant="outlined"
                 autoComplete="given-name"
                 disabled={loading}
+                autoFocus
                 sx={{ flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 8px)" } }}
               />
               <TextField
@@ -355,7 +395,8 @@ const CompleteRegistrationForm: React.FC = () => {
                 variant="outlined"
                 autoComplete="new-password"
                 disabled={loading}
-                error={!!passwordError}
+                error={Boolean(passwordError)}
+                onBlur={() => setConfirmTouched(true)}
                 sx={{ flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 8px)" } }}
               />
             </Box>

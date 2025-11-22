@@ -5,6 +5,8 @@ import {
   updateUserAPI,
   deleteUserAPI,
   adminResetPasswordAPI,
+  resendVerificationAPI,
+  resendPasswordResetAPI,
 } from "../services/userService";
 import type {
   User,
@@ -51,6 +53,22 @@ export const adminResetPassword = createAsyncThunk(
   "users/adminResetPassword",
   async (userId: number) => {
     const response = await adminResetPasswordAPI(userId);
+    return response;
+  }
+);
+
+export const resendVerificationEmail = createAsyncThunk(
+  "users/resendVerification",
+  async (userId: number) => {
+    const response = await resendVerificationAPI(userId);
+    return response;
+  }
+);
+
+export const resendPasswordResetEmail = createAsyncThunk(
+  "users/resendPasswordReset",
+  async (userId: number) => {
+    const response = await resendPasswordResetAPI(userId);
     return response;
   }
 );
@@ -147,6 +165,29 @@ const userSlice = createSlice({
       .addCase(adminResetPassword.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || "Failed to reset password";
+      })
+      .addCase(resendVerificationEmail.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(resendVerificationEmail.fulfilled, (state) => {
+        state.loading = false;
+      })
+      .addCase(resendVerificationEmail.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || "Failed to resend verification";
+      })
+      .addCase(resendPasswordResetEmail.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(resendPasswordResetEmail.fulfilled, (state) => {
+        state.loading = false;
+      })
+      .addCase(resendPasswordResetEmail.rejected, (state, action) => {
+        state.loading = false;
+        state.error =
+          action.error.message || "Failed to resend password reset email";
       });
   },
 });

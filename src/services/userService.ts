@@ -149,6 +149,47 @@ const adminResetPassword = async (id: number) => {
     throw error;
   }
 };
+const resendVerification = async (id: number) => {
+  const token = localStorage.getItem("accessToken");
+  try {
+    const response = await axios.post(
+      `${BASE_URL}/User/${id}/resend-verification`,
+      {},
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    return response.data;
+  } catch (error: any) {
+    console.log(error.message);
+    throw error;
+  }
+};
+
+const resendPasswordReset = async (id: number) => {
+  const token = localStorage.getItem("accessToken");
+  try {
+    const response = await axios.post(
+      `${BASE_URL}/User/${id}/resend-password-reset`,
+      {},
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    return response.data;
+  } catch (error: any) {
+    console.log(error.message);
+    throw error;
+  }
+};
 
 // Legacy functions for backward compatibility
 export const fetchUsersAPI = getAll;
@@ -188,6 +229,8 @@ export const deleteUserAPI = async (id: number) => {
   }
 };
 export const adminResetPasswordAPI = adminResetPassword;
+export const resendVerificationAPI = resendVerification;
+export const resendPasswordResetAPI = resendPasswordReset;
 
 // UserService object
 const UserService = {
@@ -198,6 +241,8 @@ const UserService = {
   remove,
   findByQuery,
   adminResetPassword,
+  resendVerification,
+  resendPasswordReset,
 };
 
 export default UserService;

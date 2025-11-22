@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   TextField,
@@ -24,13 +24,18 @@ const ForgotPasswordForm: React.FC = () => {
 
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-  const { loading } = useSelector((state: RootState) => state.auth);
+  const { loading, error: authError } = useSelector(
+    (state: RootState) => state.auth
+  );
 
-  const isDisabled = useMemo(() => loading || !email.trim(), [loading, email]);
+  const isDisabled = loading || !email.trim();
+  const errorMessage = formError || authError;
 
   useEffect(() => {
-    // Clear any previous errors when component mounts
     dispatch(clearError());
+    return () => {
+      dispatch(clearError());
+    };
   }, [dispatch]);
 
   const handleSubmit = async (event: React.FormEvent) => {
@@ -168,9 +173,14 @@ const ForgotPasswordForm: React.FC = () => {
             password.
           </Typography>
 
-          {formError && (
-            <Alert severity="error" sx={{ width: "100%", mb: 2 }}>
-              {formError}
+          {errorMessage && (
+            <Alert
+              severity="error"
+              sx={{ width: "100%", mb: 2 }}
+              role="alert"
+              aria-live="assertive"
+            >
+              {errorMessage}
             </Alert>
           )}
 
@@ -186,6 +196,7 @@ const ForgotPasswordForm: React.FC = () => {
               variant="outlined"
               autoComplete="email"
               disabled={loading}
+              autoFocus
             />
 
             <Button
