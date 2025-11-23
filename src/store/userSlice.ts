@@ -6,14 +6,13 @@ import {
   deleteUserAPI,
   adminResetPasswordAPI,
   resendVerificationAPI,
-  resendPasswordResetAPI,
 } from "../services/userService";
 import type {
   User,
   CreateUserRequest,
   UpdateUserRequest,
   UserResponse,
-} from "../types/user";
+} from "../models/user";
 
 //fetch users
 export const fetchUsers = createAsyncThunk("users/fetchUsers", async () => {
@@ -61,14 +60,6 @@ export const resendVerificationEmail = createAsyncThunk(
   "users/resendVerification",
   async (userId: number) => {
     const response = await resendVerificationAPI(userId);
-    return response;
-  }
-);
-
-export const resendPasswordResetEmail = createAsyncThunk(
-  "users/resendPasswordReset",
-  async (userId: number) => {
-    const response = await resendPasswordResetAPI(userId);
     return response;
   }
 );
@@ -176,18 +167,6 @@ const userSlice = createSlice({
       .addCase(resendVerificationEmail.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || "Failed to resend verification";
-      })
-      .addCase(resendPasswordResetEmail.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(resendPasswordResetEmail.fulfilled, (state) => {
-        state.loading = false;
-      })
-      .addCase(resendPasswordResetEmail.rejected, (state, action) => {
-        state.loading = false;
-        state.error =
-          action.error.message || "Failed to resend password reset email";
       });
   },
 });

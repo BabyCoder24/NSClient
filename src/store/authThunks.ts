@@ -19,7 +19,7 @@ import type {
   CompleteRegistrationRequest,
   SetPasswordRequest,
   AuthUser,
-} from "../types/auth";
+} from "../models/auth";
 import type { RootState } from "./store";
 
 // Login thunk
@@ -62,6 +62,12 @@ export const loginUser = createAsyncThunk(
         ] || "Standard User";
 
       const expiresAt = Date.now() + response.expiresIn * 1000;
+      const serverMessage =
+        response?.message ||
+        (response as any)?.Message ||
+        (response as any)?.detail ||
+        (response as any)?.title ||
+        "Login successful.";
 
       return {
         user,
@@ -69,16 +75,21 @@ export const loginUser = createAsyncThunk(
         refreshToken: response.refreshToken,
         expiresAt,
         role,
+        message: serverMessage,
       };
     } catch (error: any) {
       console.error("Login thunk error:", error);
       const message =
         error?.__kind === "network"
           ? "Network error. Please check your connection."
-          : error.response?.data?.message || error.message || "Login failed";
+          : error.response?.data?.message ||
+            error.response?.data?.detail ||
+            error.response?.data?.title ||
+            error.message ||
+            "Login failed";
       dispatch(showCrudMessage({ text: message, type: "error" }));
       return rejectWithValue({
-        message: error.message,
+        message,
         status: error.__status,
         kind: error.__kind,
       });

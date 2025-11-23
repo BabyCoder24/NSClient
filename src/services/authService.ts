@@ -8,7 +8,7 @@ import type {
   ResetPasswordRequest,
   CompleteRegistrationRequest,
   SetPasswordRequest,
-} from "../types/auth";
+} from "../models/auth";
 
 // Login API
 export const loginAPI = async (

@@ -4,7 +4,7 @@ import type {
   CreateUserRequest,
   UpdateUserRequest,
   UserResponse,
-} from "../types/user";
+} from "../models/user";
 
 // Get all users
 const getAll = async () => {
@@ -170,27 +170,6 @@ const resendVerification = async (id: number) => {
   }
 };
 
-const resendPasswordReset = async (id: number) => {
-  const token = localStorage.getItem("accessToken");
-  try {
-    const response = await axios.post(
-      `${BASE_URL}/User/${id}/resend-password-reset`,
-      {},
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
-    return response.data;
-  } catch (error: any) {
-    console.log(error.message);
-    throw error;
-  }
-};
-
 // Legacy functions for backward compatibility
 export const fetchUsersAPI = getAll;
 export const createUserAPI = create;
@@ -230,7 +209,6 @@ export const deleteUserAPI = async (id: number) => {
 };
 export const adminResetPasswordAPI = adminResetPassword;
 export const resendVerificationAPI = resendVerification;
-export const resendPasswordResetAPI = resendPasswordReset;
 
 // UserService object
 const UserService = {
@@ -242,7 +220,6 @@ const UserService = {
   findByQuery,
   adminResetPassword,
   resendVerification,
-  resendPasswordReset,
 };
 
 export default UserService;

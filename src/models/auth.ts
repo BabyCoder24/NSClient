@@ -18,6 +18,7 @@ export interface AuthState {
   role: string | null;
   loading: boolean;
   error: string | null;
+  successMessage: string | null;
 }
 
 // API Request/Response types
@@ -31,6 +32,7 @@ export interface LoginResponse {
   accessToken: string;
   refreshToken: string;
   expiresIn: number;
+  message?: string;
 }
 
 export interface RegistrationRequest {

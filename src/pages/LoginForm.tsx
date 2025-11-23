@@ -39,6 +39,7 @@ const LoginForm: React.FC = () => {
     role,
     user,
     error: authError,
+    successMessage,
   } = useSelector((state: RootState) => state.auth);
 
   const isAuthenticated = Boolean(role && user);
@@ -109,18 +110,7 @@ const LoginForm: React.FC = () => {
       // Navigation handled by useEffect on role change
     } catch (error: any) {
       console.error("Login error:", error);
-      if (error.message === "Account is deactivated.") {
-        console.log("Deactivated account login attempt:", usernameOrEmail);
-        setFormError(
-          "Your account has been deactivated. Please contact support."
-        );
-      } else if (error.status === 400 || error.status === 401) {
-        setFormError(error.message);
-      } else if (error.kind === "network") {
-        setFormError(error.message);
-      } else {
-        setFormError("An error occurred");
-      }
+      setFormError(error.message);
     }
   };
 
@@ -158,6 +148,17 @@ const LoginForm: React.FC = () => {
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
             Welcome back! Please sign in to your account.
           </Typography>
+
+          {successMessage && (
+            <Alert
+              severity="success"
+              sx={{ width: "100%", mb: 2 }}
+              role="status"
+              aria-live="polite"
+            >
+              {successMessage}
+            </Alert>
+          )}
 
           {errorMessage && (
             <Alert

@@ -13,7 +13,7 @@ import { Link as RouterLink, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "../store/store";
 import { registerUser } from "../store/authThunks";
-import type { RegistrationRequest } from "../types/auth";
+import type { RegistrationRequest } from "../models/auth";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 

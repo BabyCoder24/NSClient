@@ -11,7 +11,7 @@ import {
   refreshToken,
   logoutUser,
 } from "./authThunks";
-import type { AuthState, AuthUser } from "../types/auth";
+import type { AuthState, AuthUser } from "../models/auth";
 
 const initialState: AuthState = {
   user: null,
@@ -21,6 +21,7 @@ const initialState: AuthState = {
   role: null,
   loading: false,
   error: null,
+  successMessage: null,
 };
 
 const authSlice = createSlice({
@@ -31,6 +32,7 @@ const authSlice = createSlice({
     loginStart: (state) => {
       state.loading = true;
       state.error = null;
+      state.successMessage = null;
     },
     loginSuccess: (
       state,
@@ -40,6 +42,7 @@ const authSlice = createSlice({
         refreshToken: string;
         expiresAt: number;
         role: string;
+        message?: string;
       }>
     ) => {
       state.loading = false;
@@ -49,6 +52,7 @@ const authSlice = createSlice({
       state.expiresAt = action.payload.expiresAt;
       state.role = action.payload.role;
       state.error = null;
+      state.successMessage = action.payload.message || "Login successful.";
       // Store tokens in localStorage
       localStorage.setItem("accessToken", action.payload.accessToken);
       localStorage.setItem("refreshToken", action.payload.refreshToken);
@@ -58,6 +62,7 @@ const authSlice = createSlice({
     loginFailure: (state, action: PayloadAction<string>) => {
       state.loading = false;
       state.error = action.payload;
+      state.successMessage = null;
       state.user = null;
       state.accessToken = null;
       state.refreshToken = null;
@@ -140,6 +145,7 @@ const authSlice = createSlice({
     // Clear errors
     clearError: (state) => {
       state.error = null;
+      state.successMessage = null;
     },
   },
   extraReducers: (builder) => {
@@ -148,6 +154,7 @@ const authSlice = createSlice({
       .addCase(loginUser.pending, (state) => {
         state.loading = true;
         state.error = null;
+        state.successMessage = null;
       })
       .addCase(loginUser.fulfilled, (state, action) => {
         state.loading = false;
@@ -157,17 +164,25 @@ const authSlice = createSlice({
         state.expiresAt = action.payload.expiresAt;
         state.role = action.payload.role;
         state.error = null;
+        state.successMessage = action.payload.message || "Login successful.";
         localStorage.setItem("accessToken", action.payload.accessToken);
         localStorage.setItem("refreshToken", action.payload.refreshToken);
         localStorage.setItem("expiresAt", action.payload.expiresAt.toString());
         localStorage.setItem("role", action.payload.role);
       })
-      .addCase(loginUser.rejected, (state) => {
+      .addCase(loginUser.rejected, (state, action) => {
         state.loading = false;
         state.user = null;
         state.accessToken = null;
         state.refreshToken = null;
         state.expiresAt = null;
+        state.role = null;
+        const message =
+          (action.payload as any)?.message ||
+          action.error.message ||
+          "Login failed";
+        state.error = message;
+        state.successMessage = null;
       }) // Forgot Password
       .addCase(forgotPassword.pending, (state) => {
         state.loading = true;
@@ -266,6 +281,7 @@ const authSlice = createSlice({
         state.role = null;
         state.loading = false;
         state.error = null;
+        state.successMessage = null;
       });
   },
 });

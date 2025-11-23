@@ -52,13 +52,16 @@ import {
   Close,
   Person,
   Email,
-  Replay,
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import type { RootState, AppDispatch } from "../store/store";
 import { logoutUser } from "../store/authThunks";
-import type { User, CreateUserRequest, UpdateUserRequest } from "../types/user";
+import type {
+  User,
+  CreateUserRequest,
+  UpdateUserRequest,
+} from "../models/user";
 import {
   fetchUsers,
   createUser,
@@ -66,7 +69,6 @@ import {
   deleteUser,
   adminResetPassword,
   resendVerificationEmail,
-  resendPasswordResetEmail,
 } from "../store/userSlice";
 import UserService from "../services/userService";
 import PageContainer from "../components/PageContainer";
@@ -86,8 +88,7 @@ type DialogType =
   | "edit"
   | "delete"
   | "reset"
-  | "resendVerification"
-  | "resendPassword";
+  | "resendVerification";
 
 const ManageUsers: React.FC = () => {
   const { users, loading, error } = useSelector(
@@ -111,6 +112,8 @@ const ManageUsers: React.FC = () => {
     role: "All",
     isVerified: "All",
     isActive: "All",
+    createdAt: "",
+    updatedAt: "",
   });
   const [mobilePage, setMobilePage] = useState(1);
   const [paginationModel, setPaginationModel] = useState({
@@ -144,7 +147,14 @@ const ManageUsers: React.FC = () => {
             (user.isVerified ? "Verified" : "Unverified") ===
               filters.isVerified) &&
           (filters.isActive === "All" ||
-            (user.isActive ? "Active" : "Inactive") === filters.isActive)
+            (user.isActive ? "Active" : "Inactive") === filters.isActive) &&
+          (filters.createdAt === "" ||
+            new Date(user.createdAt).toDateString() ===
+              new Date(filters.createdAt).toDateString()) &&
+          (filters.updatedAt === "" ||
+            (user.updatedAt &&
+              new Date(user.updatedAt).toDateString() ===
+                new Date(filters.updatedAt).toDateString()))
       ),
     [filters]
   );
@@ -248,11 +258,6 @@ const ManageUsers: React.FC = () => {
         subtitle:
           "Send another verification email so the user can activate their account.",
       },
-      resendPassword: {
-        title: "Resend Password Link",
-        subtitle:
-          "Send the user their pending password reset link again without creating a new one.",
-      },
     }),
     []
   );
@@ -338,12 +343,12 @@ const ManageUsers: React.FC = () => {
             },
             {
               label: "Created At",
-              value: new Date(selectedUser.createdAt).toLocaleDateString(),
+              value: new Date(selectedUser.createdAt).toLocaleString(),
             },
             {
               label: "Updated At",
               value: selectedUser.updatedAt
-                ? new Date(selectedUser.updatedAt).toLocaleDateString()
+                ? new Date(selectedUser.updatedAt).toLocaleString()
                 : "N/A",
             },
           ]
@@ -354,7 +359,6 @@ const ManageUsers: React.FC = () => {
   const columnVisibilityModel = useMemo(() => {
     if (isSmall) {
       return {
-        id: false,
         firstName: true,
         lastName: true,
         username: false,
@@ -369,7 +373,6 @@ const ManageUsers: React.FC = () => {
 
     if (isTablet) {
       return {
-        id: true,
         firstName: true,
         lastName: true,
         username: false,
@@ -383,7 +386,6 @@ const ManageUsers: React.FC = () => {
     }
 
     return {
-      id: true,
       firstName: true,
       lastName: true,
       username: true,
@@ -392,7 +394,7 @@ const ManageUsers: React.FC = () => {
       isVerified: true,
       isActive: true,
       createdAt: true,
-      updatedAt: false,
+      updatedAt: true,
     };
   }, [isSmall, isTablet]);
 
@@ -440,6 +442,8 @@ const ManageUsers: React.FC = () => {
       role: "All",
       isVerified: "All",
       isActive: "All",
+      createdAt: "",
+      updatedAt: "",
     });
     setFilterModel({ items: [] });
     setMobilePage(1);
@@ -538,12 +542,6 @@ const ManageUsers: React.FC = () => {
     setDialogOpen(true);
   };
 
-  const handleResendPasswordLink = (user: User) => {
-    setSelectedUser(user);
-    setDialogType("resendPassword");
-    setDialogOpen(true);
-  };
-
   const handleDialogClose = () => {
     setDialogOpen(false);
     setSelectedUser(null);
@@ -576,6 +574,19 @@ const ManageUsers: React.FC = () => {
           params[field] = filter.value;
         });
       }
+
+      // Add custom filters
+      if (filters.firstName) params.FirstName = filters.firstName;
+      if (filters.lastName) params.LastName = filters.lastName;
+      if (filters.email) params.Email = filters.email;
+      if (filters.role !== "All")
+        params.RoleId = filters.role === "Administrator" ? 1 : 2;
+      if (filters.isVerified !== "All")
+        params.IsVerified = filters.isVerified === "Verified";
+      if (filters.isActive !== "All")
+        params.IsActive = filters.isActive === "Active";
+      if (filters.createdAt) params.CreatedAt = filters.createdAt;
+      if (filters.updatedAt) params.UpdatedAt = filters.updatedAt;
 
       const response = await UserService.findByQuery(params);
       setDataGridRows(response.records || []);
@@ -725,37 +736,10 @@ const ManageUsers: React.FC = () => {
           severity: "error",
         });
       }
-    } else if (dialogType === "resendPassword" && selectedUser) {
-      try {
-        const result = await dispatch(
-          resendPasswordResetEmail(selectedUser.id)
-        ).unwrap();
-        setSnackbar({
-          open: true,
-          message:
-            (result as any)?.message ||
-            "Password reset link resent successfully.",
-          severity: "success",
-        });
-        handleDialogClose();
-      } catch (err: unknown) {
-        const errorMessage =
-          (err as any)?.message || "Failed to resend password reset link.";
-        setSnackbar({
-          open: true,
-          message: errorMessage,
-          severity: "error",
-        });
-      }
     }
   };
 
   const columns: GridColDef[] = [
-    {
-      field: "id",
-      headerName: "ID",
-      width: 60,
-    },
     {
       field: "firstName",
       headerName: "First Name",
@@ -824,7 +808,7 @@ const ManageUsers: React.FC = () => {
       headerName: "Created At",
       flex: 1,
       minWidth: 100,
-      renderCell: (params) => new Date(params.value).toLocaleDateString(),
+      renderCell: (params) => new Date(params.value).toLocaleString(),
     },
     {
       field: "updatedAt",
@@ -832,7 +816,7 @@ const ManageUsers: React.FC = () => {
       flex: 1,
       minWidth: 100,
       renderCell: (params) =>
-        params.value ? new Date(params.value).toLocaleDateString() : "N/A",
+        params.value ? new Date(params.value).toLocaleString() : "N/A",
     },
     {
       field: "actions",
@@ -841,6 +825,8 @@ const ManageUsers: React.FC = () => {
       flex: 0,
       minWidth: 120,
       getActions: (params: GridRowParams) => {
+        const isInactive = !params.row.isActive;
+
         const actions = [
           <GridActionsCellItem
             icon={<Visibility />}
@@ -854,30 +840,10 @@ const ManageUsers: React.FC = () => {
             onClick={() => handleEdit(params.row)}
             showInMenu
           />,
-          <GridActionsCellItem
-            icon={<LockReset />}
-            label="Reset Password"
-            onClick={() => handlePasswordReset(params.row)}
-            showInMenu
-          />,
-          <GridActionsCellItem
-            icon={<Replay />}
-            label="Resend Password Link"
-            onClick={() => handleResendPasswordLink(params.row)}
-            showInMenu
-          />,
-          <GridActionsCellItem
-            icon={<Delete />}
-            label="Delete"
-            onClick={() => handleDelete(params.row)}
-            showInMenu
-          />,
         ];
 
         if (!params.row.isVerified) {
-          actions.splice(
-            2,
-            0,
+          actions.push(
             <GridActionsCellItem
               icon={<Email />}
               label="Resend Verification"
@@ -886,6 +852,26 @@ const ManageUsers: React.FC = () => {
             />
           );
         }
+
+        if (!isInactive) {
+          actions.push(
+            <GridActionsCellItem
+              icon={<LockReset />}
+              label="Reset Password"
+              onClick={() => handlePasswordReset(params.row)}
+              showInMenu
+            />
+          );
+        }
+
+        actions.push(
+          <GridActionsCellItem
+            icon={<Delete />}
+            label="Delete"
+            onClick={() => handleDelete(params.row)}
+            showInMenu
+          />
+        );
 
         return actions;
       },
@@ -1338,6 +1324,36 @@ const ManageUsers: React.FC = () => {
                     <MenuItem value="Active">Active</MenuItem>
                     <MenuItem value="Inactive">Inactive</MenuItem>
                   </TextField>
+                  <TextField
+                    fullWidth
+                    label="Created At"
+                    type="date"
+                    value={filters.createdAt}
+                    onChange={(e) =>
+                      handleFilterChange("createdAt", e.target.value)
+                    }
+                    sx={{ minWidth: 0 }}
+                    id="filter-created-at"
+                    name="created-at"
+                    InputLabelProps={{
+                      shrink: true,
+                    }}
+                  />
+                  <TextField
+                    fullWidth
+                    label="Updated At"
+                    type="date"
+                    value={filters.updatedAt}
+                    onChange={(e) =>
+                      handleFilterChange("updatedAt", e.target.value)
+                    }
+                    sx={{ minWidth: 0 }}
+                    id="filter-updated-at"
+                    name="updated-at"
+                    InputLabelProps={{
+                      shrink: true,
+                    }}
+                  />
                 </Box>
                 <Box
                   sx={{
@@ -1412,108 +1428,110 @@ const ManageUsers: React.FC = () => {
               {isSmall ? (
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
                   {mobilePaginatedUsers.length > 0 ? (
-                    mobilePaginatedUsers.map((user) => (
-                      <Card key={user.id} sx={{ p: 2 }}>
-                        <Box
-                          sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 2,
-                            flexWrap: "wrap",
-                          }}
-                        >
-                          <Avatar sx={{ width: 40, height: 40 }}>
-                            {user.firstName?.[0] || "?"}
-                            {user.lastName?.[0] || ""}
-                          </Avatar>
-                          <Box sx={{ flex: 1, minWidth: 160 }}>
-                            <Typography variant="h6">
-                              {user.firstName} {user.lastName}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                              {user.email}
-                            </Typography>
+                    mobilePaginatedUsers.map((user) => {
+                      const isInactive = !user.isActive;
+                      return (
+                        <Card key={user.id} sx={{ p: 2 }}>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 2,
+                              flexWrap: "wrap",
+                            }}
+                          >
+                            <Avatar sx={{ width: 40, height: 40 }}>
+                              {user.firstName?.[0] || "?"}
+                              {user.lastName?.[0] || ""}
+                            </Avatar>
+                            <Box sx={{ flex: 1, minWidth: 160 }}>
+                              <Typography variant="h6">
+                                {user.firstName} {user.lastName}
+                              </Typography>
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                              >
+                                {user.email}
+                              </Typography>
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  gap: 1,
+                                  mt: 1,
+                                  flexWrap: "wrap",
+                                }}
+                              >
+                                <Chip
+                                  label={user.roleName || "N/A"}
+                                  color={
+                                    user.roleName === "Administrator"
+                                      ? "error"
+                                      : "default"
+                                  }
+                                  size="small"
+                                />
+                                <Chip
+                                  label={
+                                    user.isVerified ? "Verified" : "Unverified"
+                                  }
+                                  color={user.isVerified ? "success" : "error"}
+                                  size="small"
+                                />
+                                <Chip
+                                  label={user.isActive ? "Active" : "Inactive"}
+                                  color={user.isActive ? "success" : "error"}
+                                  size="small"
+                                />
+                              </Box>
+                            </Box>
                             <Box
                               sx={{
                                 display: "flex",
                                 gap: 1,
-                                mt: 1,
                                 flexWrap: "wrap",
+                                justifyContent: "flex-end",
                               }}
                             >
-                              <Chip
-                                label={user.roleName || "N/A"}
-                                color={
-                                  user.roleName === "Administrator"
-                                    ? "error"
-                                    : "default"
-                                }
-                                size="small"
-                              />
-                              <Chip
-                                label={
-                                  user.isVerified ? "Verified" : "Unverified"
-                                }
-                                color={user.isVerified ? "success" : "error"}
-                                size="small"
-                              />
-                              <Chip
-                                label={user.isActive ? "Active" : "Inactive"}
-                                color={user.isActive ? "success" : "error"}
-                                size="small"
-                              />
-                            </Box>
-                          </Box>
-                          <Box
-                            sx={{
-                              display: "flex",
-                              gap: 1,
-                              flexWrap: "wrap",
-                              justifyContent: "flex-end",
-                            }}
-                          >
-                            <IconButton
-                              size="small"
-                              onClick={() => handleView(user)}
-                            >
-                              <Visibility />
-                            </IconButton>
-                            <IconButton
-                              size="small"
-                              onClick={() => handleEdit(user)}
-                            >
-                              <Edit />
-                            </IconButton>
-                            {!user.isVerified && (
                               <IconButton
                                 size="small"
-                                onClick={() => handleResendVerification(user)}
+                                onClick={() => handleView(user)}
                               >
-                                <Email />
+                                <Visibility />
                               </IconButton>
-                            )}
-                            <IconButton
-                              size="small"
-                              onClick={() => handlePasswordReset(user)}
-                            >
-                              <LockReset />
-                            </IconButton>
-                            <IconButton
-                              size="small"
-                              onClick={() => handleResendPasswordLink(user)}
-                            >
-                              <Replay />
-                            </IconButton>
-                            <IconButton
-                              size="small"
-                              onClick={() => handleDelete(user)}
-                            >
-                              <Delete />
-                            </IconButton>
+                              <IconButton
+                                size="small"
+                                onClick={() => handleEdit(user)}
+                              >
+                                <Edit />
+                              </IconButton>
+                              {!user.isVerified && (
+                                <IconButton
+                                  size="small"
+                                  onClick={() => handleResendVerification(user)}
+                                >
+                                  <Email />
+                                </IconButton>
+                              )}
+                              {!isInactive && (
+                                <IconButton
+                                  size="small"
+                                  onClick={() => handlePasswordReset(user)}
+                                >
+                                  <LockReset />
+                                </IconButton>
+                              )}
+                              <IconButton
+                                size="small"
+                                onClick={() => handleDelete(user)}
+                              >
+                                <Delete />
+                              </IconButton>
+                            </Box>
                           </Box>
-                        </Box>
-                      </Card>
-                    ))
+                        </Card>
+                      );
+                    })
                   ) : (
                     <Paper sx={{ p: 3, textAlign: "center" }}>
                       <Typography variant="body2" color="text.secondary">
@@ -2104,12 +2122,6 @@ const ManageUsers: React.FC = () => {
               activation.
             </Alert>
           )}
-          {dialogType === "resendPassword" && selectedUser && (
-            <Alert severity="info" sx={{ mb: 2 }}>
-              This will resend the previously requested password reset link to
-              {selectedUser.email}. No new token will be generated for the user.
-            </Alert>
-          )}
         </DialogContent>
         <DialogActions
           sx={{
@@ -2150,8 +2162,6 @@ const ManageUsers: React.FC = () => {
                   <Delete />
                 ) : dialogType === "resendVerification" ? (
                   <Email />
-                ) : dialogType === "resendPassword" ? (
-                  <Replay />
                 ) : (
                   <LockReset />
                 )
@@ -2164,9 +2174,7 @@ const ManageUsers: React.FC = () => {
                 (dialogType === "edit" && "Save Changes") ||
                 (dialogType === "delete" && "Delete User") ||
                 (dialogType === "reset" && "Send Reset Email") ||
-                (dialogType === "resendVerification" &&
-                  "Resend Verification") ||
-                (dialogType === "resendPassword" && "Resend Password Link")
+                (dialogType === "resendVerification" && "Resend Verification")
               )}
             </Button>
           )}
