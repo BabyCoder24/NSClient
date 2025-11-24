@@ -52,6 +52,9 @@ import {
   Close,
   Person,
   Email,
+  Print,
+  PictureAsPdf,
+  TableChart,
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
@@ -72,6 +75,7 @@ import {
 } from "../store/userSlice";
 import UserService from "../services/userService";
 import PageContainer from "../components/PageContainer";
+import { printUtility, type PrintColumn } from "../utilities/printUtility";
 
 const MOBILE_PAGE_SIZE = 5;
 const DATA_GRID_ROW_HEIGHT = 56;
@@ -127,6 +131,7 @@ const ManageUsers: React.FC = () => {
   const [dataGridRows, setDataGridRows] = useState<User[]>([]);
   const [dataGridRowCount, setDataGridRowCount] = useState(0);
   const [refetchTrigger, setRefetchTrigger] = useState(0);
+  const [exportLoading, setExportLoading] = useState(false);
 
   const filterUsers = useCallback(
     (list: User[]) =>
@@ -203,7 +208,6 @@ const ManageUsers: React.FC = () => {
   const gridHeaderHeight = isTablet
     ? DATA_GRID_HEADER_HEIGHT_COMPACT
     : DATA_GRID_HEADER_HEIGHT;
-  const showQuickFilter = !isSmall;
   const gridContainerMinWidth = isTablet ? "100%" : "auto";
 
   const visibleRowCount = useMemo(() => {
@@ -604,6 +608,97 @@ const ManageUsers: React.FC = () => {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  const buildParams = () => {
+    const params: Record<string, any> = {};
+
+    // Add sorting
+    if (sortModel.length > 0) {
+      sortModel.forEach((sort) => {
+        const field = sort.field.charAt(0).toUpperCase() + sort.field.slice(1);
+        params[`sort[field]`] = field;
+        params[`sort[dir]`] = sort.sort;
+      });
+    }
+
+    // Add filtering
+    if (filterModel.items.length > 0) {
+      filterModel.items.forEach((filter) => {
+        const field =
+          filter.field.charAt(0).toUpperCase() + filter.field.slice(1);
+        params[field] = filter.value;
+      });
+    }
+
+    // Add custom filters
+    if (filters.firstName) params.FirstName = filters.firstName;
+    if (filters.lastName) params.LastName = filters.lastName;
+    if (filters.email) params.Email = filters.email;
+    if (filters.role !== "All")
+      params.RoleId = filters.role === "Administrator" ? 1 : 2;
+    if (filters.isVerified !== "All")
+      params.IsVerified = filters.isVerified === "Verified";
+    if (filters.isActive !== "All")
+      params.IsActive = filters.isActive === "Active";
+    if (filters.createdAt) params.CreatedAt = filters.createdAt;
+    if (filters.updatedAt) params.UpdatedAt = filters.updatedAt;
+
+    return params;
+  };
+
+  const handleExportExcel = async () => {
+    setExportLoading(true);
+    try {
+      const params = buildParams();
+      const blob = await UserService.exportUsersToExcel(params);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "users.xlsx";
+      link.click();
+      URL.revokeObjectURL(url);
+      setSnackbar({
+        open: true,
+        message: "Excel export completed.",
+        severity: "success",
+      });
+    } catch (error) {
+      setSnackbar({
+        open: true,
+        message: "Failed to export Excel.",
+        severity: "error",
+      });
+    } finally {
+      setExportLoading(false);
+    }
+  };
+
+  const handleExportPdf = async () => {
+    setExportLoading(true);
+    try {
+      const params = buildParams();
+      const blob = await UserService.exportUsersToPdf(params);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "users.pdf";
+      link.click();
+      URL.revokeObjectURL(url);
+      setSnackbar({
+        open: true,
+        message: "PDF export completed.",
+        severity: "success",
+      });
+    } catch (error) {
+      setSnackbar({
+        open: true,
+        message: "Failed to export PDF.",
+        severity: "error",
+      });
+    } finally {
+      setExportLoading(false);
+    }
+  };
 
   const handleFormSubmit = async () => {
     if (dialogType === "create") {
@@ -1410,7 +1505,81 @@ const ManageUsers: React.FC = () => {
                   mb: 3,
                 }}
               >
-                <Typography variant="h6">Users</Typography>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                  <Typography variant="h6">Users</Typography>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    startIcon={<Print />}
+                    onClick={() => {
+                      const printColumns: PrintColumn[] = columns
+                        .filter((col) => col.field !== "actions")
+                        .map((col) => ({
+                          field: col.field,
+                          headerName: col.headerName || col.field,
+                        }));
+
+                      const formatCell = (
+                        value: any,
+                        field: string,
+                        _row: any
+                      ): React.ReactNode => {
+                        if (field === "isActive" || field === "isVerified") {
+                          return value ? "Yes" : "No";
+                        }
+                        if (field === "createdAt" || field === "updatedAt") {
+                          return value
+                            ? new Date(value).toLocaleString()
+                            : "N/A";
+                        }
+                        return value;
+                      };
+
+                      printUtility({
+                        title: "User Management Report",
+                        columns: printColumns,
+                        rows: dataGridRows,
+                        appName: "NS Solutions",
+                        documentTitle: "User Management Report",
+                        extraStyles: "@page { size: A4 landscape; }",
+                        maxRowsPerPage: 25,
+                        formatCell,
+                      });
+                    }}
+                    sx={{
+                      borderRadius: 2,
+                      minWidth: { md: 120 },
+                    }}
+                  >
+                    Print
+                  </Button>
+                  <Button
+                    variant="contained"
+                    color="success"
+                    startIcon={<TableChart />}
+                    onClick={handleExportExcel}
+                    disabled={exportLoading}
+                    sx={{
+                      borderRadius: 2,
+                      minWidth: { md: 120 },
+                    }}
+                  >
+                    {exportLoading ? <CircularProgress size={20} /> : "Excel"}
+                  </Button>
+                  <Button
+                    variant="contained"
+                    color="error"
+                    startIcon={<PictureAsPdf />}
+                    onClick={handleExportPdf}
+                    disabled={exportLoading}
+                    sx={{
+                      borderRadius: 2,
+                      minWidth: { md: 120 },
+                    }}
+                  >
+                    {exportLoading ? <CircularProgress size={20} /> : "PDF"}
+                  </Button>
+                </Box>
                 <Button
                   variant="contained"
                   startIcon={<Add />}
@@ -1603,13 +1772,6 @@ const ManageUsers: React.FC = () => {
                       // hideFooterSelectedRowCount
                       columnVisibilityModel={columnVisibilityModel}
                       loading={loading}
-                      // showToolbar={showToolbar}
-                      slotProps={{
-                        toolbar: {
-                          showQuickFilter,
-                          quickFilterProps: { debounceMs: 300 },
-                        },
-                      }}
                       sx={(theme) => ({
                         flexGrow: 1,
                         width: "100%",

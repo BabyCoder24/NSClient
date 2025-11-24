@@ -16,7 +16,7 @@ export type ExcelVisibilityModel = Record<string, boolean>;
 export function exportToExcel({
   columns,
   rows,
-  fileName = "export.xlsx",
+  fileName = "users_export.xlsx",
   sortModel,
   filterModel,
   columnVisibilityModel,

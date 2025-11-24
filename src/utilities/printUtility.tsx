@@ -1,4 +1,4 @@
-import React, { useMemo, useRef } from "react";
+import React, { useRef } from "react";
 import { createRoot } from "react-dom/client";
 import { useReactToPrint } from "react-to-print";
 
@@ -44,7 +44,7 @@ export function printUtility({
   title,
   columns,
   rows,
-  appName = "CMS System Administration",
+  appName = "NS Solutions",
   logoUrl,
   extraStyles,
   formatCell,
@@ -151,7 +151,7 @@ export function printUtility({
     const contentRef = useRef<HTMLDivElement>(null);
     const handlePrint = useReactToPrint({
       contentRef, // v3 API replaces `content: () => ...`
-      documentTitle: title,
+      documentTitle: documentTitle || title,
       onAfterPrint: cleanup,
     });
 

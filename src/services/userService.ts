@@ -210,6 +210,66 @@ export const deleteUserAPI = async (id: number) => {
 export const adminResetPasswordAPI = adminResetPassword;
 export const resendVerificationAPI = resendVerification;
 
+// Export users to Excel
+const exportUsersToExcel = async (parameters: Record<string, any>) => {
+  const token = localStorage.getItem("accessToken");
+  try {
+    const params = new URLSearchParams();
+    Object.entries(parameters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== "") {
+        params.append(key, value.toString());
+      }
+    });
+
+    const response = await axios.get(
+      `${BASE_URL}/User/export/excel?${params.toString()}`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/octet-stream",
+          Authorization: `Bearer ${token}`,
+        },
+        responseType: "blob",
+      }
+    );
+    console.log(response.status);
+    return response.data; // blob
+  } catch (error: any) {
+    console.log(error.message);
+    throw error;
+  }
+};
+
+// Export users to PDF
+const exportUsersToPdf = async (parameters: Record<string, any>) => {
+  const token = localStorage.getItem("accessToken");
+  try {
+    const params = new URLSearchParams();
+    Object.entries(parameters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== "") {
+        params.append(key, value.toString());
+      }
+    });
+
+    const response = await axios.get(
+      `${BASE_URL}/User/export/pdf?${params.toString()}`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/octet-stream",
+          Authorization: `Bearer ${token}`,
+        },
+        responseType: "blob",
+      }
+    );
+    console.log(response.status);
+    return response.data; // blob
+  } catch (error: any) {
+    console.log(error.message);
+    throw error;
+  }
+};
+
 // UserService object
 const UserService = {
   getAll,
@@ -220,6 +280,8 @@ const UserService = {
   findByQuery,
   adminResetPassword,
   resendVerification,
+  exportUsersToExcel,
+  exportUsersToPdf,
 };
 
 export default UserService;

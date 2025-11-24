@@ -114,9 +114,9 @@ function loadImageAsDataUrl(url?: string): Promise<string | null> {
 export async function exportToPDF({
   columns,
   rows,
-  fileName = "export.pdf",
+  fileName = "users_export.pdf",
   title = "DataGrid Export",
-  appName = "CMS System Administration",
+  appName = "NS Solutions",
   logoUrl,
   orientation = "portrait",
   format = "a4",
