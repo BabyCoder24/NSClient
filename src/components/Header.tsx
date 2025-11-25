@@ -16,6 +16,7 @@ import Button from "@mui/material/Button";
 import BusinessIcon from "@mui/icons-material/Business";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
+import useMediaQuery from "@mui/material/useMediaQuery";
 import type { RootState, AppDispatch } from "../store/store";
 import { logoutUser } from "../store/authThunks";
 
@@ -40,6 +41,15 @@ export default function Header() {
   const { accessToken } = useSelector((state: RootState) => state.auth);
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
+  // Custom breakpoint for desktop menu (1136px and up)
+  const isDesktopView = useMediaQuery(`(min-width: 1136px)`);
+
+  // Close mobile drawer when switching to desktop view
+  React.useEffect(() => {
+    if (isDesktopView && mobileOpen) {
+      setMobileOpen(false);
+    }
+  }, [isDesktopView, mobileOpen]);
 
   const handleDrawerToggle = () => {
     setMobileOpen((prevState) => !prevState);
@@ -71,9 +81,17 @@ export default function Header() {
           }}
         >
           <BusinessIcon sx={{ mr: 1, fontSize: 28 }} />
-          <Typography variant="h6" sx={{ fontWeight: 600 }}>
-            NSolutions
-          </Typography>
+          <Box>
+            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+              NSolutions
+            </Typography>
+            <Typography
+              variant="caption"
+              sx={{ opacity: 0.9, fontSize: "0.7rem" }}
+            >
+              Innovative solutions for your business needs
+            </Typography>
+          </Box>
         </Box>
       </Box>
       <Divider />
@@ -204,24 +222,24 @@ export default function Header() {
         }}
       >
         <Toolbar sx={{ minHeight: 64 }}>
-          <IconButton
-            color="inherit"
-            aria-label="open drawer"
-            edge="start"
-            onClick={handleDrawerToggle}
-            sx={{
-              mr: 2,
-              display: { md: "none" },
-              "&:hover": { backgroundColor: "rgba(255, 255, 255, 0.1)" },
-            }}
-          >
-            <MenuIcon />
-          </IconButton>
+          {!isDesktopView && (
+            <IconButton
+              color="inherit"
+              aria-label="open drawer"
+              edge="start"
+              onClick={handleDrawerToggle}
+              sx={{
+                mr: 2,
+                "&:hover": { backgroundColor: "rgba(255, 255, 255, 0.1)" },
+              }}
+            >
+              <MenuIcon />
+            </IconButton>
+          )}
           <BusinessIcon
             sx={{
-              mr: 2,
-              fontSize: 32,
-              display: { xs: "none", md: "block" },
+              mr: 1,
+              fontSize: { xs: 24, md: 32 },
             }}
           />
           <Typography
@@ -229,40 +247,90 @@ export default function Header() {
             component="div"
             sx={{
               flexGrow: 1,
-              display: { xs: "none", md: "block" },
               fontWeight: 600,
               letterSpacing: 0.5,
+              fontSize: { xs: "1rem", md: "1.25rem" },
             }}
           >
             NSolutions
           </Typography>
-          <Box sx={{ display: { xs: "none", md: "block" } }}>
-            {publicNavItems.map((item) => (
-              <Button
-                key={item.label}
-                variant="text"
-                sx={{
-                  color: "#fff",
-                  mr: 1,
-                  px: 2,
-                  py: 1,
-                  borderRadius: 1,
-                  fontWeight: 500,
-                  transition: "all 0.2s ease",
-                  "&:hover": {
-                    backgroundColor: "rgba(255,255,255,0.15)",
+          {isDesktopView && (
+            <Box>
+              {publicNavItems.map((item) => (
+                <Button
+                  key={item.label}
+                  variant="text"
+                  sx={{
                     color: "#fff",
-                    transform: "translateY(-1px)",
-                  },
-                }}
-                component={Link}
-                to={item.to}
-              >
-                {item.label}
-              </Button>
-            ))}
-            {!accessToken ? (
-              <>
+                    mr: 1,
+                    px: 2,
+                    py: 1,
+                    borderRadius: 1,
+                    fontWeight: 500,
+                    transition: "all 0.2s ease",
+                    "&:hover": {
+                      backgroundColor: "rgba(255,255,255,0.15)",
+                      color: "#fff",
+                      transform: "translateY(-1px)",
+                    },
+                  }}
+                  component={Link}
+                  to={item.to}
+                >
+                  {item.label}
+                </Button>
+              ))}
+              {!accessToken ? (
+                <>
+                  <Button
+                    variant="contained"
+                    sx={{
+                      backgroundColor: "#f44336",
+                      color: "white",
+                      mr: 1,
+                      px: 3,
+                      py: 1,
+                      borderRadius: 2,
+                      fontWeight: 600,
+                      ml: 2,
+                      transition: "all 0.2s ease",
+                      "&:hover": {
+                        backgroundColor: "#d32f2f",
+                        color: "#fff",
+                        transform: "translateY(-1px)",
+                        boxShadow: "0 4px 8px rgba(244, 67, 54, 0.3)",
+                      },
+                    }}
+                    component={Link}
+                    to="/login"
+                  >
+                    Login
+                  </Button>
+                  <Button
+                    variant="contained"
+                    sx={{
+                      backgroundColor: "#4caf50",
+                      color: "white",
+                      mr: 1,
+                      px: 3,
+                      py: 1,
+                      borderRadius: 2,
+                      fontWeight: 600,
+                      transition: "all 0.2s ease",
+                      "&:hover": {
+                        backgroundColor: "#45a049",
+                        color: "#fff",
+                        transform: "translateY(-1px)",
+                        boxShadow: "0 4px 8px rgba(76, 175, 80, 0.3)",
+                      },
+                    }}
+                    component={Link}
+                    to="/register"
+                  >
+                    Register
+                  </Button>
+                </>
+              ) : (
                 <Button
                   variant="contained"
                   sx={{
@@ -273,7 +341,6 @@ export default function Header() {
                     py: 1,
                     borderRadius: 2,
                     fontWeight: 600,
-                    ml: 2,
                     transition: "all 0.2s ease",
                     "&:hover": {
                       backgroundColor: "#d32f2f",
@@ -282,80 +349,34 @@ export default function Header() {
                       boxShadow: "0 4px 8px rgba(244, 67, 54, 0.3)",
                     },
                   }}
-                  component={Link}
-                  to="/login"
+                  onClick={handleLogout}
                 >
-                  Login
+                  Logout
                 </Button>
-                <Button
-                  variant="contained"
-                  sx={{
-                    backgroundColor: "#4caf50",
-                    color: "white",
-                    mr: 1,
-                    px: 3,
-                    py: 1,
-                    borderRadius: 2,
-                    fontWeight: 600,
-                    transition: "all 0.2s ease",
-                    "&:hover": {
-                      backgroundColor: "#45a049",
-                      color: "#fff",
-                      transform: "translateY(-1px)",
-                      boxShadow: "0 4px 8px rgba(76, 175, 80, 0.3)",
-                    },
-                  }}
-                  component={Link}
-                  to="/register"
-                >
-                  Register
-                </Button>
-              </>
-            ) : (
-              <Button
-                variant="contained"
-                sx={{
-                  backgroundColor: "#f44336",
-                  color: "white",
-                  mr: 1,
-                  px: 3,
-                  py: 1,
-                  borderRadius: 2,
-                  fontWeight: 600,
-                  transition: "all 0.2s ease",
-                  "&:hover": {
-                    backgroundColor: "#d32f2f",
-                    color: "#fff",
-                    transform: "translateY(-1px)",
-                    boxShadow: "0 4px 8px rgba(244, 67, 54, 0.3)",
-                  },
-                }}
-                onClick={handleLogout}
-              >
-                Logout
-              </Button>
-            )}
-          </Box>
+              )}
+            </Box>
+          )}
         </Toolbar>
       </AppBar>
       <nav>
-        <Drawer
-          variant="temporary"
-          open={mobileOpen}
-          onClose={handleDrawerToggle}
-          ModalProps={{
-            keepMounted: true,
-          }}
-          sx={{
-            display: { xs: "block", md: "none" },
-            "& .MuiDrawer-paper": {
-              boxSizing: "border-box",
-              width: drawerWidth,
-            },
-          }}
-        >
-          {drawer}
-        </Drawer>
+        {!isDesktopView && (
+          <Drawer
+            variant="temporary"
+            open={mobileOpen}
+            onClose={handleDrawerToggle}
+            ModalProps={{
+              keepMounted: true,
+            }}
+            sx={{
+              "& .MuiDrawer-paper": {
+                boxSizing: "border-box",
+                width: drawerWidth,
+              },
+            }}
+          >
+            {drawer}
+          </Drawer>
+        )}
       </nav>
     </Box>
   );

@@ -45,7 +45,7 @@ export function printUtility({
   columns,
   rows,
   appName = "NS Solutions",
-  logoUrl,
+  logoUrl = "/logo.png",
   extraStyles,
   formatCell,
   documentTitle,
@@ -60,40 +60,47 @@ export function printUtility({
 
   // Printable component encapsulated to be compatible with react-to-print
   const Printable = React.forwardRef<HTMLDivElement>((_, ref) => {
-    // const printDate = useMemo(() => new Date().toLocaleString(), []);
+    const printDate = new Date().toLocaleString();
 
     return (
       <div ref={ref as React.RefObject<HTMLDivElement>}>
         <style>
           {`
             * { box-sizing: border-box; }
-            body { font-family: Roboto, Arial, sans-serif; }
-            /* Avoid reserving extra space at the bottom which can create a trailing blank page */
-            .print-root { padding: 0; }
-            .header { display: flex; align-items: center; justify-content: center; margin-bottom: 16px; text-align: center; }
-            .logo { height: 48px; width: 48px; object-fit: contain; margin-right: 12px; }
-            .app-name { font-size: 2rem; font-weight: 700; color: #2e7d32; letter-spacing: 1px; }
-            h1 { color: #000; text-align: center; margin: 16px 0; font-size: 1.5rem; }
-            table { width: 100%; border-collapse: collapse; margin-top: 16px; box-shadow: 0 2px 8px rgba(44, 62, 80, 0.08); }
-            th, td { border: 1px solid #ff9800; padding: 8px 10px; text-align: left; font-size: 14px; }
-            th { background: #2e7d32; color: #fff; font-size: 15px; font-weight: 600; }
-            tr:nth-child(even) { background: #f5f5f5; }
-            .footer { position: fixed; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: space-between; padding: 8px 0; color: #666; font-size: 12px; }
-            .footer .left { padding-left: 0; }
-            .footer .right { padding-right: 0; }
+            body { font-family: 'Roboto', 'Arial', sans-serif; margin: 0; padding: 0; }
+            .print-root { padding: 20px; max-width: 100%; }
+            .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; padding-bottom: 3px; border-bottom: 2px solid #e0e0e0; }
+            .company-info { display: flex; flex-direction: column; }
+            .company-name { font-size: 1.5rem; font-weight: 700; color: #1976d2; letter-spacing: 1px; }
+            .company-tagline { font-size: 0.9rem; color: #666; font-weight: 400; margin-top: 2px; }
+            .logo { height: 150px; width: 150px; object-fit: contain; }
+            .content { margin-bottom: 20px; padding-bottom: 10px; }
+            .title { color: #000; text-align: center; margin: 20px 0; font-size: 1.8rem; font-weight: 600; }
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); border-radius: 8px; overflow: hidden; }
+            th, td { border: 1px solid #ddd; padding: 12px 15px; text-align: left; font-size: 14px; }
+            th { background: #4dabf5; color: #fff; font-size: 15px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+            tr:nth-child(even) { background: #fafafa; }
+            tr:hover { background: #f5f5f5; }
+            .footer { display: flex; align-items: center; justify-content: space-between; padding: 15px 0; color: #666; font-size: 12px; border-top: 2px solid #e0e0e0; margin-top: 20px; }
+            .footer .left { font-weight: 500; }
+            .footer .right { font-weight: 500; }
             @media print {
               @page { margin: 2.54cm; }
-              body { margin: 0; }
+              body { margin: 0; counter-reset: page; }
               .no-print { display: none !important; }
+              .print-root { padding: 0; }
+              .header { page-break-inside: avoid; }
+              .content { page-break-inside: avoid; }
+              .footer { position: fixed; left: 0; right: 0; bottom: 0; background: white; border-top: 1px solid #e0e0e0; }
               /* Keep table headers repeating and avoid splitting rows across pages */
               thead { display: table-header-group; }
               tfoot { display: table-footer-group; }
               table { page-break-inside: auto; break-inside: auto; }
               tr { page-break-inside: avoid; break-inside: avoid; }
               td, th { page-break-inside: avoid; break-inside: avoid; }
-              /* Page number counters (browser support varies; works in Chromium) */
+              /* Page counter */
               .pageNumber::after { content: counter(page); }
-              .totalPages::after { content: counter(pages); }
+              .pageNumber { counter-increment: page; }
             }
             ${extraStyles || ""}
           `}
@@ -101,45 +108,51 @@ export function printUtility({
 
         <div className="print-root">
           <div className="header">
+            <div className="company-info">
+              <div className="company-name">{appName}</div>
+              <div className="company-tagline">
+                Innovative solutions for your business needs.
+              </div>
+            </div>
             {logoUrl ? <img src={logoUrl} alt="logo" className="logo" /> : null}
-            <div className="app-name">{appName}</div>
           </div>
 
-          <h1>{title}</h1>
+          <div className="content">
+            <h1 className="title">{title}</h1>
 
-          <table>
-            <thead>
-              <tr>
-                {columns.map((c) => (
-                  <th key={c.field}>{c.headerName}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {(maxRowsPerPage && maxRowsPerPage > 0
-                ? rows.slice(0, maxRowsPerPage)
-                : rows
-              ).map((row, idx) => (
-                <tr key={idx}>
+            <table>
+              <thead>
+                <tr>
                   {columns.map((c) => (
-                    <td key={c.field}>
-                      {formatCell
-                        ? formatCell(row[c.field], c.field, row)
-                        : String(row[c.field] ?? "")}
-                    </td>
+                    <th key={c.field}>{c.headerName}</th>
                   ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {(maxRowsPerPage && maxRowsPerPage > 0
+                  ? rows.slice(0, maxRowsPerPage)
+                  : rows
+                ).map((row, idx) => (
+                  <tr key={idx}>
+                    {columns.map((c) => (
+                      <td key={c.field}>
+                        {formatCell
+                          ? formatCell(row[c.field], c.field, row)
+                          : String(row[c.field] ?? "")}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
-          {/* <div className="footer">
+          <div className="footer">
             <div className="left">Printed on: {printDate}</div>
             <div className="right">
-              Page <span className="pageNumber" /> of{" "}
-              <span className="totalPages" />
+              Page <span className="pageNumber" />
             </div>
-          </div> */}
+          </div>
         </div>
       </div>
     );
