@@ -91,15 +91,21 @@ const ForgotPasswordForm: React.FC = () => {
           <Paper
             elevation={3}
             sx={{
-              p: 4,
+              p: 3,
               width: "100%",
-              maxWidth: 400,
+              maxWidth: 350,
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
             }}
           >
-            <Typography variant="h4" component="h1" gutterBottom>
+            <Box
+              component="img"
+              src="/logo.png"
+              alt="Logo"
+              sx={{ width: 48, height: 48, mb: 1 }}
+            />
+            <Typography variant="h5" component="h1" sx={{ mb: 1 }}>
               Check Your Email
             </Typography>
 
@@ -157,18 +163,24 @@ const ForgotPasswordForm: React.FC = () => {
         <Paper
           elevation={3}
           sx={{
-            p: 4,
+            p: 3,
             width: "100%",
-            maxWidth: 400,
+            maxWidth: 350,
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
           }}
         >
-          <Typography variant="h4" component="h1" gutterBottom>
+          <Box
+            component="img"
+            src="/logo.png"
+            alt="Logo"
+            sx={{ width: 48, height: 48, mb: 1 }}
+          />
+          <Typography variant="h5" component="h1" sx={{ mb: 1 }}>
             Reset Password
           </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
             Enter your email address and we'll send you a link to reset your
             password.
           </Typography>
@@ -192,7 +204,7 @@ const ForgotPasswordForm: React.FC = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              margin="normal"
+              margin="dense"
               variant="outlined"
               autoComplete="email"
               disabled={loading}
@@ -203,7 +215,7 @@ const ForgotPasswordForm: React.FC = () => {
               type="submit"
               fullWidth
               variant="contained"
-              sx={{ mt: 3, mb: 2, py: 1.5 }}
+              sx={{ mt: 2, mb: 1, py: 1.2 }}
               disabled={isDisabled}
             >
               {loading ? (

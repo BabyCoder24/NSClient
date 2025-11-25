@@ -54,6 +54,22 @@ const CompleteRegistrationForm: React.FC = () => {
     return "";
   }, [password, confirmPassword, confirmTouched]);
 
+  const firstNameError = useMemo(() => {
+    return firstName.trim() ? "" : "First name is required";
+  }, [firstName]);
+
+  const lastNameError = useMemo(() => {
+    return lastName.trim() ? "" : "Last name is required";
+  }, [lastName]);
+
+  const emailError = useMemo(() => {
+    if (!email.trim()) {
+      return "Email is required";
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email) ? "" : "Invalid email format";
+  }, [email]);
+
   const isDisabled = useMemo(
     () =>
       loading ||
@@ -62,7 +78,10 @@ const CompleteRegistrationForm: React.FC = () => {
       !firstName.trim() ||
       !lastName.trim() ||
       !email.trim() ||
-      Boolean(passwordError),
+      Boolean(passwordError) ||
+      Boolean(firstNameError) ||
+      Boolean(lastNameError) ||
+      Boolean(emailError),
     [
       loading,
       password,
@@ -71,6 +90,9 @@ const CompleteRegistrationForm: React.FC = () => {
       lastName,
       email,
       passwordError,
+      firstNameError,
+      lastNameError,
+      emailError,
     ]
   );
 
@@ -158,15 +180,21 @@ const CompleteRegistrationForm: React.FC = () => {
           <Paper
             elevation={3}
             sx={{
-              p: 4,
+              p: 3,
               width: "100%",
-              maxWidth: 400,
+              maxWidth: 350,
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
             }}
           >
-            <Typography variant="h4" component="h1" gutterBottom>
+            <Box
+              component="img"
+              src="/logo.png"
+              alt="Logo"
+              sx={{ width: 48, height: 48, mb: 1 }}
+            />
+            <Typography variant="h5" component="h1" sx={{ mb: 1 }}>
               Registration Completed
             </Typography>
 
@@ -217,15 +245,21 @@ const CompleteRegistrationForm: React.FC = () => {
           <Paper
             elevation={3}
             sx={{
-              p: 4,
+              p: 3,
               width: "100%",
-              maxWidth: 400,
+              maxWidth: 350,
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
             }}
           >
-            <Typography variant="h4" component="h1" gutterBottom>
+            <Box
+              component="img"
+              src="/logo.png"
+              alt="Logo"
+              sx={{ width: 48, height: 48, mb: 1 }}
+            />
+            <Typography variant="h5" component="h1" sx={{ mb: 1 }}>
               Invalid Registration Link
             </Typography>
 
@@ -270,30 +304,46 @@ const CompleteRegistrationForm: React.FC = () => {
         <Paper
           elevation={3}
           sx={{
-            p: 4,
+            p: 3,
             width: "100%",
-            maxWidth: 600,
+            maxWidth: 450,
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
           }}
         >
-          <Typography variant="h4" component="h1" gutterBottom>
+          <Box
+            component="img"
+            src="/logo.png"
+            alt="Logo"
+            sx={{ width: 48, height: 48, mb: 1 }}
+          />
+          <Typography variant="h5" component="h1" sx={{ mb: 1 }}>
             Complete Registration
           </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
             Complete your account details and set your password to finish
             registration.
           </Typography>
 
-          {(formError || passwordError || authError) && (
+          {(formError ||
+            passwordError ||
+            authError ||
+            firstNameError ||
+            lastNameError ||
+            emailError) && (
             <Alert
               severity="error"
               sx={{ width: "100%", mb: 2 }}
               role="alert"
               aria-live="assertive"
             >
-              {formError || passwordError || authError}
+              {formError ||
+                passwordError ||
+                authError ||
+                firstNameError ||
+                lastNameError ||
+                emailError}
             </Alert>
           )}
 
@@ -304,7 +354,7 @@ const CompleteRegistrationForm: React.FC = () => {
               width: "100%",
               display: "flex",
               flexDirection: "column",
-              gap: 2,
+              gap: 1.5,
             }}
           >
             <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
@@ -314,7 +364,7 @@ const CompleteRegistrationForm: React.FC = () => {
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
                 required
-                margin="normal"
+                margin="dense"
                 variant="outlined"
                 autoComplete="given-name"
                 disabled={loading}
@@ -327,7 +377,7 @@ const CompleteRegistrationForm: React.FC = () => {
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
                 required
-                margin="normal"
+                margin="dense"
                 variant="outlined"
                 autoComplete="family-name"
                 disabled={loading}
@@ -341,35 +391,31 @@ const CompleteRegistrationForm: React.FC = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              margin="normal"
+              margin="dense"
               variant="outlined"
               autoComplete="email"
               disabled={loading}
             />
-            <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
-              <TextField
-                fullWidth
-                label="Company (Optional)"
-                value={company}
-                onChange={(e) => setCompany(e.target.value)}
-                margin="normal"
-                variant="outlined"
-                autoComplete="organization"
-                disabled={loading}
-                sx={{ flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 8px)" } }}
-              />
-              <TextField
-                fullWidth
-                label="Username (Optional)"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                margin="normal"
-                variant="outlined"
-                autoComplete="username"
-                disabled={loading}
-                sx={{ flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 8px)" } }}
-              />
-            </Box>
+            <TextField
+              fullWidth
+              label="Company (Optional)"
+              value={company}
+              onChange={(e) => setCompany(e.target.value)}
+              margin="dense"
+              variant="outlined"
+              autoComplete="organization"
+              disabled={loading}
+            />
+            <TextField
+              fullWidth
+              label="Username (Optional)"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              margin="dense"
+              variant="outlined"
+              autoComplete="username"
+              disabled={loading}
+            />
             <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
               <TextField
                 fullWidth
@@ -378,7 +424,7 @@ const CompleteRegistrationForm: React.FC = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                margin="normal"
+                margin="dense"
                 variant="outlined"
                 autoComplete="new-password"
                 disabled={loading}
@@ -391,7 +437,7 @@ const CompleteRegistrationForm: React.FC = () => {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
-                margin="normal"
+                margin="dense"
                 variant="outlined"
                 autoComplete="new-password"
                 disabled={loading}
@@ -404,7 +450,7 @@ const CompleteRegistrationForm: React.FC = () => {
               type="submit"
               fullWidth
               variant="contained"
-              sx={{ mt: 2, mb: 2, py: 1.5 }}
+              sx={{ mt: 1, mb: 1, py: 1.5 }}
               disabled={isDisabled}
             >
               {loading ? (

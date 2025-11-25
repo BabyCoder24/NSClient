@@ -162,6 +162,7 @@ export default function DashboardSidebarPageItem({
                   display: "flex",
                   alignItems: "center",
                   justifyContent: mini ? "center" : "auto",
+                  color: "white",
                 }}
               >
                 {icon ?? null}
@@ -195,6 +196,7 @@ export default function DashboardSidebarPageItem({
                     overflow: "hidden",
                     textOverflow: "ellipsis",
                     maxWidth: MINI_DRAWER_WIDTH - 28,
+                    color: "white",
                   }}
                 >
                   {title}
@@ -208,6 +210,7 @@ export default function DashboardSidebarPageItem({
               sx={{
                 whiteSpace: "nowrap",
                 zIndex: 1,
+                color: "white",
               }}
             />
           ) : null}

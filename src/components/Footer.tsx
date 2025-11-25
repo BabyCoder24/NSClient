@@ -1,6 +1,5 @@
 import React from "react";
 import { Box, Typography, Link, Divider } from "@mui/material";
-import BusinessIcon from "@mui/icons-material/Business";
 
 const Footer: React.FC = () => {
   return (
@@ -25,7 +24,12 @@ const Footer: React.FC = () => {
         >
           <Box sx={{ minWidth: { xs: "100%", sm: 250 }, mb: { xs: 3, sm: 0 } }}>
             <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-              <BusinessIcon sx={{ mr: 1, fontSize: 28 }} />
+              <Box
+                component="img"
+                src="/logo.png"
+                alt="Logo"
+                sx={{ mr: 1, width: 28, height: 28 }}
+              />
               <Typography variant="h6" sx={{ fontWeight: 600 }}>
                 NSolutions
               </Typography>

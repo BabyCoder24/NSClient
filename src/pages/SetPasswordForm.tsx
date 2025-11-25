@@ -131,15 +131,21 @@ const SetPasswordForm: React.FC = () => {
           <Paper
             elevation={3}
             sx={{
-              p: 4,
+              p: 3,
               width: "100%",
-              maxWidth: 400,
+              maxWidth: 350,
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
             }}
           >
-            <Typography variant="h6" component="h2" gutterBottom>
+            <Box
+              component="img"
+              src="/logo.png"
+              alt="Logo"
+              sx={{ width: 48, height: 48, mb: 1 }}
+            />
+            <Typography variant="h5" component="h2" sx={{ mb: 1 }}>
               Invalid Link
             </Typography>
             <Typography variant="body2" color="text.secondary">
@@ -170,18 +176,24 @@ const SetPasswordForm: React.FC = () => {
         <Paper
           elevation={3}
           sx={{
-            p: 4,
+            p: 3,
             width: "100%",
-            maxWidth: 500,
+            maxWidth: 350,
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
           }}
         >
-          <Typography variant="h4" component="h1" gutterBottom>
+          <Box
+            component="img"
+            src="/logo.png"
+            alt="Logo"
+            sx={{ width: 48, height: 48, mb: 1 }}
+          />
+          <Typography variant="h5" component="h1" sx={{ mb: 1 }}>
             Set Your Password
           </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
             Enter a new password for your account.
           </Typography>
 
@@ -204,7 +216,7 @@ const SetPasswordForm: React.FC = () => {
               width: "100%",
               display: "flex",
               flexDirection: "column",
-              gap: 2,
+              gap: 1.5,
             }}
           >
             <TextField
@@ -264,7 +276,7 @@ const SetPasswordForm: React.FC = () => {
               fullWidth
               variant="contained"
               disabled={isDisabled}
-              sx={{ mt: 2 }}
+              sx={{ mt: 1.5 }}
             >
               {loading ? "Setting Password..." : "Set Password"}
             </Button>

@@ -6,7 +6,6 @@ import Toolbar from "@mui/material/Toolbar";
 import { Outlet } from "react-router-dom";
 import DashboardHeader from "./DashboardHeader";
 import DashboardSidebar from "./DashboardSidebar";
-import SitemarkIcon from "./SitemarkIcon";
 
 export interface DashboardLayoutProps {
   title?: string;
@@ -18,9 +17,22 @@ export interface DashboardLayoutProps {
   children?: React.ReactNode;
 }
 
+const defaultLogo = (
+  <Box
+    component="img"
+    src="/logo.png"
+    alt="Logo"
+    sx={{
+      width: { xs: 24, md: 32 },
+      height: { xs: 24, md: 32 },
+      mr: 1,
+    }}
+  />
+);
+
 export default function DashboardLayout({
   title = "NSolutions",
-  logo = <SitemarkIcon />,
+  logo = defaultLogo,
   headerActions,
   sidebarNavigation,
   sidebarFooter,

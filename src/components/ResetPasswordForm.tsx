@@ -130,15 +130,21 @@ const ResetPasswordForm: React.FC = () => {
           <Paper
             elevation={3}
             sx={{
-              p: 4,
+              p: 3,
               width: "100%",
-              maxWidth: 400,
+              maxWidth: 350,
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
             }}
           >
-            <Typography variant="h4" component="h1" gutterBottom>
+            <Box
+              component="img"
+              src="/logo.png"
+              alt="Logo"
+              sx={{ width: 48, height: 48, mb: 1 }}
+            />
+            <Typography variant="h5" component="h1" sx={{ mb: 1 }}>
               Invalid Reset Link
             </Typography>
 
@@ -178,18 +184,24 @@ const ResetPasswordForm: React.FC = () => {
         <Paper
           elevation={3}
           sx={{
-            p: 4,
+            p: 3,
             width: "100%",
-            maxWidth: 400,
+            maxWidth: 350,
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
           }}
         >
-          <Typography variant="h4" component="h1" gutterBottom>
+          <Box
+            component="img"
+            src="/logo.png"
+            alt="Logo"
+            sx={{ width: 48, height: 48, mb: 1 }}
+          />
+          <Typography variant="h5" component="h1" sx={{ mb: 1 }}>
             Reset Password
           </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
             Enter your new password below.
           </Typography>
 
@@ -222,7 +234,7 @@ const ResetPasswordForm: React.FC = () => {
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               required
-              margin="normal"
+              margin="dense"
               variant="outlined"
               autoComplete="new-password"
               disabled={loading}
@@ -250,7 +262,7 @@ const ResetPasswordForm: React.FC = () => {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
-              margin="normal"
+              margin="dense"
               variant="outlined"
               autoComplete="new-password"
               disabled={loading}
@@ -278,7 +290,7 @@ const ResetPasswordForm: React.FC = () => {
               type="submit"
               fullWidth
               variant="contained"
-              sx={{ mt: 3, mb: 2, py: 1.5 }}
+              sx={{ mt: 2, mb: 1, py: 1.2 }}
               disabled={isDisabled}
             >
               {loading ? (

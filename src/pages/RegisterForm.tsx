@@ -28,7 +28,18 @@ const RegisterForm: React.FC = () => {
     (state: RootState) => state.auth
   );
 
-  const isDisabled = useMemo(() => loading || !email.trim(), [loading, email]);
+  const emailError = useMemo(() => {
+    if (!email.trim()) {
+      return "Email is required";
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email) ? "" : "Invalid email format";
+  }, [email]);
+
+  const isDisabled = useMemo(
+    () => loading || !email.trim() || !!emailError,
+    [loading, email, emailError]
+  );
 
   const timeoutRef = useRef<number | null>(null);
 
@@ -94,18 +105,24 @@ const RegisterForm: React.FC = () => {
         <Paper
           elevation={3}
           sx={{
-            p: 4,
+            p: 3,
             width: "100%",
-            maxWidth: 450,
+            maxWidth: 350,
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
           }}
         >
-          <Typography variant="h4" component="h1" gutterBottom>
+          <Box
+            component="img"
+            src="/logo.png"
+            alt="Logo"
+            sx={{ width: 48, height: 48, mb: 1 }}
+          />
+          <Typography variant="h5" component="h1" sx={{ mb: 1 }}>
             Create Account
           </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
             Join NSolutions and start your journey with us.
           </Typography>
 
@@ -121,14 +138,14 @@ const RegisterForm: React.FC = () => {
             </Box>
           ) : (
             <>
-              {(formError || authError) && (
+              {(formError || authError || emailError) && (
                 <Alert
                   severity="error"
                   sx={{ width: "100%", mb: 2 }}
                   role="alert"
                   aria-live="assertive"
                 >
-                  {formError || authError}
+                  {formError || authError || emailError}
                 </Alert>
               )}
 
@@ -144,7 +161,7 @@ const RegisterForm: React.FC = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  margin="normal"
+                  margin="dense"
                   variant="outlined"
                   autoComplete="email"
                   disabled={loading}
@@ -154,7 +171,7 @@ const RegisterForm: React.FC = () => {
                   type="submit"
                   fullWidth
                   variant="contained"
-                  sx={{ mt: 3, mb: 2, py: 1.5 }}
+                  sx={{ mt: 2, mb: 1, py: 1.2 }}
                   disabled={isDisabled || success}
                 >
                   {loading ? (
@@ -167,7 +184,7 @@ const RegisterForm: React.FC = () => {
             </>
           )}
 
-          <Box sx={{ textAlign: "center", mt: 2 }}>
+          <Box sx={{ textAlign: "center", mt: 1 }}>
             <Typography variant="body2">
               Already have an account?{" "}
               <Link

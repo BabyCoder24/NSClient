@@ -65,12 +65,15 @@ const AdminDashboard: React.FC = () => {
     <Stack direction="row" alignItems="center" spacing={1.5}>
       <Box
         sx={{
-          display: { xs: "none", sm: "flex" },
+          display: "flex",
           flexDirection: "column",
           textAlign: "right",
         }}
       >
-        <Typography variant="body2" sx={{ fontWeight: 600, lineHeight: 1.2 }}>
+        <Typography
+          variant="body2"
+          sx={{ fontWeight: 600, lineHeight: 1.2, color: "white" }}
+        >
           {displayName}
         </Typography>
         <Typography variant="caption" color="text.secondary">

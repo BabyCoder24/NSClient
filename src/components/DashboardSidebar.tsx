@@ -243,7 +243,7 @@ export default function DashboardSidebar({
           position: "absolute",
           width: drawerWidth,
           boxSizing: "border-box",
-          backgroundImage: "none",
+          background: "linear-gradient(135deg, #00366b 0%, #1a7196 100%)",
           ...getDrawerWidthTransitionMixin(expanded),
         },
       };
@@ -305,6 +305,7 @@ export default function DashboardSidebar({
         variant="permanent"
         sx={{
           display: { xs: "none", md: "block" },
+
           ...getDrawerSharedSx(false),
         }}
       >

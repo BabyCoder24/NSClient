@@ -71,6 +71,7 @@ export default function DashboardHeader({
                 isExpanded ? collapseMenuActionText : expandMenuActionText
               } navigation menu`}
               onClick={handleMenuOpen}
+              sx={{ color: "white" }}
             >
               {isExpanded ? <MenuOpenIcon /> : <MenuIcon />}
             </IconButton>
@@ -82,7 +83,15 @@ export default function DashboardHeader({
   );
 
   return (
-    <AppBar color="inherit" position="absolute" sx={{ displayPrint: "none" }}>
+    <AppBar
+      color="inherit"
+      position="absolute"
+      sx={{
+        displayPrint: "none",
+        background: "linear-gradient(135deg, #2c3e50 0%, #58b8c7 100%)",
+        backdropFilter: "blur(10px)",
+      }}
+    >
       <Toolbar sx={{ backgroundColor: "inherit", mx: { xs: -0.75, sm: -1 } }}>
         <Stack
           direction="row"

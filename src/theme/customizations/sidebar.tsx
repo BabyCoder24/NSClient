@@ -8,14 +8,14 @@ import { typographyClasses } from "@mui/material/Typography";
 export const sidebarCustomizations: Components<Theme> = {
   MuiDrawer: {
     styleOverrides: {
-      root: ({ theme }: { theme: Theme }) => ({
+      root: () => ({
         [`& .${listSubheaderClasses.root}`]: {
           lineHeight: 3,
         },
         [`& .${listItemButtonClasses.root}`]: {
           "&.Mui-selected": {
             [`& .${typographyClasses.root}`]: {
-              color: (theme.vars ?? theme).palette.text.primary,
+              color: "white",
             },
           },
         },

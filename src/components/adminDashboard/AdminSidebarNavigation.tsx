@@ -9,7 +9,6 @@ import {
   ADMIN_DASHBOARD_OVERVIEW_PATH,
   ADMIN_DASHBOARD_SETTINGS_PATH,
 } from "../../constants";
-import DashboardSidebarHeaderItem from "../DashboardSidebarHeaderItem";
 import DashboardSidebarPageItem from "../DashboardSidebarPageItem";
 import DashboardSidebarDividerItem from "../DashboardSidebarDividerItem";
 
@@ -30,7 +29,7 @@ export default function AdminSidebarNavigation() {
 
   return (
     <React.Fragment>
-      <DashboardSidebarHeaderItem>Main</DashboardSidebarHeaderItem>
+      {/* <DashboardSidebarHeaderItem>Main</DashboardSidebarHeaderItem> */}
       <DashboardSidebarPageItem
         id="admin-overview"
         title="Overview"
@@ -49,7 +48,7 @@ export default function AdminSidebarNavigation() {
         selected={isPathActive(pathname, ADMIN_DASHBOARD_MANAGE_USERS_PATH)}
       />
       <DashboardSidebarDividerItem />
-      <DashboardSidebarHeaderItem>Shortcuts</DashboardSidebarHeaderItem>
+      {/* <DashboardSidebarHeaderItem>Shortcuts</DashboardSidebarHeaderItem> */}
       {/* <DashboardSidebarPageItem
         id="admin-home"
         title="Home"

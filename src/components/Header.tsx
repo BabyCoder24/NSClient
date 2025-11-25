@@ -13,7 +13,6 @@ import MenuIcon from "@mui/icons-material/Menu";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
-import BusinessIcon from "@mui/icons-material/Business";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import useMediaQuery from "@mui/material/useMediaQuery";
@@ -80,7 +79,12 @@ export default function Header() {
             mb: 2,
           }}
         >
-          <BusinessIcon sx={{ mr: 1, fontSize: 28 }} />
+          <Box
+            component="img"
+            src="/logo.png"
+            alt="Logo"
+            sx={{ mr: 1, width: 28, height: 28 }}
+          />
           <Box>
             <Typography variant="h6" sx={{ fontWeight: 600 }}>
               NSolutions
@@ -129,13 +133,16 @@ export default function Header() {
                   textAlign: "center",
                   padding: "12px 16px",
                   margin: "8px",
-                  backgroundColor: "#f44336",
+                  border: "1px solid #2196f3",
                   borderRadius: 2,
+                  boxShadow: "0 0 10px rgba(33, 150, 243, 0.5)",
                   transition: "all 0.2s ease",
                   "&:hover": {
-                    backgroundColor: "#d32f2f",
+                    borderColor: "#1976d2",
+                    color: "#1976d2",
+                    backgroundColor: "rgba(33, 150, 243, 0.04)",
                     transform: "translateY(-1px)",
-                    boxShadow: "0 2px 4px rgba(244, 67, 54, 0.3)",
+                    boxShadow: "0 0 15px rgba(33, 150, 243, 0.7)",
                   },
                 }}
                 component={Link}
@@ -146,7 +153,7 @@ export default function Header() {
                   slotProps={{
                     primary: {
                       fontWeight: 600,
-                      color: "white",
+                      color: "#2196f3",
                     },
                   }}
                 />
@@ -162,11 +169,12 @@ export default function Header() {
                   color: "white",
                   borderRadius: 2,
                   fontWeight: 600,
+                  boxShadow: "0 0 10px rgba(255, 255, 255, 0.5)",
                   transition: "all 0.2s ease",
                   "&:hover": {
                     backgroundColor: "#45a049",
                     transform: "translateY(-1px)",
-                    boxShadow: "0 2px 4px rgba(76, 175, 80, 0.3)",
+                    boxShadow: "0 0 15px rgba(255, 255, 255, 0.7)",
                   },
                 }}
                 component={Link}
@@ -236,10 +244,14 @@ export default function Header() {
               <MenuIcon />
             </IconButton>
           )}
-          <BusinessIcon
+          <Box
+            component="img"
+            src="/logo.png"
+            alt="Logo"
             sx={{
               mr: 1,
-              fontSize: { xs: 24, md: 32 },
+              width: { xs: 24, md: 32 },
+              height: { xs: 24, md: 32 },
             }}
           />
           <Typography
@@ -283,9 +295,9 @@ export default function Header() {
               {!accessToken ? (
                 <>
                   <Button
-                    variant="contained"
+                    variant="outlined"
                     sx={{
-                      backgroundColor: "#f44336",
+                      borderColor: "white",
                       color: "white",
                       mr: 1,
                       px: 3,
@@ -293,12 +305,14 @@ export default function Header() {
                       borderRadius: 2,
                       fontWeight: 600,
                       ml: 2,
+                      boxShadow: "0 0 10px rgba(255, 255, 255, 0.5)",
                       transition: "all 0.2s ease",
                       "&:hover": {
-                        backgroundColor: "#d32f2f",
-                        color: "#fff",
+                        borderColor: "white",
+                        color: "white",
+                        backgroundColor: "rgba(255, 255, 255, 0.1)",
                         transform: "translateY(-1px)",
-                        boxShadow: "0 4px 8px rgba(244, 67, 54, 0.3)",
+                        boxShadow: "0 0 15px rgba(255, 255, 255, 0.7)",
                       },
                     }}
                     component={Link}
@@ -316,12 +330,13 @@ export default function Header() {
                       py: 1,
                       borderRadius: 2,
                       fontWeight: 600,
+                      boxShadow: "0 0 10px rgba(255, 255, 255, 0.5)",
                       transition: "all 0.2s ease",
                       "&:hover": {
                         backgroundColor: "#45a049",
                         color: "#fff",
                         transform: "translateY(-1px)",
-                        boxShadow: "0 4px 8px rgba(76, 175, 80, 0.3)",
+                        boxShadow: "0 0 15px rgba(255, 255, 255, 0.7)",
                       },
                     }}
                     component={Link}

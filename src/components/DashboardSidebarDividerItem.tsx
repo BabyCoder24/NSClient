@@ -21,6 +21,7 @@ export default function DashboardSidebarDividerItem() {
           ...(hasDrawerTransitions
             ? getDrawerSxTransitionMixin(fullyExpanded, "margin")
             : {}),
+          bgcolor: "white",
         }}
       />
     </li>
