@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import {
   Typography,
   Box,
@@ -19,8 +19,16 @@ import {
 } from "@mui/icons-material";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
+import Loading from "../components/Loading";
 
 const Home: React.FC = () => {
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setLoading(false), 500);
+    return () => clearTimeout(timer);
+  }, []);
+
   const services = useMemo(
     () => [
       {
@@ -80,6 +88,10 @@ const Home: React.FC = () => {
     ],
     []
   );
+
+  if (loading) {
+    return <Loading />;
+  }
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>

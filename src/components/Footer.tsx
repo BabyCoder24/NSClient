@@ -1,5 +1,6 @@
 import React from "react";
 import { Box, Typography, Link, Divider } from "@mui/material";
+import { Link as RouterLink } from "react-router-dom";
 
 const Footer: React.FC = () => {
   return (
@@ -46,7 +47,8 @@ const Footer: React.FC = () => {
             </Typography>
             <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
               <Link
-                href="/"
+                component={RouterLink}
+                to="/"
                 color="inherit"
                 sx={{
                   textDecoration: "none",
@@ -58,7 +60,8 @@ const Footer: React.FC = () => {
                 Home
               </Link>
               <Link
-                href="/about"
+                component={RouterLink}
+                to="/about"
                 color="inherit"
                 sx={{
                   textDecoration: "none",
@@ -70,7 +73,8 @@ const Footer: React.FC = () => {
                 About
               </Link>
               <Link
-                href="/products"
+                component={RouterLink}
+                to="/products"
                 color="inherit"
                 sx={{
                   textDecoration: "none",
@@ -82,7 +86,8 @@ const Footer: React.FC = () => {
                 Products
               </Link>
               <Link
-                href="/services"
+                component={RouterLink}
+                to="/services"
                 color="inherit"
                 sx={{
                   textDecoration: "none",
@@ -94,7 +99,8 @@ const Footer: React.FC = () => {
                 Services
               </Link>
               <Link
-                href="/contact"
+                component={RouterLink}
+                to="/contact"
                 color="inherit"
                 sx={{
                   textDecoration: "none",
@@ -114,7 +120,8 @@ const Footer: React.FC = () => {
             </Typography>
             <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
               <Link
-                href="/login"
+                component={RouterLink}
+                to="/login"
                 color="inherit"
                 sx={{
                   textDecoration: "none",
@@ -126,7 +133,8 @@ const Footer: React.FC = () => {
                 Login
               </Link>
               <Link
-                href="/register"
+                component={RouterLink}
+                to="/register"
                 color="inherit"
                 sx={{
                   textDecoration: "none",
@@ -153,8 +161,9 @@ const Footer: React.FC = () => {
           >
             {"Copyright © "}
             <Link
+              component={RouterLink}
+              to="/"
               color="inherit"
-              href="/"
               sx={{
                 textDecoration: "none",
                 "&:hover": { textDecoration: "underline" },

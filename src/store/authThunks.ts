@@ -81,7 +81,7 @@ export const loginUser = createAsyncThunk(
       console.error("Login thunk error:", error);
       const message =
         error?.__kind === "network"
-          ? "Network error. Please check your connection."
+          ? error.message
           : error.response?.data?.message ||
             error.response?.data?.detail ||
             error.response?.data?.title ||
@@ -113,7 +113,7 @@ export const forgotPassword = createAsyncThunk(
     } catch (error: any) {
       const message =
         error?.__kind === "network"
-          ? "Network error. Please check your connection."
+          ? error.message
           : error.response?.data?.message || "Failed to send reset email";
       dispatch(showCrudMessage({ text: message, type: "error" }));
       return rejectWithValue({
@@ -138,7 +138,7 @@ export const resetPassword = createAsyncThunk(
     } catch (error: any) {
       const message =
         error?.__kind === "network"
-          ? "Network error. Please check your connection."
+          ? error.message
           : error.response?.data?.message || "Failed to reset password";
       dispatch(showCrudMessage({ text: message, type: "error" }));
       return rejectWithValue({
@@ -169,7 +169,7 @@ export const registerUser = createAsyncThunk(
     } catch (error: any) {
       const message =
         error?.__kind === "network"
-          ? "Network error. Please check your connection."
+          ? error.message
           : error.response?.data?.message || "Registration failed";
       dispatch(showCrudMessage({ text: message, type: "error" }));
       return rejectWithValue({
@@ -197,7 +197,7 @@ export const completeRegistration = createAsyncThunk(
     } catch (error: any) {
       const message =
         error?.__kind === "network"
-          ? "Network error. Please check your connection."
+          ? error.message
           : error.response?.data?.message || "Failed to complete registration";
       dispatch(showCrudMessage({ text: message, type: "error" }));
       return rejectWithValue({
@@ -219,7 +219,7 @@ export const setPassword = createAsyncThunk(
     } catch (error: any) {
       const message =
         error?.__kind === "network"
-          ? "Network error. Please check your connection."
+          ? error.message
           : error.response?.data?.message || "Failed to set password";
       dispatch(showCrudMessage({ text: message, type: "error" }));
       return rejectWithValue({
@@ -277,9 +277,13 @@ export const refreshToken = createAsyncThunk(
         role,
       };
     } catch (error: any) {
+      const message =
+        error?.__kind === "network"
+          ? error.message
+          : "Session expired. Please log in again.";
       dispatch(
         showCrudMessage({
-          text: "Session expired. Please log in again.",
+          text: message,
           type: "error",
         })
       );
