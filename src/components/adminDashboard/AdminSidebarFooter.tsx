@@ -55,13 +55,15 @@ export default function AdminSidebarFooter({
       sx={{
         borderRadius: 2,
         border: (theme) => `1px solid ${(theme.vars || theme).palette.divider}`,
-        p: 2,
-        backgroundColor: (theme) =>
-          theme.palette.mode === "dark"
-            ? (theme.vars || theme).palette.action.selected
-            : (theme.vars || theme).palette.grey[50],
-        textAlign: { xs: "center", sm: "left" },
-        minWidth: isCompact ? 220 : undefined,
+        p: 1,
+        // backgroundColor: (theme) =>
+        //   theme.palette.mode === "dark"
+        //     ? (theme.vars || theme).palette.action.selected
+        //     : (theme.vars || theme).palette.grey[50],
+        // textAlign: { xs: "center", sm: "left" },
+        // minWidth: isCompact ? 220 : undefined,
+        background: "linear-gradient(135deg, #add6ed 0%, #add6ed 100%)",
+        minWidth: isCompact ? 190 : undefined,
       }}
     >
       <Stack
@@ -73,7 +75,7 @@ export default function AdminSidebarFooter({
       >
         <FiberManualRecordIcon fontSize="small" sx={{ color: statusColor }} />
         <Typography variant="body2" fontWeight={600} noWrap>
-          NSolutions
+          Namakala Solutions
         </Typography>
       </Stack>
       <Typography variant="caption" color="text.secondary">
@@ -92,7 +94,7 @@ export default function AdminSidebarFooter({
       </Button>
       <Box sx={{ mt: 0.5 }}>
         <Typography variant="caption" color="text.secondary" display="block">
-          © {currentYear} NSolutions
+          © {currentYear} Namakala Solutions
         </Typography>
         <Typography variant="caption" color="text.secondary" display="block">
           All rights reserved.
@@ -110,7 +112,7 @@ export default function AdminSidebarFooter({
             onClick={handleOpen}
             aria-label="Show sidebar footer details"
             aria-haspopup="true"
-            color="primary"
+            sx={{ color: "#fff" }}
           >
             <InfoOutlinedIcon fontSize="small" />
           </IconButton>
@@ -121,7 +123,9 @@ export default function AdminSidebarFooter({
           onClose={handleClose}
           anchorOrigin={{ vertical: "top", horizontal: "center" }}
           transformOrigin={{ vertical: "bottom", horizontal: "center" }}
-          slotProps={{ paper: { sx: { p: 1, borderRadius: 2 } } }}
+          slotProps={{
+            paper: { sx: { p: 1, borderRadius: 2 } },
+          }}
         >
           {footerContent}
         </Popover>

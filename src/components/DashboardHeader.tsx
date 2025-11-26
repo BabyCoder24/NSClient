@@ -1,5 +1,5 @@
 import * as React from "react";
-import { styled, useTheme } from "@mui/material/styles";
+import { styled } from "@mui/material/styles";
 import Box from "@mui/material/Box";
 import MuiAppBar from "@mui/material/AppBar";
 import IconButton from "@mui/material/IconButton";
@@ -46,8 +46,6 @@ export default function DashboardHeader({
   onToggleMenu,
   actions,
 }: DashboardHeaderProps) {
-  const theme = useTheme();
-
   const handleMenuOpen = React.useCallback(() => {
     onToggleMenu(!menuOpen);
   }, [menuOpen, onToggleMenu]);
@@ -111,7 +109,7 @@ export default function DashboardHeader({
                   <Typography
                     variant="h6"
                     sx={{
-                      color: (theme.vars ?? theme).palette.primary.main,
+                      color: "white",
                       fontWeight: "700",
                       ml: 1,
                       whiteSpace: "nowrap",

@@ -61,6 +61,22 @@ export function printUtility({
   // Printable component encapsulated to be compatible with react-to-print
   const Printable = React.forwardRef<HTMLDivElement>((_, ref) => {
     const printDate = new Date().toLocaleString();
+    const firstPageRows = 5;
+    const subsequentPageRows = 10;
+    const effectiveRows =
+      maxRowsPerPage && maxRowsPerPage > 0
+        ? rows.slice(0, maxRowsPerPage)
+        : rows;
+    const pages: any[][] = [];
+    let remainingRows = effectiveRows;
+    if (remainingRows.length > 0) {
+      pages.push(remainingRows.slice(0, firstPageRows));
+      remainingRows = remainingRows.slice(firstPageRows);
+    }
+    while (remainingRows.length > 0) {
+      pages.push(remainingRows.slice(0, subsequentPageRows));
+      remainingRows = remainingRows.slice(subsequentPageRows);
+    }
 
     return (
       <div ref={ref as React.RefObject<HTMLDivElement>}>
@@ -68,91 +84,137 @@ export function printUtility({
           {`
             * { box-sizing: border-box; }
             body { font-family: 'Roboto', 'Arial', sans-serif; margin: 0; padding: 0; }
-            .print-root { padding: 20px; max-width: 100%; }
+            .print-root { max-width: 100%; }
+            .print-page { 
+              display: flex; 
+              flex-direction: column; 
+              min-height: 100vh; 
+              padding: 20px; 
+              page-break-after: always; 
+            }
+            .print-page:last-child { page-break-after: avoid; }
             .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; padding-bottom: 3px; border-bottom: 2px solid #e0e0e0; }
             .company-info { display: flex; flex-direction: column; }
-            .company-name { font-size: 1.5rem; font-weight: 700; color: #1976d2; letter-spacing: 1px; }
-            .company-tagline { font-size: 0.9rem; color: #666; font-weight: 400; margin-top: 2px; }
-            .logo { height: 150px; width: 150px; object-fit: contain; }
-            .content { margin-bottom: 20px; padding-bottom: 10px; }
-            .title { color: #000; text-align: center; margin: 20px 0; font-size: 1.8rem; font-weight: 600; }
-            table { width: 100%; border-collapse: collapse; margin-top: 20px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); border-radius: 8px; overflow: hidden; }
-            th, td { border: 1px solid #ddd; padding: 12px 15px; text-align: left; font-size: 14px; }
-            th { background: #4dabf5; color: #fff; font-size: 15px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+            .company-name { font-size: 1.1rem; font-weight: 700; color: #1976d2; letter-spacing: 1px; }
+            .company-tagline { font-size: 0.7rem; color: #666; font-weight: 400; margin-top: 2px; }
+            .logo { height: 100px; width: 100px; object-fit: contain; }
+            .content { flex: 1; margin-bottom: 20px; padding-bottom: 10px; }
+            .title { color: #000; text-align: center; margin: 10px 0; font-size: 1rem; font-weight: 600; }
+            table { width: 100%; border-collapse: collapse; margin-top: 10px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); border-radius: 8px; overflow: hidden; }
+            th, td { border: 1px solid #ddd; padding: 12px 15px; text-align: left; font-size: 9px; }
+            th { background: #4dabf5; color: #fff; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
             tr:nth-child(even) { background: #fafafa; }
             tr:hover { background: #f5f5f5; }
-            .footer { display: flex; align-items: center; justify-content: space-between; padding: 15px 0; color: #666; font-size: 12px; border-top: 2px solid #e0e0e0; margin-top: 20px; }
+            .footer { 
+              margin-top: auto;
+              display: flex; 
+              align-items: center; 
+              justify-content: space-between; 
+              padding: 15px 0; 
+              color: #666; 
+              font-size: 12px; 
+              border-top: 2px solid #e0e0e0; 
+            }
             .footer .left { font-weight: 500; }
             .footer .right { font-weight: 500; }
             @media print {
               @page { margin: 2.54cm; }
-              body { margin: 0; counter-reset: page; }
+              body { margin: 0; }
               .no-print { display: none !important; }
-              .print-root { padding: 0; }
               .header { page-break-inside: avoid; }
               .content { page-break-inside: avoid; }
-              .footer { position: fixed; left: 0; right: 0; bottom: 0; background: white; border-top: 1px solid #e0e0e0; }
+              .print-page { page-break-after: always; }
+              .print-page:last-child { page-break-after: avoid; }
               /* Keep table headers repeating and avoid splitting rows across pages */
               thead { display: table-header-group; }
               tfoot { display: table-footer-group; }
               table { page-break-inside: auto; break-inside: auto; }
               tr { page-break-inside: avoid; break-inside: avoid; }
               td, th { page-break-inside: avoid; break-inside: avoid; }
-              /* Page counter */
-              .pageNumber::after { content: counter(page); }
-              .pageNumber { counter-increment: page; }
             }
             ${extraStyles || ""}
           `}
         </style>
 
         <div className="print-root">
-          <div className="header">
-            <div className="company-info">
-              <div className="company-name">{appName}</div>
-              <div className="company-tagline">
-                Innovative solutions for your business needs.
+          {pages.map((pageRows, pageIndex) => (
+            <div key={pageIndex} className="print-page">
+              {pageIndex === 0 && (
+                <>
+                  <div className="header">
+                    <div className="company-info">
+                      <div className="company-name">{appName}</div>
+                      <div className="company-tagline">
+                        Innovative solutions for your business needs.
+                      </div>
+                    </div>
+                    {logoUrl ? (
+                      <img src={logoUrl} alt="logo" className="logo" />
+                    ) : null}
+                  </div>
+
+                  <div className="content">
+                    <h1 className="title">{title}</h1>
+
+                    <table>
+                      <thead>
+                        <tr>
+                          {columns.map((c) => (
+                            <th key={c.field}>{c.headerName}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {pageRows.map((row, idx) => (
+                          <tr key={idx}>
+                            {columns.map((c) => (
+                              <td key={c.field}>
+                                {formatCell
+                                  ? formatCell(row[c.field], c.field, row)
+                                  : String(row[c.field] ?? "")}
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              )}
+
+              {pageIndex > 0 && (
+                <div className="content">
+                  <table>
+                    <thead>
+                      <tr>
+                        {columns.map((c) => (
+                          <th key={c.field}>{c.headerName}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pageRows.map((row, idx) => (
+                        <tr key={idx}>
+                          {columns.map((c) => (
+                            <td key={c.field}>
+                              {formatCell
+                                ? formatCell(row[c.field], c.field, row)
+                                : String(row[c.field] ?? "")}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              <div className="footer">
+                <div className="left">Printed on: {printDate}</div>
+                <div className="right">Page {pageIndex + 1}</div>
               </div>
             </div>
-            {logoUrl ? <img src={logoUrl} alt="logo" className="logo" /> : null}
-          </div>
-
-          <div className="content">
-            <h1 className="title">{title}</h1>
-
-            <table>
-              <thead>
-                <tr>
-                  {columns.map((c) => (
-                    <th key={c.field}>{c.headerName}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {(maxRowsPerPage && maxRowsPerPage > 0
-                  ? rows.slice(0, maxRowsPerPage)
-                  : rows
-                ).map((row, idx) => (
-                  <tr key={idx}>
-                    {columns.map((c) => (
-                      <td key={c.field}>
-                        {formatCell
-                          ? formatCell(row[c.field], c.field, row)
-                          : String(row[c.field] ?? "")}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="footer">
-            <div className="left">Printed on: {printDate}</div>
-            <div className="right">
-              Page <span className="pageNumber" />
-            </div>
-          </div>
+          ))}
         </div>
       </div>
     );

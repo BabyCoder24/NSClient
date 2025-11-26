@@ -21,7 +21,6 @@ import {
   Snackbar,
   Menu,
   MenuItem,
-  Pagination,
   FormControlLabel,
   Checkbox,
   CircularProgress,
@@ -77,7 +76,6 @@ import UserService from "../services/userService";
 import PageContainer from "../components/PageContainer";
 import { printUtility, type PrintColumn } from "../utilities/printUtility";
 
-const MOBILE_PAGE_SIZE = 5;
 const DATA_GRID_ROW_HEIGHT = 56;
 const DATA_GRID_ROW_HEIGHT_SMALL = 64;
 const DATA_GRID_ROW_HEIGHT_TABLET = 60;
@@ -119,11 +117,19 @@ const ManageUsers: React.FC = () => {
     createdAt: "",
     updatedAt: "",
   });
-  const [mobilePage, setMobilePage] = useState(1);
   const [paginationModel, setPaginationModel] = useState({
     page: 0,
-    pageSize: 10,
+    pageSize: isSmall ? 5 : 10,
   });
+  useEffect(() => {
+    const newPageSize = isSmall ? 5 : 10;
+    setPaginationModel((prev) => {
+      if (prev.pageSize !== newPageSize) {
+        return { ...prev, pageSize: newPageSize };
+      }
+      return prev;
+    });
+  }, [isSmall]);
   const [sortModel, setSortModel] = useState<GridSortModel>([]);
   const [filterModel, setFilterModel] = useState<GridFilterModel>({
     items: [],
@@ -170,14 +176,6 @@ const ManageUsers: React.FC = () => {
   );
 
   useEffect(() => {
-    const maxPage = Math.max(
-      1,
-      Math.ceil(displayedUsers.length / MOBILE_PAGE_SIZE)
-    );
-    setMobilePage((prev) => Math.min(prev, maxPage));
-  }, [displayedUsers.length]);
-
-  useEffect(() => {
     setPaginationModel((prev) => {
       const maxPageIndex = Math.max(
         0,
@@ -189,16 +187,6 @@ const ManageUsers: React.FC = () => {
       return prev;
     });
   }, [displayedUsers.length]);
-
-  const mobileTotalPages = Math.max(
-    1,
-    Math.ceil(displayedUsers.length / MOBILE_PAGE_SIZE)
-  );
-
-  const mobilePaginatedUsers = useMemo(() => {
-    const startIndex = (mobilePage - 1) * MOBILE_PAGE_SIZE;
-    return displayedUsers.slice(startIndex, startIndex + MOBILE_PAGE_SIZE);
-  }, [displayedUsers, mobilePage]);
 
   const gridRowHeight = isSmall
     ? DATA_GRID_ROW_HEIGHT_SMALL
@@ -403,8 +391,8 @@ const ManageUsers: React.FC = () => {
   }, [isSmall, isTablet]);
 
   const gridPageSizeOptions = useMemo(
-    () => (isTablet ? [5, 10, 25] : [10, 25, 50]),
-    [isTablet]
+    () => (isSmall ? [5, 10] : isTablet ? [5, 10, 25] : [10, 25, 50]),
+    [isSmall, isTablet]
   );
   const gridDensity = isTablet ? "compact" : "standard";
   const gridContainerMinHeight = dataGridHeight;
@@ -450,7 +438,6 @@ const ManageUsers: React.FC = () => {
       updatedAt: "",
     });
     setFilterModel({ items: [] });
-    setMobilePage(1);
   };
 
   const handleSearch = () => {
@@ -1536,13 +1523,12 @@ const ManageUsers: React.FC = () => {
                       };
 
                       printUtility({
-                        title: "User Management Report",
+                        title: "User Report",
                         columns: printColumns,
-                        rows: dataGridRows,
+                        rows: displayedUsers,
                         appName: "NS Solutions",
-                        documentTitle: "User Management Report",
+                        documentTitle: "Users List",
                         extraStyles: "@page { size: A4 landscape; }",
-                        maxRowsPerPage: 25,
                         formatCell,
                       });
                     }}
@@ -1594,257 +1580,121 @@ const ManageUsers: React.FC = () => {
                   Add User
                 </Button>
               </Box>
-              {isSmall ? (
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                  {mobilePaginatedUsers.length > 0 ? (
-                    mobilePaginatedUsers.map((user) => {
-                      const isInactive = !user.isActive;
-                      return (
-                        <Card key={user.id} sx={{ p: 2 }}>
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 2,
-                              flexWrap: "wrap",
-                            }}
-                          >
-                            <Avatar sx={{ width: 40, height: 40 }}>
-                              {user.firstName?.[0] || "?"}
-                              {user.lastName?.[0] || ""}
-                            </Avatar>
-                            <Box sx={{ flex: 1, minWidth: 160 }}>
-                              <Typography variant="h6">
-                                {user.firstName} {user.lastName}
-                              </Typography>
-                              <Typography
-                                variant="body2"
-                                color="text.secondary"
-                              >
-                                {user.email}
-                              </Typography>
-                              <Box
-                                sx={{
-                                  display: "flex",
-                                  gap: 1,
-                                  mt: 1,
-                                  flexWrap: "wrap",
-                                }}
-                              >
-                                <Chip
-                                  label={user.roleName || "N/A"}
-                                  color={
-                                    user.roleName === "Administrator"
-                                      ? "error"
-                                      : "default"
-                                  }
-                                  size="small"
-                                />
-                                <Chip
-                                  label={
-                                    user.isVerified ? "Verified" : "Unverified"
-                                  }
-                                  color={user.isVerified ? "success" : "error"}
-                                  size="small"
-                                />
-                                <Chip
-                                  label={user.isActive ? "Active" : "Inactive"}
-                                  color={user.isActive ? "success" : "error"}
-                                  size="small"
-                                />
-                              </Box>
-                            </Box>
-                            <Box
-                              sx={{
-                                display: "flex",
-                                gap: 1,
-                                flexWrap: "wrap",
-                                justifyContent: "flex-end",
-                              }}
-                            >
-                              <IconButton
-                                size="small"
-                                onClick={() => handleView(user)}
-                              >
-                                <Visibility />
-                              </IconButton>
-                              <IconButton
-                                size="small"
-                                onClick={() => handleEdit(user)}
-                              >
-                                <Edit />
-                              </IconButton>
-                              {!user.isVerified && (
-                                <IconButton
-                                  size="small"
-                                  onClick={() => handleResendVerification(user)}
-                                >
-                                  <Email />
-                                </IconButton>
-                              )}
-                              {!isInactive && (
-                                <IconButton
-                                  size="small"
-                                  onClick={() => handlePasswordReset(user)}
-                                >
-                                  <LockReset />
-                                </IconButton>
-                              )}
-                              <IconButton
-                                size="small"
-                                onClick={() => handleDelete(user)}
-                              >
-                                <Delete />
-                              </IconButton>
-                            </Box>
-                          </Box>
-                        </Card>
-                      );
-                    })
-                  ) : (
-                    <Paper sx={{ p: 3, textAlign: "center" }}>
-                      <Typography variant="body2" color="text.secondary">
-                        No users found with the selected filters.
-                      </Typography>
-                    </Paper>
-                  )}
-                  {mobileTotalPages > 1 && (
-                    <Box
-                      sx={{
-                        display: "flex",
-                        justifyContent: "center",
-                        mt: 1,
-                      }}
-                    >
-                      <Pagination
-                        count={mobileTotalPages}
-                        page={mobilePage}
-                        onChange={(_, value) => setMobilePage(value)}
-                        size="small"
-                        color="primary"
-                        showFirstButton
-                        showLastButton
-                      />
-                    </Box>
-                  )}
+              <Box sx={{ width: "100%", overflowX: "auto" }}>
+                <Box
+                  sx={{
+                    minWidth: gridContainerMinWidth,
+                    borderRadius: 3,
+                    border: (theme) =>
+                      `1px solid ${alpha(theme.palette.primary.main, 0.18)}`,
+                    boxShadow: "0px 22px 48px rgba(15, 23, 42, 0.16)",
+                    backgroundColor: (theme) =>
+                      theme.palette.mode === "light"
+                        ? theme.palette.background.paper
+                        : alpha(theme.palette.background.paper, 0.9),
+                    display: "flex",
+                    flexDirection: "column",
+                    minHeight: gridContainerMinHeight,
+                    height: gridContainerMinHeight,
+                  }}
+                >
+                  <DataGrid
+                    rows={dataGridRows}
+                    columns={columns}
+                    density={gridDensity}
+                    rowHeight={gridRowHeight}
+                    columnHeaderHeight={gridHeaderHeight}
+                    showCellVerticalBorder
+                    // disableColumnResize
+                    disableColumnFilter
+                    disableColumnMenu
+                    paginationMode="server"
+                    sortingMode="server"
+                    filterMode="server"
+                    paginationModel={paginationModel}
+                    onPaginationModelChange={setPaginationModel}
+                    sortModel={sortModel}
+                    onSortModelChange={setSortModel}
+                    filterModel={filterModel}
+                    onFilterModelChange={setFilterModel}
+                    rowCount={dataGridRowCount}
+                    pageSizeOptions={gridPageSizeOptions}
+                    disableRowSelectionOnClick
+                    // hideFooterSelectedRowCount
+                    columnVisibilityModel={columnVisibilityModel}
+                    loading={loading}
+                    sx={(theme) => ({
+                      flexGrow: 1,
+                      width: "100%",
+                      border: 0,
+                      "& .MuiDataGrid-columnHeaders": {
+                        background: `linear-gradient(135deg, ${alpha(
+                          theme.palette.primary.main,
+                          0.08
+                        )} 0%, ${alpha(
+                          theme.palette.primary.main,
+                          0.18
+                        )} 100%)`,
+                        backdropFilter: "blur(6px)",
+                        borderBottom: `1px solid ${alpha(
+                          theme.palette.primary.main,
+                          0.18
+                        )}`,
+                        color: theme.palette.text.primary,
+                        fontWeight: 600,
+                      },
+                      "& .MuiDataGrid-columnHeaderTitle": {
+                        fontSize: "0.95rem",
+                        [theme.breakpoints.down("lg")]: {
+                          fontSize: "0.85rem",
+                        },
+                      },
+                      "& .MuiDataGrid-columnSeparator": {
+                        color: alpha(theme.palette.primary.main, 0.25),
+                      },
+                      "& .MuiDataGrid-cell": {
+                        borderBottom: `1px solid ${alpha(
+                          theme.palette.divider,
+                          0.6
+                        )}`,
+                        fontSize: "0.95rem",
+                        paddingBlock: theme.spacing(1.25),
+                        [theme.breakpoints.down("lg")]: {
+                          fontSize: "0.85rem",
+                          paddingBlock: theme.spacing(0.75),
+                        },
+                      },
+                      "& .MuiDataGrid-cell:focus": {
+                        outline: "none",
+                      },
+                      "& .MuiDataGrid-row:hover": {
+                        backgroundColor: alpha(
+                          theme.palette.primary.main,
+                          0.06
+                        ),
+                      },
+                      "& .MuiDataGrid-virtualScroller": {
+                        overflowX: "auto",
+                        overflowY: "auto",
+                        backgroundColor: "transparent",
+                      },
+                      "& .MuiDataGrid-footerContainer": {
+                        borderTop: `1px solid ${alpha(
+                          theme.palette.primary.main,
+                          0.18
+                        )}`,
+                        backgroundColor: alpha(
+                          theme.palette.background.paper,
+                          0.9
+                        ),
+                        "& .MuiTablePagination-displayedRows": {
+                          fontSize: "0.85rem",
+                        },
+                      },
+                    })}
+                  />
                 </Box>
-              ) : (
-                <Box sx={{ width: "100%", overflowX: "auto" }}>
-                  <Box
-                    sx={{
-                      minWidth: gridContainerMinWidth,
-                      borderRadius: 3,
-                      border: (theme) =>
-                        `1px solid ${alpha(theme.palette.primary.main, 0.18)}`,
-                      boxShadow: "0px 22px 48px rgba(15, 23, 42, 0.16)",
-                      backgroundColor: (theme) =>
-                        theme.palette.mode === "light"
-                          ? theme.palette.background.paper
-                          : alpha(theme.palette.background.paper, 0.9),
-                      display: "flex",
-                      flexDirection: "column",
-                      minHeight: gridContainerMinHeight,
-                      height: gridContainerMinHeight,
-                    }}
-                  >
-                    <DataGrid
-                      rows={dataGridRows}
-                      columns={columns}
-                      density={gridDensity}
-                      rowHeight={gridRowHeight}
-                      columnHeaderHeight={gridHeaderHeight}
-                      showCellVerticalBorder
-                      // disableColumnResize
-                      disableColumnFilter
-                      disableColumnMenu
-                      paginationMode="server"
-                      sortingMode="server"
-                      filterMode="server"
-                      paginationModel={paginationModel}
-                      onPaginationModelChange={setPaginationModel}
-                      sortModel={sortModel}
-                      onSortModelChange={setSortModel}
-                      filterModel={filterModel}
-                      onFilterModelChange={setFilterModel}
-                      rowCount={dataGridRowCount}
-                      pageSizeOptions={gridPageSizeOptions}
-                      disableRowSelectionOnClick
-                      // hideFooterSelectedRowCount
-                      columnVisibilityModel={columnVisibilityModel}
-                      loading={loading}
-                      sx={(theme) => ({
-                        flexGrow: 1,
-                        width: "100%",
-                        border: 0,
-                        "& .MuiDataGrid-columnHeaders": {
-                          background: `linear-gradient(135deg, ${alpha(
-                            theme.palette.primary.main,
-                            0.08
-                          )} 0%, ${alpha(
-                            theme.palette.primary.main,
-                            0.18
-                          )} 100%)`,
-                          backdropFilter: "blur(6px)",
-                          borderBottom: `1px solid ${alpha(
-                            theme.palette.primary.main,
-                            0.18
-                          )}`,
-                          color: theme.palette.text.primary,
-                          fontWeight: 600,
-                        },
-                        "& .MuiDataGrid-columnHeaderTitle": {
-                          fontSize: "0.95rem",
-                          [theme.breakpoints.down("lg")]: {
-                            fontSize: "0.85rem",
-                          },
-                        },
-                        "& .MuiDataGrid-columnSeparator": {
-                          color: alpha(theme.palette.primary.main, 0.25),
-                        },
-                        "& .MuiDataGrid-cell": {
-                          borderBottom: `1px solid ${alpha(
-                            theme.palette.divider,
-                            0.6
-                          )}`,
-                          fontSize: "0.95rem",
-                          paddingBlock: theme.spacing(1.25),
-                          [theme.breakpoints.down("lg")]: {
-                            fontSize: "0.85rem",
-                            paddingBlock: theme.spacing(0.75),
-                          },
-                        },
-                        "& .MuiDataGrid-cell:focus": {
-                          outline: "none",
-                        },
-                        "& .MuiDataGrid-row:hover": {
-                          backgroundColor: alpha(
-                            theme.palette.primary.main,
-                            0.06
-                          ),
-                        },
-                        "& .MuiDataGrid-virtualScroller": {
-                          overflowX: "auto",
-                          overflowY: "auto",
-                          backgroundColor: "transparent",
-                        },
-                        "& .MuiDataGrid-footerContainer": {
-                          borderTop: `1px solid ${alpha(
-                            theme.palette.primary.main,
-                            0.18
-                          )}`,
-                          backgroundColor: alpha(
-                            theme.palette.background.paper,
-                            0.9
-                          ),
-                          "& .MuiTablePagination-displayedRows": {
-                            fontSize: "0.85rem",
-                          },
-                        },
-                      })}
-                    />
-                  </Box>
-                </Box>
-              )}
+              </Box>
             </CardContent>
           </Card>
         </Stack>
