@@ -28,9 +28,7 @@ import {
 } from "../constants";
 
 const AdminDashboard: React.FC = () => {
-  const { user, accessToken, role } = useSelector(
-    (state: RootState) => state.auth
-  );
+  const { user, role } = useSelector((state: RootState) => state.auth);
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const [menuAnchor, setMenuAnchor] = React.useState<null | HTMLElement>(null);
@@ -139,7 +137,7 @@ const AdminDashboard: React.FC = () => {
                 // title="NSolutions"
                 headerActions={headerActions}
                 sidebarNavigation={<AdminSidebarNavigation />}
-                sidebarFooter={<AdminSidebarFooter isOnline={!!accessToken} />}
+                sidebarFooter={<AdminSidebarFooter />}
               />
             }
           >

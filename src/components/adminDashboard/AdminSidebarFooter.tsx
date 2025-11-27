@@ -12,25 +12,55 @@ import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
 import SettingsIcon from "@mui/icons-material/Settings";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import { Link as RouterLink } from "react-router-dom";
+import axios from "axios";
 import DashboardSidebarContext from "../../context/DashboardSidebarContext";
 import { ADMIN_DASHBOARD_SETTINGS_PATH } from "../../constants";
 
 interface AdminSidebarFooterProps {
-  isOnline: boolean;
+  // isOnline prop removed, now checked internally
 }
 
-export default function AdminSidebarFooter({
-  isOnline,
-}: AdminSidebarFooterProps) {
+export default function AdminSidebarFooter({}: AdminSidebarFooterProps) {
   const theme = useTheme();
   const sidebarContext = React.useContext(DashboardSidebarContext);
   const isViewportCompact = useMediaQuery(theme.breakpoints.down("md"));
   const isSidebarMini = sidebarContext?.mini ?? false;
   const isSidebarCollapsed = sidebarContext?.fullyCollapsed ?? false;
   const isCompact = isViewportCompact || isSidebarMini || isSidebarCollapsed;
-  const statusLabel = isOnline ? "All systems operational" : "Offline";
+  const [isOnline, setIsOnline] = React.useState(true);
+  const statusLabel = isOnline ? "API Server Online" : "API Server Offline";
   const statusColor = isOnline ? "success.main" : "error.main";
+  const glowColor = isOnline
+    ? "rgba(76, 175, 80, 0.6)"
+    : "rgba(244, 67, 54, 0.6)";
   const currentYear = new Date().getFullYear();
+
+  const checkConnection = React.useCallback(async () => {
+    try {
+      const healthAxios = axios.create({
+        baseURL: axios.defaults.baseURL,
+        timeout: 5000,
+      });
+      await healthAxios.get("/health");
+      setIsOnline(true);
+    } catch (error) {
+      const isNetwork =
+        !(error as any)?.response ||
+        (error as any)?.code === "ERR_NETWORK" ||
+        (error as any)?.code === "ECONNABORTED";
+      if (isNetwork) {
+        setIsOnline(false);
+      } else {
+        setIsOnline(true);
+      }
+    }
+  }, []);
+
+  React.useEffect(() => {
+    checkConnection();
+    const interval = setInterval(checkConnection, 30000); // Check every 30 seconds
+    return () => clearInterval(interval);
+  }, [checkConnection]);
 
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const popoverOpen = Boolean(anchorEl);
@@ -53,17 +83,21 @@ export default function AdminSidebarFooter({
     <Stack
       spacing={1.5}
       sx={{
+        width: "100%",
         borderRadius: 2,
         border: (theme) => `1px solid ${(theme.vars || theme).palette.divider}`,
-        p: 1,
-        // backgroundColor: (theme) =>
+        p: 1.5,
+        // background: (theme) =>
         //   theme.palette.mode === "dark"
-        //     ? (theme.vars || theme).palette.action.selected
-        //     : (theme.vars || theme).palette.grey[50],
-        // textAlign: { xs: "center", sm: "left" },
-        // minWidth: isCompact ? 220 : undefined,
-        background: "linear-gradient(135deg, #add6ed 0%, #add6ed 100%)",
-        minWidth: isCompact ? 190 : undefined,
+        //     ? "rgba(255, 255, 255, 0.05)"
+        //     : "rgba(0, 0, 0, 0.02)",
+        background: "linear-gradient(135deg, #2c3e50 0%, #58b8c7 100%)",
+        backdropFilter: "blur(8px)",
+        boxShadow: (theme) =>
+          theme.palette.mode === "dark"
+            ? "0 4px 12px rgba(0, 0, 0, 0.3)"
+            : "0 2px 8px rgba(0, 0, 0, 0.1)",
+        transition: "all 0.2s ease-in-out",
       }}
     >
       <Stack
@@ -73,30 +107,67 @@ export default function AdminSidebarFooter({
         justifyContent={{ xs: "center", sm: "flex-start" }}
         sx={{ flexWrap: "wrap" }}
       >
-        <FiberManualRecordIcon fontSize="small" sx={{ color: statusColor }} />
-        <Typography variant="body2" fontWeight={600} noWrap>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: 24,
+            height: 24,
+            borderRadius: "50%",
+            backgroundColor: (theme) =>
+              theme.palette.mode === "dark"
+                ? "rgba(255, 255, 255, 0.1)"
+                : "rgba(0, 0, 0, 0.05)",
+            boxShadow: `0 0 8px ${glowColor}`,
+          }}
+        >
+          <FiberManualRecordIcon fontSize="small" sx={{ color: statusColor }} />
+        </Box>
+        <Typography
+          variant="body2"
+          fontWeight={600}
+          noWrap
+          sx={{ color: "white" }}
+        >
           Namakala Solutions
         </Typography>
       </Stack>
-      <Typography variant="caption" color="text.secondary">
+      <Typography
+        variant="caption"
+        color="text.secondary"
+        sx={{ color: "white" }}
+      >
         {statusLabel}
       </Typography>
       <Button
         component={RouterLink}
         to={ADMIN_DASHBOARD_SETTINGS_PATH}
-        variant="outlined"
+        variant="contained"
         size="small"
         startIcon={<SettingsIcon fontSize="small" />}
         fullWidth
         aria-label="Open settings"
+        sx={{
+          backgroundColor: (theme) =>
+            theme.palette.mode === "dark"
+              ? "rgba(255, 255, 255, 0.1)"
+              : "rgba(0, 0, 0, 0.05)",
+          color: "white",
+          "&:hover": {
+            color: "white",
+          },
+          border: (theme) =>
+            `1px solid ${(theme.vars || theme).palette.divider}`,
+        }}
       >
         Settings
       </Button>
       <Box sx={{ mt: 0.5 }}>
-        <Typography variant="caption" color="text.secondary" display="block">
+        <Typography variant="caption" color="white" display="block">
           © {currentYear} Namakala Solutions
         </Typography>
-        <Typography variant="caption" color="text.secondary" display="block">
+        <Typography variant="caption" color="white">
           All rights reserved.
         </Typography>
       </Box>

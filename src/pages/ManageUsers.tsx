@@ -1,97 +1,38 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   Box,
   Typography,
-  Card,
-  CardContent,
-  Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  Chip,
-  IconButton,
-  useMediaQuery,
   useTheme,
-  Avatar,
-  Paper,
-  Divider,
-  Alert,
-  Snackbar,
   Menu,
   MenuItem,
-  FormControlLabel,
-  Checkbox,
-  CircularProgress,
+  Snackbar,
+  Alert,
   Stack,
 } from "@mui/material";
-import {
-  DataGrid,
-  type GridColDef,
-  GridActionsCellItem,
-  type GridRowParams,
-  type GridSortModel,
-  type GridFilterModel,
-} from "@mui/x-data-grid";
-import { alpha } from "@mui/material/styles";
-import {
-  People as PeopleIcon,
-  Settings as SettingsIcon,
-  Logout,
-  Add,
-  Edit,
-  Delete,
-  Visibility,
-  LockReset,
-  Work,
-  CheckCircle,
-  Cancel,
-  Save,
-  Close,
-  Person,
-  Email,
-  Print,
-  PictureAsPdf,
-  TableChart,
-} from "@mui/icons-material";
+import { Settings as SettingsIcon, Logout } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import type { RootState, AppDispatch } from "../store/store";
 import { logoutUser } from "../store/authThunks";
-import type {
-  User,
-  CreateUserRequest,
-  UpdateUserRequest,
-} from "../models/user";
-import {
-  fetchUsers,
-  createUser,
-  updateUser,
-  deleteUser,
-  adminResetPassword,
-  resendVerificationEmail,
-} from "../store/userSlice";
-import UserService from "../services/userService";
+import { fetchUsers } from "../store/userSlice";
 import PageContainer from "../components/PageContainer";
 import { printUtility, type PrintColumn } from "../utilities/printUtility";
+import axios from "axios";
 import Loading from "../components/Loading";
 
-const DATA_GRID_ROW_HEIGHT = 56;
-const DATA_GRID_ROW_HEIGHT_SMALL = 64;
-const DATA_GRID_ROW_HEIGHT_TABLET = 60;
-const DATA_GRID_HEADER_HEIGHT = 56;
-const DATA_GRID_HEADER_HEIGHT_COMPACT = 52;
-const DATA_GRID_FOOTER_HEIGHT = 52;
-const DATA_GRID_MIN_HEIGHT = 360;
-
-type DialogType =
-  | "view"
-  | "create"
-  | "edit"
-  | "delete"
-  | "reset"
-  | "resendVerification";
+// New imports for refactored components and hooks
+import StatsCards from "../components/ManageUsers/StatsCards";
+import UserFilters from "../components/ManageUsers/UserFilters";
+import UserDataGrid from "../components/ManageUsers/UserDataGrid";
+import UserViewDialog from "../components/ManageUsers/dialogs/UserViewDialog";
+import UserCreateDialog from "../components/ManageUsers/dialogs/UserCreateDialog";
+import UserEditDialog from "../components/ManageUsers/dialogs/UserEditDialog";
+import UserDeleteDialog from "../components/ManageUsers/dialogs/UserDeleteDialog";
+import UserResetDialog from "../components/ManageUsers/dialogs/UserResetDialog";
+import UserResendDialog from "../components/ManageUsers/dialogs/UserResendDialog";
+import { useUserData } from "../hooks/users/useUserData";
+import { useUserFilters } from "../hooks/users/useUserFilters";
+import { useUserDialogs } from "../hooks/users/useUserDialogs";
 
 const ManageUsers: React.FC = () => {
   const { users, loading, error } = useSelector(
@@ -100,303 +41,61 @@ const ManageUsers: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const theme = useTheme();
-  const isSmall = useMediaQuery(theme.breakpoints.down("sm"));
-  const isTablet = useMediaQuery(theme.breakpoints.between("sm", "lg"));
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [dialogType, setDialogType] = useState<DialogType>("view");
-  const [formData, setFormData] = useState<any>({});
-  const [initialFormData, setInitialFormData] = useState<any>({});
-  const [filters, setFilters] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    role: "All",
-    isVerified: "All",
-    isActive: "All",
-    createdAt: "",
-    updatedAt: "",
-  });
-  const [paginationModel, setPaginationModel] = useState({
-    page: 0,
-    pageSize: isSmall ? 5 : 10,
-  });
-  useEffect(() => {
-    const newPageSize = isSmall ? 5 : 10;
-    setPaginationModel((prev) => {
-      if (prev.pageSize !== newPageSize) {
-        return { ...prev, pageSize: newPageSize };
-      }
-      return prev;
-    });
-  }, [isSmall]);
-  const [sortModel, setSortModel] = useState<GridSortModel>([]);
-  const [filterModel, setFilterModel] = useState<GridFilterModel>({
-    items: [],
-  });
-  const [dataGridRows, setDataGridRows] = useState<User[]>([]);
-  const [dataGridRowCount, setDataGridRowCount] = useState(0);
-  const [refetchTrigger, setRefetchTrigger] = useState(0);
-  const [exportLoading, setExportLoading] = useState(false);
-
-  const filterUsers = useCallback(
-    (list: User[]) =>
-      list.filter(
-        (user) =>
-          (filters.firstName === "" ||
-            user.firstName
-              .toLowerCase()
-              .includes(filters.firstName.toLowerCase())) &&
-          (filters.lastName === "" ||
-            user.lastName
-              .toLowerCase()
-              .includes(filters.lastName.toLowerCase())) &&
-          (filters.email === "" ||
-            user.email.toLowerCase().includes(filters.email.toLowerCase())) &&
-          (filters.role === "All" || user.roleName === filters.role) &&
-          (filters.isVerified === "All" ||
-            (user.isVerified ? "Verified" : "Unverified") ===
-              filters.isVerified) &&
-          (filters.isActive === "All" ||
-            (user.isActive ? "Active" : "Inactive") === filters.isActive) &&
-          (filters.createdAt === "" ||
-            new Date(user.createdAt).toDateString() ===
-              new Date(filters.createdAt).toDateString()) &&
-          (filters.updatedAt === "" ||
-            (user.updatedAt &&
-              new Date(user.updatedAt).toDateString() ===
-                new Date(filters.updatedAt).toDateString()))
-      ),
-    [filters]
-  );
-
-  const displayedUsers = useMemo(
-    () => filterUsers(users),
-    [users, filterUsers]
-  );
-
-  useEffect(() => {
-    setPaginationModel((prev) => {
-      const maxPageIndex = Math.max(
-        0,
-        Math.ceil(displayedUsers.length / prev.pageSize) - 1
-      );
-      if (prev.page > maxPageIndex) {
-        return { ...prev, page: maxPageIndex };
-      }
-      return prev;
-    });
-  }, [displayedUsers.length]);
-
-  const gridRowHeight = isSmall
-    ? DATA_GRID_ROW_HEIGHT_SMALL
-    : isTablet
-    ? DATA_GRID_ROW_HEIGHT_TABLET
-    : DATA_GRID_ROW_HEIGHT;
-  const gridHeaderHeight = isTablet
-    ? DATA_GRID_HEADER_HEIGHT_COMPACT
-    : DATA_GRID_HEADER_HEIGHT;
-  const gridContainerMinWidth = isTablet ? "100%" : "auto";
-
-  const visibleRowCount = useMemo(() => {
-    if (displayedUsers.length === 0) {
-      return 0;
-    }
-    const startIndex = paginationModel.page * paginationModel.pageSize;
-    const remaining = displayedUsers.length - startIndex;
-    return Math.max(0, Math.min(paginationModel.pageSize, remaining));
-  }, [displayedUsers.length, paginationModel]);
-
-  const dataGridHeight = useMemo(() => {
-    const rowsHeight = visibleRowCount * gridRowHeight;
-    return Math.max(
-      DATA_GRID_MIN_HEIGHT,
-      gridHeaderHeight + DATA_GRID_FOOTER_HEIGHT + rowsHeight
-    );
-  }, [gridHeaderHeight, gridRowHeight, visibleRowCount]);
-
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
     severity: "success" as "success" | "error",
   });
 
-  const dialogMeta = useMemo<
-    Record<DialogType, { title: string; subtitle: string }>
-  >(
-    () => ({
-      view: {
-        title: "View User",
-        subtitle: "Review account information and access history.",
-      },
-      create: {
-        title: "Create New User",
-        subtitle: "Configure profile details and access permissions.",
-      },
-      edit: {
-        title: "Edit User",
-        subtitle: "Update personal information or adjust their role.",
-      },
-      delete: {
-        title: "Delete User",
-        subtitle: "Double-check before removing this account permanently.",
-      },
-      reset: {
-        title: "Reset Password",
-        subtitle: "Send the user a secure password reset link via email.",
-      },
-      resendVerification: {
-        title: "Resend Verification",
-        subtitle:
-          "Send another verification email so the user can activate their account.",
-      },
-    }),
-    []
-  );
+  // State for DataGrid
+  const [paginationModel, setPaginationModel] = useState({
+    page: 0,
+    pageSize: 10,
+  });
+  const [sortModel, setSortModel] = useState<any[]>([]);
+  const [filterModel, setFilterModel] = useState<any>({ items: [] });
+  const [refetchTrigger, setRefetchTrigger] = useState(0);
 
-  const activeDialogMeta = dialogMeta[dialogType];
+  // Loading states for print and export operations
+  const [printLoading, setPrintLoading] = useState(false);
+  const [excelLoading, setExcelLoading] = useState(false);
+  const [pdfLoading, setPdfLoading] = useState(false);
 
-  const firstNameError = useMemo(() => {
-    return formData.firstName?.trim() ? "" : "First name is required";
-  }, [formData.firstName]);
+  // Trigger refetch function
+  const triggerRefetch = useCallback(() => {
+    setRefetchTrigger((prev) => prev + 1);
+  }, []);
 
-  const lastNameError = useMemo(() => {
-    return formData.lastName?.trim() ? "" : "Last name is required";
-  }, [formData.lastName]);
+  // Use custom hooks
+  const { filters, handleSearch, handleClearFilters } = useUserFilters({
+    onSearch: triggerRefetch,
+  });
+  const {
+    dataGridRows,
+    dataGridRowCount,
+    loading: dataLoading,
+  } = useUserData({
+    filters,
+    paginationModel,
+    sortModel,
+    filterModel,
+    refetchTrigger,
+  });
 
-  const emailError = useMemo(() => {
-    if (!formData.email?.trim()) {
-      return "Email is required";
-    }
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(formData.email) ? "" : "Invalid email format";
-  }, [formData.email]);
-
-  const isFormValid = useMemo(() => {
-    if (dialogType === "create" || dialogType === "edit") {
-      return !firstNameError && !lastNameError && !emailError;
-    }
-    return true;
-  }, [dialogType, firstNameError, lastNameError, emailError]);
-
-  const hasChanges = useMemo(() => {
-    if (dialogType === "create") return true;
-    if (dialogType === "edit") {
-      return (
-        initialFormData.firstName !== formData.firstName ||
-        initialFormData.lastName !== formData.lastName ||
-        initialFormData.username !== formData.username ||
-        initialFormData.email !== formData.email ||
-        initialFormData.companyName !== formData.companyName ||
-        initialFormData.roleId !== formData.roleId ||
-        initialFormData.isActive !== formData.isActive
-      );
-    }
-    return false;
-  }, [dialogType, initialFormData, formData]);
-
-  const dialogHeaderStyles = useMemo(() => {
-    switch (dialogType) {
-      case "delete":
-        return {
-          background: `linear-gradient(135deg, ${theme.palette.error.main} 0%, ${theme.palette.error.dark} 100%)`,
-        };
-      case "reset":
-        return {
-          background: `linear-gradient(135deg, ${theme.palette.info.main} 0%, ${theme.palette.info.dark} 100%)`,
-        };
-      default:
-        return {
-          background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
-        };
-    }
-  }, [dialogType, theme]);
-
-  const selectedUserDetails = useMemo(
-    () =>
-      selectedUser
-        ? [
-            { label: "First Name", value: selectedUser.firstName },
-            { label: "Last Name", value: selectedUser.lastName },
-            { label: "Username", value: selectedUser.username },
-            { label: "Email", value: selectedUser.email },
-            {
-              label: "Company",
-              value: selectedUser.companyName || "Not provided",
-            },
-            { label: "Role", value: selectedUser.roleName || "N/A" },
-            {
-              label: "Status",
-              value: selectedUser.isVerified ? "Verified" : "Unverified",
-            },
-            {
-              label: "Active",
-              value: selectedUser.isActive ? "Active" : "Inactive",
-            },
-            {
-              label: "Created At",
-              value: new Date(selectedUser.createdAt).toLocaleString(),
-            },
-            {
-              label: "Updated At",
-              value: selectedUser.updatedAt
-                ? new Date(selectedUser.updatedAt).toLocaleString()
-                : "N/A",
-            },
-          ]
-        : [],
-    [selectedUser]
-  );
-
-  const columnVisibilityModel = useMemo(() => {
-    if (isSmall) {
-      return {
-        firstName: true,
-        lastName: true,
-        username: false,
-        email: false,
-        roleName: false,
-        isVerified: true,
-        isActive: true,
-        createdAt: false,
-        updatedAt: false,
-      };
-    }
-
-    if (isTablet) {
-      return {
-        firstName: true,
-        lastName: true,
-        username: false,
-        email: false,
-        roleName: true,
-        isVerified: true,
-        isActive: true,
-        createdAt: false,
-        updatedAt: false,
-      };
-    }
-
-    return {
-      firstName: true,
-      lastName: true,
-      username: true,
-      email: true,
-      roleName: true,
-      isVerified: true,
-      isActive: true,
-      createdAt: true,
-      updatedAt: true,
-    };
-  }, [isSmall, isTablet]);
-
-  const gridPageSizeOptions = useMemo(
-    () => (isSmall ? [5, 10] : isTablet ? [5, 10, 25] : [10, 25, 50]),
-    [isSmall, isTablet]
-  );
-  const gridDensity = isTablet ? "compact" : "standard";
-  const gridContainerMinHeight = dataGridHeight;
+  const {
+    dialogOpen,
+    dialogType,
+    selectedUser,
+    handleView,
+    handleCreate,
+    handleEdit,
+    handleDelete,
+    handlePasswordReset,
+    handleResendVerification,
+    handleDialogClose,
+    handleFormSubmit,
+  } = useUserDialogs(setSnackbar);
 
   useEffect(() => {
     dispatch(fetchUsers());
@@ -423,543 +122,168 @@ const ManageUsers: React.FC = () => {
     handleClose();
   };
 
-  const handleFilterChange = (field: string, value: string) => {
-    setFilters({ ...filters, [field]: value });
-  };
-
-  const handleClearFilters = () => {
-    setFilters({
-      firstName: "",
-      lastName: "",
-      email: "",
-      role: "All",
-      isVerified: "All",
-      isActive: "All",
-      createdAt: "",
-      updatedAt: "",
-    });
-    setFilterModel({ items: [] });
-  };
-
-  const handleSearch = () => {
-    const items = [];
-    if (filters.firstName)
-      items.push({
-        field: "firstName",
-        operator: "contains",
-        value: filters.firstName,
-      });
-    if (filters.lastName)
-      items.push({
-        field: "lastName",
-        operator: "contains",
-        value: filters.lastName,
-      });
-    if (filters.email)
-      items.push({
-        field: "email",
-        operator: "contains",
-        value: filters.email,
-      });
-    if (filters.role && filters.role !== "All")
-      items.push({
-        field: "roleName",
-        operator: "contains",
-        value: filters.role,
-      });
-    if (filters.isVerified && filters.isVerified !== "All") {
-      const value = filters.isVerified === "Verified" ? "true" : "false";
-      items.push({ field: "isVerified", operator: "equals", value });
-    }
-    if (filters.isActive && filters.isActive !== "All") {
-      const value = filters.isActive === "Active" ? "true" : "false";
-      items.push({ field: "isActive", operator: "equals", value });
-    }
-    setFilterModel({ items });
-  };
-
-  const handleView = (user: User) => {
-    setSelectedUser(user);
-    setDialogType("view");
-    setDialogOpen(true);
-  };
-
-  const handleCreate = () => {
-    setFormData({
-      firstName: "",
-      lastName: "",
-      companyName: "",
-      username: "",
-      email: "",
-      roleId: 2,
-    });
-    setDialogType("create");
-    setDialogOpen(true);
-  };
-
-  const handleEdit = (user: User) => {
-    setSelectedUser(user);
-    const data = {
-      id: user.id,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      companyName: user.companyName,
-      username: user.username,
-      email: user.email,
-      isVerified: user.isVerified,
-      isActive: user.isActive,
-      roleId: user.roleId,
-    };
-    setFormData(data);
-    setInitialFormData(data);
-    setDialogType("edit");
-    setDialogOpen(true);
-  };
-
-  const handleDelete = (user: User) => {
-    setSelectedUser(user);
-    setDialogType("delete");
-    setDialogOpen(true);
-  };
-
-  const handlePasswordReset = (user: User) => {
-    setSelectedUser(user);
-    setDialogType("reset");
-    setDialogOpen(true);
-  };
-
-  const handleResendVerification = (user: User) => {
-    setSelectedUser(user);
-    setDialogType("resendVerification");
-    setDialogOpen(true);
-  };
-
-  const handleDialogClose = () => {
-    setDialogOpen(false);
-    setSelectedUser(null);
-    setFormData({});
-    setInitialFormData({});
-  };
-
-  const fetchData = useCallback(async () => {
+  const handlePrint = () => {
+    setPrintLoading(true);
     try {
-      const params: Record<string, any> = {
-        skip: paginationModel.page * paginationModel.pageSize,
-        take: paginationModel.pageSize,
+      const printColumns: PrintColumn[] = [
+        { field: "firstName", headerName: "First Name" },
+        { field: "lastName", headerName: "Last Name" },
+        { field: "username", headerName: "Username" },
+        { field: "email", headerName: "Email" },
+        { field: "roleName", headerName: "Role" },
+        { field: "isVerified", headerName: "Verified" },
+        { field: "isActive", headerName: "Active" },
+        { field: "createdAt", headerName: "Created At" },
+        { field: "updatedAt", headerName: "Updated At" },
+      ];
+
+      const formatCell = (value: any, field: string): React.ReactNode => {
+        if (field === "isActive" || field === "isVerified") {
+          return value ? "Yes" : "No";
+        }
+        if (field === "createdAt" || field === "updatedAt") {
+          return value ? new Date(value).toLocaleString() : "N/A";
+        }
+        return value;
       };
+
+      printUtility({
+        title: "User Report",
+        columns: printColumns,
+        rows: users,
+        appName: "NS Solutions",
+        documentTitle: "Users List",
+        extraStyles: "@page { size: A4 landscape; }",
+        formatCell,
+      });
+    } finally {
+      setPrintLoading(false);
+    }
+  };
+
+  const handleExportExcel = async () => {
+    setExcelLoading(true);
+    try {
+      const params = new URLSearchParams();
+
+      // Add pagination - for export, get all records
+      params.append("take", "10000");
 
       // Add sorting
       if (sortModel.length > 0) {
         sortModel.forEach((sort) => {
           const field =
             sort.field.charAt(0).toUpperCase() + sort.field.slice(1);
-          params[`sort[field]`] = field;
-          params[`sort[dir]`] = sort.sort;
-        });
-      }
-
-      // Add filtering
-      if (filterModel.items.length > 0) {
-        filterModel.items.forEach((filter) => {
-          const field =
-            filter.field.charAt(0).toUpperCase() + filter.field.slice(1);
-          params[field] = filter.value;
+          params.append("sort[field]", field);
+          params.append("sort[dir]", sort.sort || "asc");
         });
       }
 
       // Add custom filters
-      if (filters.firstName) params.FirstName = filters.firstName;
-      if (filters.lastName) params.LastName = filters.lastName;
-      if (filters.email) params.Email = filters.email;
+      if (filters.firstName) params.append("FirstName", filters.firstName);
+      if (filters.lastName) params.append("LastName", filters.lastName);
+      if (filters.email) params.append("Email", filters.email);
       if (filters.role !== "All")
-        params.RoleId = filters.role === "Administrator" ? 1 : 2;
+        params.append("RoleId", filters.role === "Administrator" ? "1" : "2");
       if (filters.isVerified !== "All")
-        params.IsVerified = filters.isVerified === "Verified";
+        params.append(
+          "IsVerified",
+          filters.isVerified === "Verified" ? "true" : "false"
+        );
       if (filters.isActive !== "All")
-        params.IsActive = filters.isActive === "Active";
-      if (filters.createdAt) params.CreatedAt = filters.createdAt;
-      if (filters.updatedAt) params.UpdatedAt = filters.updatedAt;
+        params.append(
+          "IsActive",
+          filters.isActive === "Active" ? "true" : "false"
+        );
+      if (filters.createdAt) params.append("CreatedAt", filters.createdAt);
+      if (filters.updatedAt) params.append("UpdatedAt", filters.updatedAt);
 
-      const response = await UserService.findByQuery(params);
-      setDataGridRows(response.records || []);
-      setDataGridRowCount(response.recordCount || 0);
+      const response = await axios.get(
+        `/User/export/excel?${params.toString()}`,
+        {
+          responseType: "blob",
+        }
+      );
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "users.xlsx";
+      a.click();
+      window.URL.revokeObjectURL(url);
     } catch (error) {
-      console.error("Error fetching data:", error);
+      console.error("Export Excel failed:", error);
       setSnackbar({
         open: true,
-        message: "Failed to load users. Please try again.",
-        severity: "error",
-      });
-    }
-  }, [paginationModel, sortModel, filterModel, refetchTrigger]);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
-  const buildParams = () => {
-    const params: Record<string, any> = {};
-
-    // Add sorting
-    if (sortModel.length > 0) {
-      sortModel.forEach((sort) => {
-        const field = sort.field.charAt(0).toUpperCase() + sort.field.slice(1);
-        params[`sort[field]`] = field;
-        params[`sort[dir]`] = sort.sort;
-      });
-    }
-
-    // Add filtering
-    if (filterModel.items.length > 0) {
-      filterModel.items.forEach((filter) => {
-        const field =
-          filter.field.charAt(0).toUpperCase() + filter.field.slice(1);
-        params[field] = filter.value;
-      });
-    }
-
-    // Add custom filters
-    if (filters.firstName) params.FirstName = filters.firstName;
-    if (filters.lastName) params.LastName = filters.lastName;
-    if (filters.email) params.Email = filters.email;
-    if (filters.role !== "All")
-      params.RoleId = filters.role === "Administrator" ? 1 : 2;
-    if (filters.isVerified !== "All")
-      params.IsVerified = filters.isVerified === "Verified";
-    if (filters.isActive !== "All")
-      params.IsActive = filters.isActive === "Active";
-    if (filters.createdAt) params.CreatedAt = filters.createdAt;
-    if (filters.updatedAt) params.UpdatedAt = filters.updatedAt;
-
-    return params;
-  };
-
-  const handleExportExcel = async () => {
-    setExportLoading(true);
-    try {
-      const params = buildParams();
-      const blob = await UserService.exportUsersToExcel(params);
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = "users.xlsx";
-      link.click();
-      URL.revokeObjectURL(url);
-      setSnackbar({
-        open: true,
-        message: "Excel export completed.",
-        severity: "success",
-      });
-    } catch (error) {
-      setSnackbar({
-        open: true,
-        message: "Failed to export Excel.",
+        message: "Failed to export Excel file.",
         severity: "error",
       });
     } finally {
-      setExportLoading(false);
+      setExcelLoading(false);
     }
   };
 
   const handleExportPdf = async () => {
-    setExportLoading(true);
+    setPdfLoading(true);
     try {
-      const params = buildParams();
-      const blob = await UserService.exportUsersToPdf(params);
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = "users.pdf";
-      link.click();
-      URL.revokeObjectURL(url);
-      setSnackbar({
-        open: true,
-        message: "PDF export completed.",
-        severity: "success",
-      });
+      const params = new URLSearchParams();
+
+      // Add pagination - for export, get all records
+      params.append("take", "10000");
+
+      // Add sorting
+      if (sortModel.length > 0) {
+        sortModel.forEach((sort) => {
+          const field =
+            sort.field.charAt(0).toUpperCase() + sort.field.slice(1);
+          params.append("sort[field]", field);
+          params.append("sort[dir]", sort.sort || "asc");
+        });
+      }
+
+      // Add custom filters
+      if (filters.firstName) params.append("FirstName", filters.firstName);
+      if (filters.lastName) params.append("LastName", filters.lastName);
+      if (filters.email) params.append("Email", filters.email);
+      if (filters.role !== "All")
+        params.append("RoleId", filters.role === "Administrator" ? "1" : "2");
+      if (filters.isVerified !== "All")
+        params.append(
+          "IsVerified",
+          filters.isVerified === "Verified" ? "true" : "false"
+        );
+      if (filters.isActive !== "All")
+        params.append(
+          "IsActive",
+          filters.isActive === "Active" ? "true" : "false"
+        );
+      if (filters.createdAt) params.append("CreatedAt", filters.createdAt);
+      if (filters.updatedAt) params.append("UpdatedAt", filters.updatedAt);
+
+      const response = await axios.get(
+        `/User/export/pdf?${params.toString()}`,
+        {
+          responseType: "blob",
+        }
+      );
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "users.pdf";
+      a.click();
+      window.URL.revokeObjectURL(url);
     } catch (error) {
+      console.error("Export PDF failed:", error);
       setSnackbar({
         open: true,
-        message: "Failed to export PDF.",
+        message: "Failed to export PDF file.",
         severity: "error",
       });
     } finally {
-      setExportLoading(false);
+      setPdfLoading(false);
     }
   };
-
-  const handleFormSubmit = async () => {
-    if (dialogType === "create") {
-      if (!isFormValid) {
-        setSnackbar({
-          open: true,
-          message:
-            "Please resolve the highlighted validation errors before creating the user.",
-          severity: "error",
-        });
-        return;
-      }
-      try {
-        const result = await dispatch(
-          createUser(formData as CreateUserRequest)
-        ).unwrap();
-        setRefetchTrigger((prev) => prev + 1);
-        setSnackbar({
-          open: true,
-          message:
-            (result as any).message ||
-            "User created successfully. A set-password email has been sent to the user's email address.",
-          severity: "success",
-        });
-        dispatch(fetchUsers());
-        handleDialogClose();
-      } catch (err: unknown) {
-        const errorMessage =
-          (err as any)?.message || "Failed to create user. Please try again.";
-        setSnackbar({
-          open: true,
-          message: errorMessage,
-          severity: "error",
-        });
-      }
-      return;
-    } else if (dialogType === "edit" && selectedUser) {
-      if (!isFormValid) {
-        setSnackbar({
-          open: true,
-          message:
-            "Please resolve the highlighted validation errors before saving changes.",
-          severity: "error",
-        });
-        return;
-      }
-      try {
-        await dispatch(updateUser(formData as UpdateUserRequest)).unwrap();
-        setRefetchTrigger((prev) => prev + 1);
-        setSnackbar({
-          open: true,
-          message: "User updated successfully.",
-          severity: "success",
-        });
-        dispatch(fetchUsers());
-        handleDialogClose();
-        return;
-      } catch (err: unknown) {
-        const errorMessage =
-          (err as any)?.message || "Failed to update user. Please try again.";
-        setSnackbar({
-          open: true,
-          message: errorMessage,
-          severity: "error",
-        });
-        return;
-      }
-    } else if (dialogType === "delete" && selectedUser) {
-      try {
-        const result = await dispatch(deleteUser(selectedUser.id)).unwrap();
-        setRefetchTrigger((prev) => prev + 1);
-        setSnackbar({
-          open: true,
-          message: result.message || "User deleted successfully.",
-          severity: "success",
-        });
-        dispatch(fetchUsers());
-        handleDialogClose();
-      } catch (err: unknown) {
-        const errorMessage = (err as any)?.message || "Failed to delete user.";
-        setSnackbar({
-          open: true,
-          message: errorMessage,
-          severity: "error",
-        });
-      }
-    } else if (dialogType === "reset" && selectedUser) {
-      try {
-        const result = await dispatch(
-          adminResetPassword(selectedUser.id)
-        ).unwrap();
-        setRefetchTrigger((prev) => prev + 1);
-        setSnackbar({
-          open: true,
-          message:
-            (result as any)?.message ||
-            "Password reset email sent successfully.",
-          severity: "success",
-        });
-        dispatch(fetchUsers());
-        handleDialogClose();
-      } catch (err: unknown) {
-        const errorMessage =
-          (err as any)?.message || "Failed to send reset email.";
-        setSnackbar({
-          open: true,
-          message: errorMessage,
-          severity: "error",
-        });
-      }
-    } else if (dialogType === "resendVerification" && selectedUser) {
-      try {
-        const result = await dispatch(
-          resendVerificationEmail(selectedUser.id)
-        ).unwrap();
-        setSnackbar({
-          open: true,
-          message:
-            (result as any)?.message ||
-            "Verification email resent successfully.",
-          severity: "success",
-        });
-        handleDialogClose();
-      } catch (err: unknown) {
-        const errorMessage =
-          (err as any)?.message || "Failed to resend verification email.";
-        setSnackbar({
-          open: true,
-          message: errorMessage,
-          severity: "error",
-        });
-      }
-    }
-  };
-
-  const columns: GridColDef[] = [
-    {
-      field: "firstName",
-      headerName: "First Name",
-      flex: 1,
-      minWidth: 100,
-    },
-    {
-      field: "lastName",
-      headerName: "Last Name",
-      flex: 1,
-      minWidth: 100,
-    },
-    {
-      field: "username",
-      headerName: "Username",
-      flex: 1,
-      minWidth: 100,
-    },
-    {
-      field: "email",
-      headerName: "Email",
-      flex: 1,
-      minWidth: 120,
-    },
-    {
-      field: "roleName",
-      headerName: "Role",
-      flex: 0,
-      minWidth: 100,
-      renderCell: (params) => (
-        <Chip
-          label={params.value || "N/A"}
-          color={params.value === "Administrator" ? "error" : "default"}
-          size="small"
-        />
-      ),
-    },
-    {
-      field: "isVerified",
-      headerName: "Status",
-      flex: 0,
-      minWidth: 80,
-      renderCell: (params) => (
-        <Chip
-          label={params.value ? "Verified" : "Unverified"}
-          color={params.value ? "success" : "error"}
-          size="small"
-        />
-      ),
-    },
-    {
-      field: "isActive",
-      headerName: "Active",
-      flex: 0,
-      minWidth: 80,
-      renderCell: (params) => (
-        <Chip
-          label={params.value ? "Active" : "Inactive"}
-          color={params.value ? "success" : "error"}
-          size="small"
-        />
-      ),
-    },
-    {
-      field: "createdAt",
-      headerName: "Created At",
-      flex: 1,
-      minWidth: 100,
-      renderCell: (params) => new Date(params.value).toLocaleString(),
-    },
-    {
-      field: "updatedAt",
-      headerName: "Updated At",
-      flex: 1,
-      minWidth: 100,
-      renderCell: (params) =>
-        params.value ? new Date(params.value).toLocaleString() : "N/A",
-    },
-    {
-      field: "actions",
-      type: "actions",
-      headerName: "Actions",
-      flex: 0,
-      minWidth: 120,
-      getActions: (params: GridRowParams) => {
-        const isInactive = !params.row.isActive;
-
-        const actions = [
-          <GridActionsCellItem
-            icon={<Visibility />}
-            label="View"
-            onClick={() => handleView(params.row)}
-            showInMenu
-          />,
-          <GridActionsCellItem
-            icon={<Edit />}
-            label="Edit"
-            onClick={() => handleEdit(params.row)}
-            showInMenu
-          />,
-        ];
-
-        if (!params.row.isVerified) {
-          actions.push(
-            <GridActionsCellItem
-              icon={<Email />}
-              label="Resend Verification"
-              onClick={() => handleResendVerification(params.row)}
-              showInMenu
-            />
-          );
-        }
-
-        if (!isInactive) {
-          actions.push(
-            <GridActionsCellItem
-              icon={<LockReset />}
-              label="Reset Password"
-              onClick={() => handlePasswordReset(params.row)}
-              showInMenu
-            />
-          );
-        }
-
-        actions.push(
-          <GridActionsCellItem
-            icon={<Delete />}
-            label="Delete"
-            onClick={() => handleDelete(params.row)}
-            showInMenu
-          />
-        );
-
-        return actions;
-      },
-    },
-  ];
 
   return (
     <>
@@ -1038,1173 +362,75 @@ const ManageUsers: React.FC = () => {
               </Box>
             </Box>
 
-            {/* Stats Cards - Using CSS Grid for responsive layout */}
-            <Box
-              sx={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-                gap: { xs: 2, sm: 3, md: 4 },
-                alignItems: "stretch",
-              }}
-            >
-              <Card
-                sx={{
-                  background:
-                    "linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)",
-                  "&:hover": {
-                    transform: "translateY(-4px)",
-                    transition: "0.3s",
-                  },
-                  height: "100%",
-                }}
-              >
-                <CardContent>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      flexWrap: "wrap",
-                    }}
-                  >
-                    <PeopleIcon
-                      sx={{
-                        fontSize: { xs: 30, md: 40 },
-                        color: "primary.main",
-                        mr: 2,
-                      }}
-                    />
-                    <Box>
-                      <Typography
-                        variant={isSmall ? "h5" : "h4"}
-                        color="primary"
-                        sx={{ overflow: "hidden", textOverflow: "ellipsis" }}
-                      >
-                        {users.length}
-                      </Typography>
-                      <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        sx={{ overflow: "hidden", textOverflow: "ellipsis" }}
-                      >
-                        Total Users
-                      </Typography>
-                    </Box>
-                  </Box>
-                </CardContent>
-              </Card>
-              <Card
-                sx={{
-                  background:
-                    "linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%)",
-                  "&:hover": {
-                    transform: "translateY(-4px)",
-                    transition: "0.3s",
-                  },
-                  height: "100%",
-                }}
-              >
-                <CardContent>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      flexWrap: "wrap",
-                    }}
-                  >
-                    <CheckCircle
-                      sx={{
-                        fontSize: { xs: 30, md: 40 },
-                        color: "success.main",
-                        mr: 2,
-                      }}
-                    />
-                    <Box>
-                      <Typography
-                        variant={isSmall ? "h5" : "h4"}
-                        color="success.main"
-                        sx={{ overflow: "hidden", textOverflow: "ellipsis" }}
-                      >
-                        {users.filter((u) => u.isVerified).length}
-                      </Typography>
-                      <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        sx={{ overflow: "hidden", textOverflow: "ellipsis" }}
-                      >
-                        Verified Users
-                      </Typography>
-                    </Box>
-                  </Box>
-                </CardContent>
-              </Card>
-              <Card
-                sx={{
-                  background:
-                    "linear-gradient(135deg, #e1f5fe 0%, #b3e5fc 100%)",
-                  "&:hover": {
-                    transform: "translateY(-4px)",
-                    transition: "0.3s",
-                  },
-                  height: "100%",
-                }}
-              >
-                <CardContent>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      flexWrap: "wrap",
-                    }}
-                  >
-                    <Person
-                      sx={{
-                        fontSize: { xs: 30, md: 40 },
-                        color: "info.main",
-                        mr: 2,
-                      }}
-                    />
-                    <Box>
-                      <Typography
-                        variant={isSmall ? "h5" : "h4"}
-                        color="info.main"
-                        sx={{ overflow: "hidden", textOverflow: "ellipsis" }}
-                      >
-                        {users.filter((u) => u.isActive).length}
-                      </Typography>
-                      <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        sx={{ overflow: "hidden", textOverflow: "ellipsis" }}
-                      >
-                        Active Users
-                      </Typography>
-                    </Box>
-                  </Box>
-                </CardContent>
-              </Card>
-              <Card
-                sx={{
-                  background:
-                    "linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%)",
-                  "&:hover": {
-                    transform: "translateY(-4px)",
-                    transition: "0.3s",
-                  },
-                  height: "100%",
-                }}
-              >
-                <CardContent>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      flexWrap: "wrap",
-                    }}
-                  >
-                    <Work
-                      sx={{
-                        fontSize: { xs: 30, md: 40 },
-                        color: "warning.main",
-                        mr: 2,
-                      }}
-                    />
-                    <Box>
-                      <Typography
-                        variant={isSmall ? "h5" : "h4"}
-                        color="warning.main"
-                        sx={{ overflow: "hidden", textOverflow: "ellipsis" }}
-                      >
-                        {
-                          users.filter((u) => u.roleName === "Administrator")
-                            .length
-                        }
-                      </Typography>
-                      <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        sx={{ overflow: "hidden", textOverflow: "ellipsis" }}
-                      >
-                        Administrators
-                      </Typography>
-                    </Box>
-                  </Box>
-                </CardContent>
-              </Card>
-              <Card
-                sx={{
-                  background:
-                    "linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%)",
-                  "&:hover": {
-                    transform: "translateY(-4px)",
-                    transition: "0.3s",
-                  },
-                  height: "100%",
-                }}
-              >
-                <CardContent>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      flexWrap: "wrap",
-                    }}
-                  >
-                    <Cancel
-                      sx={{
-                        fontSize: { xs: 30, md: 40 },
-                        color: "error.main",
-                        mr: 2,
-                      }}
-                    />
-                    <Box>
-                      <Typography
-                        variant={isSmall ? "h5" : "h4"}
-                        color="error.main"
-                        sx={{ overflow: "hidden", textOverflow: "ellipsis" }}
-                      >
-                        {users.filter((u) => !u.isVerified).length}
-                      </Typography>
-                      <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        sx={{ overflow: "hidden", textOverflow: "ellipsis" }}
-                      >
-                        Unverified Users
-                      </Typography>
-                    </Box>
-                  </Box>
-                </CardContent>
-              </Card>
-            </Box>
+            {/* Stats Cards */}
+            <StatsCards />
 
-            {/* Filters Card */}
-            <Card
-              sx={{
-                borderRadius: 3,
-                position: "relative",
-                overflow: "hidden",
-                color: "common.white",
-                background:
-                  "linear-gradient(135deg, #1e3c72 0%, #2a5298 45%, #38a3d1 100%)",
-                boxShadow: "0px 18px 42px rgba(30, 64, 175, 0.22)",
-                "&::before": {
-                  content: '""',
-                  position: "absolute",
-                  inset: 0,
-                  background:
-                    "linear-gradient(180deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0) 70%)",
-                },
-              }}
-            >
-              <CardContent
-                sx={{
-                  position: "relative",
-                  zIndex: 1,
-                  p: { xs: 2, sm: 3 },
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: { xs: 2, sm: 2.5 },
-                }}
-              >
-                <Box>
-                  <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                    User Filters
-                  </Typography>
-                  <Typography variant="body2" sx={{ opacity: 0.85 }}>
-                    Quickly narrow down users by name, role, or status.
-                  </Typography>
-                </Box>
-                <Box
-                  sx={{
-                    backgroundColor: (theme) =>
-                      alpha(theme.palette.common.white, 0.92),
-                    borderRadius: 2,
-                    p: { xs: 1.5, sm: 2.5 },
-                    boxShadow: "0 12px 32px rgba(15, 23, 42, 0.15)",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: { xs: 1.5, sm: 2 },
-                    color: "text.primary",
-                  }}
-                >
-                  <Box
-                    sx={{
-                      display: "grid",
-                      gap: { xs: 1, sm: 1.5, md: 2 },
-                      gridTemplateColumns: {
-                        xs: "1fr",
-                        sm: "repeat(auto-fit, minmax(200px, 1fr))",
-                      },
-                    }}
-                  >
-                    <TextField
-                      fullWidth
-                      label="First Name"
-                      value={filters.firstName}
-                      onChange={(e) =>
-                        handleFilterChange("firstName", e.target.value)
-                      }
-                      sx={{ minWidth: 0 }}
-                      id="filter-first-name"
-                      name="first-name"
-                    />
-                    <TextField
-                      fullWidth
-                      label="Last Name"
-                      value={filters.lastName}
-                      onChange={(e) =>
-                        handleFilterChange("lastName", e.target.value)
-                      }
-                      sx={{ minWidth: 0 }}
-                      id="filter-last-name"
-                      name="last-name"
-                    />
-                    <TextField
-                      fullWidth
-                      label="Email"
-                      value={filters.email}
-                      onChange={(e) =>
-                        handleFilterChange("email", e.target.value)
-                      }
-                      sx={{ minWidth: 0 }}
-                      id="filter-email"
-                      name="filter-email"
-                    />
-                    <TextField
-                      fullWidth
-                      select
-                      label="Role"
-                      value={filters.role}
-                      onChange={(e) =>
-                        handleFilterChange("role", e.target.value)
-                      }
-                      sx={{ minWidth: 0 }}
-                      id="filter-role"
-                      name="filter-role"
-                    >
-                      <MenuItem value="All">All</MenuItem>
-                      <MenuItem value="Administrator">Administrator</MenuItem>
-                      <MenuItem value="Standard User">Standard User</MenuItem>
-                    </TextField>
-                    <TextField
-                      fullWidth
-                      select
-                      label="Status"
-                      value={filters.isVerified}
-                      onChange={(e) =>
-                        handleFilterChange("isVerified", e.target.value)
-                      }
-                      sx={{ minWidth: 0 }}
-                      id="filter-is-verified"
-                      name="filter-is-verified"
-                    >
-                      <MenuItem value="All">All</MenuItem>
-                      <MenuItem value="Verified">Verified</MenuItem>
-                      <MenuItem value="Unverified">Unverified</MenuItem>
-                    </TextField>
-                    <TextField
-                      fullWidth
-                      select
-                      label="Active"
-                      value={filters.isActive}
-                      onChange={(e) =>
-                        handleFilterChange("isActive", e.target.value)
-                      }
-                      sx={{ minWidth: 0 }}
-                      id="filter-is-active"
-                      name="filter-is-active"
-                    >
-                      <MenuItem value="All">All</MenuItem>
-                      <MenuItem value="Active">Active</MenuItem>
-                      <MenuItem value="Inactive">Inactive</MenuItem>
-                    </TextField>
-                    <TextField
-                      fullWidth
-                      label="Created At"
-                      type="date"
-                      value={filters.createdAt}
-                      onChange={(e) =>
-                        handleFilterChange("createdAt", e.target.value)
-                      }
-                      sx={{ minWidth: 0 }}
-                      id="filter-created-at"
-                      name="created-at"
-                      InputLabelProps={{
-                        shrink: true,
-                      }}
-                    />
-                    <TextField
-                      fullWidth
-                      label="Updated At"
-                      type="date"
-                      value={filters.updatedAt}
-                      onChange={(e) =>
-                        handleFilterChange("updatedAt", e.target.value)
-                      }
-                      sx={{ minWidth: 0 }}
-                      id="filter-updated-at"
-                      name="updated-at"
-                      InputLabelProps={{
-                        shrink: true,
-                      }}
-                    />
-                  </Box>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      gap: 1.5,
-                      flexWrap: "wrap",
-                      alignItems: "center",
-                    }}
-                  >
-                    <Button
-                      variant="contained"
-                      onClick={handleSearch}
-                      sx={{
-                        minWidth: 140,
-                        borderRadius: 999,
-                        px: 3,
-                      }}
-                    >
-                      Search
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      onClick={handleClearFilters}
-                      sx={{
-                        minWidth: 140,
-                        borderRadius: 999,
-                        px: 3,
-                        color: "text.primary",
-                        borderColor: (theme) =>
-                          alpha(theme.palette.primary.main, 0.4),
-                        "&:hover": {
-                          borderColor: (theme) => theme.palette.primary.main,
-                          backgroundColor: (theme) =>
-                            alpha(theme.palette.primary.main, 0.08),
-                        },
-                      }}
-                    >
-                      Reset
-                    </Button>
-                  </Box>
-                </Box>
-              </CardContent>
-            </Card>
+            {/* Filters */}
+            <UserFilters
+              onSearch={handleSearch}
+              onClearFilters={handleClearFilters}
+            />
 
-            <Card>
-              <CardContent>
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: { xs: "stretch", md: "center" },
-                    flexDirection: { xs: "column", md: "row" },
-                    gap: { xs: 1.5, md: 2 },
-                    mb: 3,
-                  }}
-                >
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                    <Typography variant="h6">Users</Typography>
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      startIcon={<Print />}
-                      onClick={() => {
-                        const printColumns: PrintColumn[] = columns
-                          .filter((col) => col.field !== "actions")
-                          .map((col) => ({
-                            field: col.field,
-                            headerName: col.headerName || col.field,
-                          }));
-
-                        const formatCell = (
-                          value: any,
-                          field: string,
-                          _row: any
-                        ): React.ReactNode => {
-                          if (field === "isActive" || field === "isVerified") {
-                            return value ? "Yes" : "No";
-                          }
-                          if (field === "createdAt" || field === "updatedAt") {
-                            return value
-                              ? new Date(value).toLocaleString()
-                              : "N/A";
-                          }
-                          return value;
-                        };
-
-                        printUtility({
-                          title: "User Report",
-                          columns: printColumns,
-                          rows: displayedUsers,
-                          appName: "NS Solutions",
-                          documentTitle: "Users List",
-                          extraStyles: "@page { size: A4 landscape; }",
-                          formatCell,
-                        });
-                      }}
-                      sx={{
-                        borderRadius: 2,
-                        minWidth: { md: 120 },
-                      }}
-                    >
-                      Print
-                    </Button>
-                    <Button
-                      variant="contained"
-                      color="success"
-                      startIcon={<TableChart />}
-                      onClick={handleExportExcel}
-                      disabled={exportLoading}
-                      sx={{
-                        borderRadius: 2,
-                        minWidth: { md: 120 },
-                      }}
-                    >
-                      {exportLoading ? <CircularProgress size={20} /> : "Excel"}
-                    </Button>
-                    <Button
-                      variant="contained"
-                      color="error"
-                      startIcon={<PictureAsPdf />}
-                      onClick={handleExportPdf}
-                      disabled={exportLoading}
-                      sx={{
-                        borderRadius: 2,
-                        minWidth: { md: 120 },
-                      }}
-                    >
-                      {exportLoading ? <CircularProgress size={20} /> : "PDF"}
-                    </Button>
-                  </Box>
-                  <Button
-                    variant="contained"
-                    startIcon={<Add />}
-                    onClick={handleCreate}
-                    sx={{
-                      borderRadius: 2,
-                      width: { xs: "100%", md: "auto" },
-                      minWidth: { md: 160 },
-                      alignSelf: { xs: "stretch", md: "center" },
-                    }}
-                  >
-                    Add User
-                  </Button>
-                </Box>
-                <Box sx={{ width: "100%", overflowX: "auto" }}>
-                  <Box
-                    sx={{
-                      minWidth: gridContainerMinWidth,
-                      borderRadius: 3,
-                      border: (theme) =>
-                        `1px solid ${alpha(theme.palette.primary.main, 0.18)}`,
-                      boxShadow: "0px 22px 48px rgba(15, 23, 42, 0.16)",
-                      backgroundColor: (theme) =>
-                        theme.palette.mode === "light"
-                          ? theme.palette.background.paper
-                          : alpha(theme.palette.background.paper, 0.9),
-                      display: "flex",
-                      flexDirection: "column",
-                      minHeight: gridContainerMinHeight,
-                      height: gridContainerMinHeight,
-                    }}
-                  >
-                    <DataGrid
-                      rows={dataGridRows}
-                      columns={columns}
-                      density={gridDensity}
-                      rowHeight={gridRowHeight}
-                      columnHeaderHeight={gridHeaderHeight}
-                      showCellVerticalBorder
-                      // disableColumnResize
-                      disableColumnFilter
-                      disableColumnMenu
-                      paginationMode="server"
-                      sortingMode="server"
-                      filterMode="server"
-                      paginationModel={paginationModel}
-                      onPaginationModelChange={setPaginationModel}
-                      sortModel={sortModel}
-                      onSortModelChange={setSortModel}
-                      filterModel={filterModel}
-                      onFilterModelChange={setFilterModel}
-                      rowCount={dataGridRowCount}
-                      pageSizeOptions={gridPageSizeOptions}
-                      disableRowSelectionOnClick
-                      // hideFooterSelectedRowCount
-                      columnVisibilityModel={columnVisibilityModel}
-                      loading={loading}
-                      sx={(theme) => ({
-                        flexGrow: 1,
-                        width: "100%",
-                        border: 0,
-                        "& .MuiDataGrid-columnHeaders": {
-                          background: `linear-gradient(135deg, ${alpha(
-                            theme.palette.primary.main,
-                            0.08
-                          )} 0%, ${alpha(
-                            theme.palette.primary.main,
-                            0.18
-                          )} 100%)`,
-                          backdropFilter: "blur(6px)",
-                          borderBottom: `1px solid ${alpha(
-                            theme.palette.primary.main,
-                            0.18
-                          )}`,
-                          color: theme.palette.text.primary,
-                          fontWeight: 600,
-                        },
-                        "& .MuiDataGrid-columnHeaderTitle": {
-                          fontSize: "0.95rem",
-                          [theme.breakpoints.down("lg")]: {
-                            fontSize: "0.85rem",
-                          },
-                        },
-                        "& .MuiDataGrid-columnSeparator": {
-                          color: alpha(theme.palette.primary.main, 0.25),
-                        },
-                        "& .MuiDataGrid-cell": {
-                          borderBottom: `1px solid ${alpha(
-                            theme.palette.divider,
-                            0.6
-                          )}`,
-                          fontSize: "0.95rem",
-                          paddingBlock: theme.spacing(1.25),
-                          [theme.breakpoints.down("lg")]: {
-                            fontSize: "0.85rem",
-                            paddingBlock: theme.spacing(0.75),
-                          },
-                        },
-                        "& .MuiDataGrid-cell:focus": {
-                          outline: "none",
-                        },
-                        "& .MuiDataGrid-row:hover": {
-                          backgroundColor: alpha(
-                            theme.palette.primary.main,
-                            0.06
-                          ),
-                        },
-                        "& .MuiDataGrid-virtualScroller": {
-                          overflowX: "auto",
-                          overflowY: "auto",
-                          backgroundColor: "transparent",
-                        },
-                        "& .MuiDataGrid-footerContainer": {
-                          borderTop: `1px solid ${alpha(
-                            theme.palette.primary.main,
-                            0.18
-                          )}`,
-                          backgroundColor: alpha(
-                            theme.palette.background.paper,
-                            0.9
-                          ),
-                          "& .MuiTablePagination-displayedRows": {
-                            fontSize: "0.85rem",
-                          },
-                        },
-                      })}
-                    />
-                  </Box>
-                </Box>
-              </CardContent>
-            </Card>
+            <UserDataGrid
+              data={dataGridRows}
+              rowCount={dataGridRowCount}
+              loading={dataLoading}
+              paginationModel={paginationModel}
+              onPaginationModelChange={setPaginationModel}
+              onSortModelChange={setSortModel}
+              onFilterModelChange={setFilterModel}
+              onView={handleView}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onPasswordReset={handlePasswordReset}
+              onResendVerification={handleResendVerification}
+              onCreate={handleCreate}
+              printLoading={printLoading}
+              excelLoading={excelLoading}
+              pdfLoading={pdfLoading}
+              onExportExcel={handleExportExcel}
+              onExportPdf={handleExportPdf}
+              onPrint={handlePrint}
+            />
           </Stack>
         )}
       </PageContainer>
 
-      {/* User Dialog */}
-      <Dialog
-        open={dialogOpen}
-        onClose={(_event, reason) => {
-          if (reason === "backdropClick" || reason === "escapeKeyDown") {
-            return;
-          }
-          handleDialogClose();
-        }}
-        maxWidth="md"
-        fullWidth
-        fullScreen={isSmall}
-        disableEscapeKeyDown
-        slotProps={{
-          paper: {
-            sx: {
-              borderRadius: { xs: 0, sm: 4 },
-              width: "100%",
-              maxWidth: isSmall ? "100%" : 720,
-              maxHeight: isSmall ? "100vh" : "80vh",
-              display: "flex",
-              flexDirection: "column",
-              overflow: "hidden",
-              border: `1px solid ${alpha(theme.palette.primary.main, 0.08)}`,
-              boxShadow: "0px 32px 60px rgba(15, 23, 42, 0.35)",
-              backgroundImage: `linear-gradient(180deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`,
-            },
-          },
-          backdrop: {
-            sx: {
-              backdropFilter: "blur(6px)",
-              backgroundColor: "rgba(15, 23, 42, 0.6)",
-            },
-          },
-        }}
-      >
-        <DialogTitle
-          sx={{
-            position: "relative",
-            px: { xs: 2.5, sm: 3 },
-            py: { xs: 2, sm: 2.75 },
-            background: dialogHeaderStyles.background,
-            color: "common.white",
-            display: "flex",
-            flexDirection: "column",
-            gap: 0.75,
-          }}
-        >
-          <Typography variant="h6" sx={{ fontWeight: 700 }}>
-            {activeDialogMeta.title}
-          </Typography>
-          <Typography
-            variant="body2"
-            sx={{
-              opacity: 0.85,
-              maxWidth: 420,
-              display: { xs: "none", sm: "block" },
-            }}
-          >
-            {activeDialogMeta.subtitle}
-          </Typography>
-          <IconButton
-            aria-label="close"
-            onClick={handleDialogClose}
-            sx={{
-              position: "absolute",
-              top: { xs: 10, sm: 12 },
-              right: { xs: 10, sm: 12 },
-              color: "common.white",
-              backgroundColor: "rgba(255, 255, 255, 0.12)",
-              "&:hover": {
-                backgroundColor: "rgba(255, 255, 255, 0.24)",
-              },
-            }}
-          >
-            <Close />
-          </IconButton>
-        </DialogTitle>
-        <DialogContent
-          sx={{
-            p: { xs: 2.5, sm: 3 },
-            backgroundColor: (theme) =>
-              theme.palette.mode === "light"
-                ? "rgba(248, 250, 252, 0.96)"
-                : theme.palette.background.paper,
-            flex: 1,
-            overflowY: "auto",
-          }}
-        >
-          {dialogType === "view" && selectedUser && (
-            <Box
-              sx={{
-                display: "flex",
-                flexDirection: "column",
-                gap: { xs: 2, sm: 3 },
-                backgroundColor: (theme) =>
-                  theme.palette.mode === "light"
-                    ? "rgba(255, 255, 255, 0.92)"
-                    : "rgba(15, 23, 42, 0.45)",
-                p: { xs: 1.5, sm: 2.5 },
-                borderRadius: 2,
-                border: (theme) => `1px solid ${theme.palette.divider}`,
-                boxShadow: (theme) =>
-                  theme.palette.mode === "light"
-                    ? "inset 0 1px 0 rgba(255, 255, 255, 0.65)"
-                    : "inset 0 1px 0 rgba(255, 255, 255, 0.08)",
-              }}
-            >
-              <Box
-                sx={{
-                  display: "grid",
-                  gridTemplateColumns: {
-                    xs: "1fr",
-                    md: "minmax(0, 280px) 1fr",
-                  },
-                  gap: { xs: 2, md: 3 },
-                  alignItems: "stretch",
-                }}
-              >
-                <Box
-                  sx={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 2,
-                  }}
-                >
-                  <Paper
-                    sx={{
-                      p: { xs: 1.5, sm: 2 },
-                      textAlign: "center",
-                      background: (theme) =>
-                        theme.palette.mode === "light"
-                          ? "linear-gradient(180deg, rgba(227,242,253,0.9) 0%, rgba(187,222,251,0.9) 100%)"
-                          : "linear-gradient(180deg, rgba(30,41,59,0.85) 0%, rgba(15,23,42,0.9) 100%)",
-                      borderRadius: 2,
-                      border: (theme) => `1px solid ${theme.palette.divider}`,
-                      boxShadow: "none",
-                    }}
-                  >
-                    <Avatar
-                      sx={{
-                        width: { xs: 60, sm: 80, md: 100 },
-                        height: { xs: 60, sm: 80, md: 100 },
-                        mx: "auto",
-                        mb: 2,
-                        bgcolor: "primary.main",
-                        fontSize: { xs: "1.5rem", sm: "2rem" },
-                      }}
-                    >
-                      {selectedUser.firstName[0]}
-                      {selectedUser.lastName[0]}
-                    </Avatar>
-                    <Typography variant="h6">
-                      {selectedUser.firstName} {selectedUser.lastName}
-                    </Typography>
-                    <Chip
-                      label={selectedUser.roleName || "N/A"}
-                      color={
-                        selectedUser.roleName === "Administrator"
-                          ? "error"
-                          : "default"
-                      }
-                      sx={{ mt: 1 }}
-                    />
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      sx={{ mt: 1 }}
-                    >
-                      ID: #{selectedUser.id}
-                    </Typography>
-                  </Paper>
-                </Box>
-                <Box
-                  sx={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: { xs: 1.5, md: 2 },
-                  }}
-                >
-                  <Paper
-                    sx={{
-                      p: { xs: 1.5, sm: 2.5 },
-                      borderRadius: 2,
-                      border: (theme) => `1px solid ${theme.palette.divider}`,
-                      backgroundColor: (theme) =>
-                        theme.palette.mode === "light"
-                          ? "rgba(248, 250, 252, 0.85)"
-                          : "rgba(15, 23, 42, 0.55)",
-                      boxShadow: "none",
-                    }}
-                  >
-                    <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                      Account Details
-                    </Typography>
-                    <Divider sx={{ mt: 1.5, mb: { xs: 2, md: 2.5 } }} />
-                    <Box
-                      sx={{
-                        display: "grid",
-                        gridTemplateColumns: {
-                          xs: "1fr",
-                          sm: "repeat(auto-fit, minmax(220px, 1fr))",
-                        },
-                        gap: { xs: 1.25, md: 2 },
-                      }}
-                    >
-                      {selectedUserDetails.map((detail) => (
-                        <Box
-                          key={detail.label}
-                          sx={{
-                            display: "flex",
-                            flexDirection: "column",
-                            gap: 0.5,
-                          }}
-                        >
-                          <Typography
-                            variant="caption"
-                            color="text.secondary"
-                            sx={{
-                              textTransform: "uppercase",
-                              letterSpacing: 0.6,
-                            }}
-                          >
-                            {detail.label}
-                          </Typography>
-                          <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                            {detail.value}
-                          </Typography>
-                        </Box>
-                      ))}
-                    </Box>
-                  </Paper>
-                </Box>
-              </Box>
-            </Box>
-          )}
-
-          {(dialogType === "create" || dialogType === "edit") && (
-            <Box
-              sx={{
-                display: "flex",
-                flexDirection: "column",
-                gap: { xs: 1, sm: 2 },
-                backgroundColor: (theme) =>
-                  theme.palette.mode === "light"
-                    ? "rgba(255, 255, 255, 0.92)"
-                    : "rgba(15, 23, 42, 0.45)",
-                p: { xs: 1.5, sm: 2.5 },
-                borderRadius: 2,
-                border: (theme) => `1px solid ${theme.palette.divider}`,
-                boxShadow: (theme) =>
-                  theme.palette.mode === "light"
-                    ? "inset 0 1px 0 rgba(255, 255, 255, 0.65)"
-                    : "inset 0 1px 0 rgba(255, 255, 255, 0.08)",
-              }}
-            >
-              <Typography
-                variant="subtitle2"
-                sx={{ color: "text.secondary", fontWeight: 600 }}
-              >
-                Account Details
-              </Typography>
-              <Box
-                sx={{
-                  display: "grid",
-                  gridTemplateColumns: {
-                    xs: "1fr",
-                    sm: "repeat(2, minmax(0, 1fr))",
-                    md: "repeat(3, minmax(0, 1fr))",
-                  },
-                  gap: { xs: 1, sm: 2 },
-                }}
-              >
-                <TextField
-                  fullWidth
-                  label="First Name"
-                  value={formData.firstName || ""}
-                  onChange={(e) =>
-                    setFormData({ ...formData, firstName: e.target.value })
-                  }
-                  required
-                  error={!!firstNameError}
-                  helperText={firstNameError || " "}
-                  id="form-first-name"
-                  name="first-name"
-                />
-                <TextField
-                  fullWidth
-                  label="Last Name"
-                  value={formData.lastName || ""}
-                  onChange={(e) =>
-                    setFormData({ ...formData, lastName: e.target.value })
-                  }
-                  required
-                  error={!!lastNameError}
-                  helperText={lastNameError || " "}
-                  id="form-last-name"
-                  name="last-name"
-                />
-                <TextField
-                  fullWidth
-                  label="Username"
-                  value={formData.username || ""}
-                  onChange={(e) =>
-                    setFormData({ ...formData, username: e.target.value })
-                  }
-                  // required
-                  id="form-username"
-                  name="username"
-                />
-                <TextField
-                  fullWidth
-                  label="Email"
-                  type="email"
-                  value={formData.email || ""}
-                  onChange={(e) =>
-                    setFormData({ ...formData, email: e.target.value })
-                  }
-                  required
-                  error={!!emailError}
-                  helperText={emailError || " "}
-                  id="form-email"
-                  name="email"
-                  sx={{
-                    gridColumn: {
-                      xs: "span 1",
-                      sm: "span 2",
-                      md: "span 3",
-                    },
-                  }}
-                />
-                <TextField
-                  fullWidth
-                  label="Company Name"
-                  value={formData.companyName || ""}
-                  onChange={(e) =>
-                    setFormData({ ...formData, companyName: e.target.value })
-                  }
-                  id="form-company-name"
-                  name="company-name"
-                  sx={{
-                    gridColumn: {
-                      xs: "span 1",
-                      sm: "span 2",
-                      md: "span 3",
-                    },
-                  }}
-                />
-                <TextField
-                  fullWidth
-                  select
-                  label="Role"
-                  value={formData.roleId || 2}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      roleId: Number(e.target.value),
-                    })
-                  }
-                  id="form-role-id"
-                  name="role-id"
-                >
-                  <MenuItem value={1}>Administrator</MenuItem>
-                  <MenuItem value={2}>Standard User</MenuItem>
-                </TextField>
-                {dialogType === "edit" && (
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      gridColumn: {
-                        xs: "span 1",
-                        sm: "span 2",
-                        md: "span 3",
-                      },
-                    }}
-                  >
-                    <FormControlLabel
-                      control={
-                        <Checkbox
-                          checked={formData.isVerified || false}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              isVerified: e.target.checked,
-                            })
-                          }
-                          disabled
-                        />
-                      }
-                      label="Verified"
-                    />
-                    <FormControlLabel
-                      control={
-                        <Checkbox
-                          checked={formData.isActive || false}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              isActive: e.target.checked,
-                            })
-                          }
-                        />
-                      }
-                      label="Active"
-                      sx={{ ml: 2 }}
-                    />
-                  </Box>
-                )}
-              </Box>
-            </Box>
-          )}
-
-          {dialogType === "delete" && selectedUser && (
-            <Alert severity="warning" sx={{ mb: 2 }}>
-              Are you sure you want to delete the user "{selectedUser.firstName}{" "}
-              {selectedUser.lastName}"? This action cannot be undone.
-            </Alert>
-          )}
-
-          {dialogType === "reset" && selectedUser && (
-            <Alert severity="info" sx={{ mb: 2 }}>
-              This will send a password reset email to {selectedUser.email}. The
-              user will be able to set a new password using the link in the
-              email.
-            </Alert>
-          )}
-          {dialogType === "resendVerification" && selectedUser && (
-            <Alert severity="info" sx={{ mb: 2 }}>
-              This will resend the verification email to {selectedUser.email}.
-              The user will receive a fresh link to complete their account
-              activation.
-            </Alert>
-          )}
-        </DialogContent>
-        <DialogActions
-          sx={{
-            px: { xs: 2.5, sm: 3 },
-            py: { xs: 2, sm: 2.5 },
-            backgroundColor: (theme) =>
-              theme.palette.mode === "light"
-                ? "rgba(255, 255, 255, 0.92)"
-                : theme.palette.background.default,
-            borderTop: (theme) => `1px solid ${theme.palette.divider}`,
-            gap: 1,
-            justifyContent: "flex-end",
-          }}
-        >
-          <Button
-            onClick={handleDialogClose}
-            variant="outlined"
-            color="primary"
-          >
-            Cancel
-          </Button>
-          {dialogType !== "view" && (
-            <Button
-              onClick={handleFormSubmit}
-              variant="contained"
-              color={dialogType === "delete" ? "error" : "primary"}
-              disabled={
-                loading ||
-                ((dialogType === "create" || dialogType === "edit") &&
-                  (!isFormValid || (dialogType === "edit" && !hasChanges)))
-              }
-              startIcon={
-                dialogType === "create" ? (
-                  <Add />
-                ) : dialogType === "edit" ? (
-                  <Save />
-                ) : dialogType === "delete" ? (
-                  <Delete />
-                ) : dialogType === "resendVerification" ? (
-                  <Email />
-                ) : (
-                  <LockReset />
-                )
-              }
-            >
-              {loading ? (
-                <CircularProgress size={24} color="inherit" />
-              ) : (
-                (dialogType === "create" && "Create User") ||
-                (dialogType === "edit" && "Save Changes") ||
-                (dialogType === "delete" && "Delete User") ||
-                (dialogType === "reset" && "Send Reset Email") ||
-                (dialogType === "resendVerification" && "Resend Verification")
-              )}
-            </Button>
-          )}
-        </DialogActions>
-      </Dialog>
+      {/* Dialogs */}
+      <UserViewDialog
+        open={dialogOpen && dialogType === "view"}
+        user={selectedUser}
+        onClose={handleDialogClose}
+      />
+      <UserCreateDialog
+        open={dialogOpen && dialogType === "create"}
+        onClose={handleDialogClose}
+        onSubmit={handleFormSubmit}
+      />
+      <UserEditDialog
+        open={dialogOpen && dialogType === "edit"}
+        user={selectedUser}
+        onClose={handleDialogClose}
+        onSubmit={handleFormSubmit}
+      />
+      <UserDeleteDialog
+        open={dialogOpen && dialogType === "delete"}
+        user={selectedUser}
+        onClose={handleDialogClose}
+        onConfirm={handleFormSubmit}
+      />
+      <UserResetDialog
+        open={dialogOpen && dialogType === "reset"}
+        user={selectedUser}
+        onClose={handleDialogClose}
+        onConfirm={handleFormSubmit}
+      />
+      <UserResendDialog
+        open={dialogOpen && dialogType === "resendVerification"}
+        user={selectedUser}
+        onClose={handleDialogClose}
+        onConfirm={handleFormSubmit}
+      />
 
       {/* Snackbar for notifications */}
       <Snackbar
