@@ -8,24 +8,22 @@ import Box from "@mui/material/Box";
 import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
 import MenuItem from "@mui/material/MenuItem";
-import { useUserFilters } from "../../hooks/users/useUserFilters";
+import type { UserFilters as UserFiltersType } from "../../hooks/users/useUserFilters";
 
 interface UserFiltersProps {
+  filters: UserFiltersType;
+  onFilterChange: (field: string, value: string) => void;
   onSearch?: () => void;
   onClearFilters?: () => void;
 }
 
 const UserFilters: React.FC<UserFiltersProps> = ({
+  filters,
+  onFilterChange,
   onSearch,
   onClearFilters,
 }) => {
   const theme = useTheme();
-  const {
-    filters,
-    handleFilterChange,
-    handleClearFilters: hookClearFilters,
-    handleSearch: hookSearch,
-  } = useUserFilters();
 
   return (
     <Card
@@ -90,7 +88,7 @@ const UserFilters: React.FC<UserFiltersProps> = ({
               fullWidth
               label="First Name"
               value={filters.firstName}
-              onChange={(e) => handleFilterChange("firstName", e.target.value)}
+              onChange={(e) => onFilterChange("firstName", e.target.value)}
               sx={{ minWidth: 0 }}
               id="filter-first-name"
               name="first-name"
@@ -99,7 +97,7 @@ const UserFilters: React.FC<UserFiltersProps> = ({
               fullWidth
               label="Last Name"
               value={filters.lastName}
-              onChange={(e) => handleFilterChange("lastName", e.target.value)}
+              onChange={(e) => onFilterChange("lastName", e.target.value)}
               sx={{ minWidth: 0 }}
               id="filter-last-name"
               name="last-name"
@@ -108,7 +106,7 @@ const UserFilters: React.FC<UserFiltersProps> = ({
               fullWidth
               label="Email"
               value={filters.email}
-              onChange={(e) => handleFilterChange("email", e.target.value)}
+              onChange={(e) => onFilterChange("email", e.target.value)}
               sx={{ minWidth: 0 }}
               id="filter-email"
               name="filter-email"
@@ -118,21 +116,21 @@ const UserFilters: React.FC<UserFiltersProps> = ({
               select
               label="Role"
               value={filters.role}
-              onChange={(e) => handleFilterChange("role", e.target.value)}
+              onChange={(e) => onFilterChange("role", e.target.value)}
               sx={{ minWidth: 0 }}
               id="filter-role"
               name="role"
             >
               <MenuItem value="All">All</MenuItem>
               <MenuItem value="Administrator">Administrator</MenuItem>
-              <MenuItem value="User">User</MenuItem>
+              <MenuItem value="User">Standard User</MenuItem>
             </TextField>
             <TextField
               fullWidth
               select
               label="Verified"
               value={filters.isVerified}
-              onChange={(e) => handleFilterChange("isVerified", e.target.value)}
+              onChange={(e) => onFilterChange("isVerified", e.target.value)}
               sx={{ minWidth: 0 }}
               id="filter-is-verified"
               name="is-verified"
@@ -146,7 +144,7 @@ const UserFilters: React.FC<UserFiltersProps> = ({
               select
               label="Active"
               value={filters.isActive}
-              onChange={(e) => handleFilterChange("isActive", e.target.value)}
+              onChange={(e) => onFilterChange("isActive", e.target.value)}
               sx={{ minWidth: 0 }}
               id="filter-is-active"
               name="is-active"
@@ -160,7 +158,7 @@ const UserFilters: React.FC<UserFiltersProps> = ({
               label="Created At"
               type="date"
               value={filters.createdAt}
-              onChange={(e) => handleFilterChange("createdAt", e.target.value)}
+              onChange={(e) => onFilterChange("createdAt", e.target.value)}
               sx={{ minWidth: 0 }}
               id="filter-created-at"
               name="created-at"
@@ -171,7 +169,7 @@ const UserFilters: React.FC<UserFiltersProps> = ({
               label="Updated At"
               type="date"
               value={filters.updatedAt}
-              onChange={(e) => handleFilterChange("updatedAt", e.target.value)}
+              onChange={(e) => onFilterChange("updatedAt", e.target.value)}
               sx={{ minWidth: 0 }}
               id="filter-updated-at"
               name="updated-at"
@@ -186,13 +184,10 @@ const UserFilters: React.FC<UserFiltersProps> = ({
               alignItems: "center",
             }}
           >
-            <Button variant="contained" onClick={onSearch || hookSearch}>
+            <Button variant="contained" onClick={onSearch}>
               Search
             </Button>
-            <Button
-              variant="outlined"
-              onClick={onClearFilters || hookClearFilters}
-            >
+            <Button variant="outlined" onClick={onClearFilters}>
               Clear Filters
             </Button>
           </Box>

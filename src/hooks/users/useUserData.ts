@@ -74,7 +74,12 @@ export const useUserData = ({
       if (filters.updatedAt) params.UpdatedAt = filters.updatedAt;
 
       const response = await UserService.findByQuery(params);
-      setDataGridRows(response.records || []);
+      const records =
+        response.records?.map((record: any) => ({
+          ...record,
+          roleId: record.roleName === "Administrator" ? 1 : 2,
+        })) || [];
+      setDataGridRows(records);
       setDataGridRowCount(response.recordCount || 0);
     } catch (err) {
       console.error("Error fetching data:", err);
@@ -82,7 +87,7 @@ export const useUserData = ({
     } finally {
       setLoading(false);
     }
-  }, [paginationModel, sortModel, filterModel, filters]);
+  }, [paginationModel, sortModel, filterModel, refetchTrigger]);
 
   useEffect(() => {
     fetchData();

@@ -14,6 +14,7 @@ import {
   useMediaQuery,
   IconButton,
   alpha,
+  MenuItem,
 } from "@mui/material";
 import { Close } from "@mui/icons-material";
 import type { UpdateUserRequest, User } from "../../../models/user";
@@ -296,8 +297,8 @@ const UserEditDialog: React.FC<UserEditDialogProps> = ({
               id="edit-role"
               name="role"
             >
-              <option value={1}>Administrator</option>
-              <option value={2}>Standard User</option>
+              <MenuItem value={1}>Administrator</MenuItem>
+              <MenuItem value={2}>Standard User</MenuItem>
             </TextField>
           </Box>
           <Box sx={{ display: "flex", gap: 2, mt: 2 }}>
@@ -313,14 +314,7 @@ const UserEditDialog: React.FC<UserEditDialogProps> = ({
               label="Active"
             />
             <FormControlLabel
-              control={
-                <Checkbox
-                  checked={formData.isVerified}
-                  onChange={(e) =>
-                    setFormData({ ...formData, isVerified: e.target.checked })
-                  }
-                />
-              }
+              control={<Checkbox checked={formData.isVerified} disabled />}
               label="Verified"
             />
           </Box>

@@ -16,6 +16,7 @@ export interface UseUserFiltersReturn {
   filters: UserFilters;
   filterModel: GridFilterModel;
   handleFilterChange: (field: string, value: string) => void;
+  handleFilterModelChange: (model: GridFilterModel) => void;
   handleClearFilters: () => void;
   handleSearch: () => void;
 }
@@ -48,6 +49,10 @@ export const useUserFilters = (
     setFilters((prev) => ({ ...prev, [field]: value }));
   }, []);
 
+  const handleFilterModelChange = useCallback((model: GridFilterModel) => {
+    setFilterModel(model);
+  }, []);
+
   const handleClearFilters = useCallback(() => {
     setFilters({
       firstName: "",
@@ -73,6 +78,7 @@ export const useUserFilters = (
     filters,
     filterModel,
     handleFilterChange,
+    handleFilterModelChange,
     handleClearFilters,
     handleSearch,
   };

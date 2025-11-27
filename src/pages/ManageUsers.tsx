@@ -54,7 +54,6 @@ const ManageUsers: React.FC = () => {
     pageSize: 10,
   });
   const [sortModel, setSortModel] = useState<any[]>([]);
-  const [filterModel, setFilterModel] = useState<any>({ items: [] });
   const [refetchTrigger, setRefetchTrigger] = useState(0);
 
   // Loading states for print and export operations
@@ -68,7 +67,14 @@ const ManageUsers: React.FC = () => {
   }, []);
 
   // Use custom hooks
-  const { filters, handleSearch, handleClearFilters } = useUserFilters({
+  const {
+    filters,
+    filterModel,
+    handleFilterChange,
+    handleFilterModelChange,
+    handleSearch,
+    handleClearFilters,
+  } = useUserFilters({
     onSearch: triggerRefetch,
   });
   const {
@@ -367,6 +373,8 @@ const ManageUsers: React.FC = () => {
 
             {/* Filters */}
             <UserFilters
+              filters={filters}
+              onFilterChange={handleFilterChange}
               onSearch={handleSearch}
               onClearFilters={handleClearFilters}
             />
@@ -378,7 +386,7 @@ const ManageUsers: React.FC = () => {
               paginationModel={paginationModel}
               onPaginationModelChange={setPaginationModel}
               onSortModelChange={setSortModel}
-              onFilterModelChange={setFilterModel}
+              onFilterModelChange={handleFilterModelChange}
               onView={handleView}
               onEdit={handleEdit}
               onDelete={handleDelete}
