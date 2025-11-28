@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -17,11 +17,13 @@ import {
   MenuItem,
 } from "@mui/material";
 import { Close } from "@mui/icons-material";
-import type { UpdateUserRequest, User } from "../../../models/user";
+import type { UpdateUserRequest } from "../../../models/user";
 
 interface UserEditDialogProps {
   open: boolean;
-  user: User | null;
+  formData: UpdateUserRequest;
+  onFormDataChange: (data: UpdateUserRequest) => void;
+  hasChanges: boolean;
   onClose: () => void;
   onSubmit: (data: UpdateUserRequest) => void;
   loading?: boolean;
@@ -29,7 +31,9 @@ interface UserEditDialogProps {
 
 const UserEditDialog: React.FC<UserEditDialogProps> = ({
   open,
-  user,
+  formData,
+  onFormDataChange,
+  hasChanges,
   onClose,
   onSubmit,
   loading = false,
@@ -37,81 +41,36 @@ const UserEditDialog: React.FC<UserEditDialogProps> = ({
   const theme = useTheme();
   const isSmall = useMediaQuery(theme.breakpoints.down("sm"));
 
-  const [formData, setFormData] = React.useState({
-    id: 0,
-    firstName: "",
-    lastName: "",
-    companyName: "",
-    username: "",
-    email: "",
-    isVerified: false,
-    isActive: false,
-    roleId: 2,
-  });
+  const firstNameError = useMemo(() => {
+    return formData.firstName?.trim() ? "" : "First name is required";
+  }, [formData.firstName]);
 
-  const [initialData, setInitialData] = React.useState(formData);
-  const [errors, setErrors] = React.useState<Record<string, string>>({});
+  const lastNameError = useMemo(() => {
+    return formData.lastName?.trim() ? "" : "Last name is required";
+  }, [formData.lastName]);
 
-  React.useEffect(() => {
-    if (user && open) {
-      const data = {
-        id: user.id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        companyName: user.companyName || "",
-        username: user.username,
-        email: user.email,
-        isVerified: user.isVerified,
-        isActive: user.isActive,
-        roleId: user.roleId,
-      };
-      setFormData(data);
-      setInitialData(data);
+  const emailError = useMemo(() => {
+    if (!formData.email?.trim()) {
+      return "Email is required";
     }
-  }, [user, open]);
-
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {};
-    if (!formData.firstName.trim())
-      newErrors.firstName = "First name is required";
-    if (!formData.lastName.trim()) newErrors.lastName = "Last name is required";
-    if (!formData.email.trim()) newErrors.email = "Email is required";
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = "Invalid email format";
-    }
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const hasChanges = JSON.stringify(formData) !== JSON.stringify(initialData);
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(formData.email) ? "" : "Invalid email format";
+  }, [formData.email]);
 
   const handleSubmit = () => {
-    if (validateForm() && hasChanges) {
-      onSubmit(formData);
+    if (firstNameError || lastNameError || emailError) {
+      return;
     }
+    onSubmit(formData);
   };
 
   const handleClose = () => {
-    setFormData({
-      id: 0,
-      firstName: "",
-      lastName: "",
-      companyName: "",
-      username: "",
-      email: "",
-      isVerified: false,
-      isActive: false,
-      roleId: 2,
-    });
-    setInitialData(formData);
-    setErrors({});
     onClose();
   };
 
   return (
     <Dialog
       open={open}
-      onClose={handleClose}
       maxWidth="md"
       fullWidth
       fullScreen={isSmall}
@@ -230,35 +189,35 @@ const UserEditDialog: React.FC<UserEditDialogProps> = ({
             <TextField
               fullWidth
               label="First Name"
-              value={formData.firstName}
+              value={formData.firstName || ""}
               onChange={(e) =>
-                setFormData({ ...formData, firstName: e.target.value })
+                onFormDataChange({ ...formData, firstName: e.target.value })
               }
               required
-              error={!!errors.firstName}
-              helperText={errors.firstName || " "}
+              error={!!firstNameError}
+              helperText={firstNameError || " "}
               id="edit-first-name"
               name="first-name"
             />
             <TextField
               fullWidth
               label="Last Name"
-              value={formData.lastName}
+              value={formData.lastName || ""}
               onChange={(e) =>
-                setFormData({ ...formData, lastName: e.target.value })
+                onFormDataChange({ ...formData, lastName: e.target.value })
               }
               required
-              error={!!errors.lastName}
-              helperText={errors.lastName || " "}
+              error={!!lastNameError}
+              helperText={lastNameError || " "}
               id="edit-last-name"
               name="last-name"
             />
             <TextField
               fullWidth
               label="Username"
-              value={formData.username}
+              value={formData.username || ""}
               onChange={(e) =>
-                setFormData({ ...formData, username: e.target.value })
+                onFormDataChange({ ...formData, username: e.target.value })
               }
               id="edit-username"
               name="username"
@@ -266,22 +225,22 @@ const UserEditDialog: React.FC<UserEditDialogProps> = ({
             <TextField
               fullWidth
               label="Email"
-              value={formData.email}
+              value={formData.email || ""}
               onChange={(e) =>
-                setFormData({ ...formData, email: e.target.value })
+                onFormDataChange({ ...formData, email: e.target.value })
               }
               required
-              error={!!errors.email}
-              helperText={errors.email || " "}
+              error={!!emailError}
+              helperText={emailError || " "}
               id="edit-email"
               name="email"
             />
             <TextField
               fullWidth
               label="Company Name"
-              value={formData.companyName}
+              value={formData.companyName || ""}
               onChange={(e) =>
-                setFormData({ ...formData, companyName: e.target.value })
+                onFormDataChange({ ...formData, companyName: e.target.value })
               }
               id="edit-company-name"
               name="company-name"
@@ -290,9 +249,12 @@ const UserEditDialog: React.FC<UserEditDialogProps> = ({
               fullWidth
               select
               label="Role"
-              value={formData.roleId}
+              value={formData.roleId || 2}
               onChange={(e) =>
-                setFormData({ ...formData, roleId: Number(e.target.value) })
+                onFormDataChange({
+                  ...formData,
+                  roleId: Number(e.target.value),
+                })
               }
               id="edit-role"
               name="role"
@@ -305,9 +267,12 @@ const UserEditDialog: React.FC<UserEditDialogProps> = ({
             <FormControlLabel
               control={
                 <Checkbox
-                  checked={formData.isActive}
+                  checked={formData.isActive || false}
                   onChange={(e) =>
-                    setFormData({ ...formData, isActive: e.target.checked })
+                    onFormDataChange({
+                      ...formData,
+                      isActive: e.target.checked,
+                    })
                   }
                 />
               }

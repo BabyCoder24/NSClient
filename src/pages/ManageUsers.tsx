@@ -33,6 +33,7 @@ import UserResendDialog from "../components/ManageUsers/dialogs/UserResendDialog
 import { useUserData } from "../hooks/users/useUserData";
 import { useUserFilters } from "../hooks/users/useUserFilters";
 import { useUserDialogs } from "../hooks/users/useUserDialogs";
+import type { CreateUserRequest, UpdateUserRequest } from "../models/user";
 
 const ManageUsers: React.FC = () => {
   const { users, loading, error } = useSelector(
@@ -93,6 +94,13 @@ const ManageUsers: React.FC = () => {
     dialogOpen,
     dialogType,
     selectedUser,
+    formData,
+    hasChanges,
+    loadingCreate,
+    loadingEdit,
+    loadingDelete,
+    loadingReset,
+    loadingResend,
     handleView,
     handleCreate,
     handleEdit,
@@ -101,7 +109,8 @@ const ManageUsers: React.FC = () => {
     handleResendVerification,
     handleDialogClose,
     handleFormSubmit,
-  } = useUserDialogs(setSnackbar);
+    setFormData,
+  } = useUserDialogs(setSnackbar, triggerRefetch);
 
   useEffect(() => {
     dispatch(fetchUsers());
@@ -412,32 +421,41 @@ const ManageUsers: React.FC = () => {
       />
       <UserCreateDialog
         open={dialogOpen && dialogType === "create"}
+        formData={formData as CreateUserRequest}
+        onFormDataChange={setFormData}
         onClose={handleDialogClose}
         onSubmit={handleFormSubmit}
+        loading={loadingCreate}
       />
       <UserEditDialog
         open={dialogOpen && dialogType === "edit"}
-        user={selectedUser}
+        formData={formData as UpdateUserRequest}
+        onFormDataChange={setFormData}
+        hasChanges={hasChanges}
         onClose={handleDialogClose}
         onSubmit={handleFormSubmit}
+        loading={loadingEdit}
       />
       <UserDeleteDialog
         open={dialogOpen && dialogType === "delete"}
         user={selectedUser}
         onClose={handleDialogClose}
         onConfirm={handleFormSubmit}
+        loading={loadingDelete}
       />
       <UserResetDialog
         open={dialogOpen && dialogType === "reset"}
         user={selectedUser}
         onClose={handleDialogClose}
         onConfirm={handleFormSubmit}
+        loading={loadingReset}
       />
       <UserResendDialog
         open={dialogOpen && dialogType === "resendVerification"}
         user={selectedUser}
         onClose={handleDialogClose}
         onConfirm={handleFormSubmit}
+        loading={loadingResend}
       />
 
       {/* Snackbar for notifications */}

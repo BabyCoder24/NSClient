@@ -36,7 +36,6 @@ const UserDeleteDialog: React.FC<UserDeleteDialogProps> = ({
   return (
     <Dialog
       open={open}
-      onClose={onClose}
       maxWidth="sm"
       fullWidth
       fullScreen={isSmall}
@@ -59,7 +58,7 @@ const UserDeleteDialog: React.FC<UserDeleteDialogProps> = ({
         backdrop: {
           sx: {
             backdropFilter: "blur(6px)",
-            backgroundColor: "rgba(244, 67, 54, 0.6)",
+            backgroundColor: "rgba(15, 23, 42, 0.6)",
           },
         },
       }}

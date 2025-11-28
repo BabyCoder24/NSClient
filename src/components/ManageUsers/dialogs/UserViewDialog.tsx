@@ -61,7 +61,6 @@ const UserViewDialog: React.FC<UserViewDialogProps> = ({
   return (
     <Dialog
       open={open}
-      onClose={onClose}
       maxWidth="md"
       fullWidth
       fullScreen={isSmall}

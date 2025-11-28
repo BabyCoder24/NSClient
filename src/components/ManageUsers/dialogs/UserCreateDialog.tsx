@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -12,12 +12,15 @@ import {
   useMediaQuery,
   IconButton,
   alpha,
+  MenuItem,
 } from "@mui/material";
 import { Close } from "@mui/icons-material";
 import type { CreateUserRequest } from "../../../models/user";
 
 interface UserCreateDialogProps {
   open: boolean;
+  formData: CreateUserRequest;
+  onFormDataChange: (data: CreateUserRequest) => void;
   onClose: () => void;
   onSubmit: (data: CreateUserRequest) => void;
   loading?: boolean;
@@ -25,6 +28,8 @@ interface UserCreateDialogProps {
 
 const UserCreateDialog: React.FC<UserCreateDialogProps> = ({
   open,
+  formData,
+  onFormDataChange,
   onClose,
   onSubmit,
   loading = false,
@@ -32,38 +37,51 @@ const UserCreateDialog: React.FC<UserCreateDialogProps> = ({
   const theme = useTheme();
   const isSmall = useMediaQuery(theme.breakpoints.down("sm"));
 
-  const [formData, setFormData] = React.useState({
-    firstName: "",
-    lastName: "",
-    companyName: "",
-    username: "",
-    email: "",
-    roleId: 2,
-  });
+  const firstNameError = useMemo(() => {
+    return formData.firstName?.trim() ? "" : "First name is required";
+  }, [formData.firstName]);
 
-  const [errors, setErrors] = React.useState<Record<string, string>>({});
+  const lastNameError = useMemo(() => {
+    return formData.lastName?.trim() ? "" : "Last name is required";
+  }, [formData.lastName]);
 
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {};
-    if (!formData.firstName.trim())
-      newErrors.firstName = "First name is required";
-    if (!formData.lastName.trim()) newErrors.lastName = "Last name is required";
-    if (!formData.email.trim()) newErrors.email = "Email is required";
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = "Invalid email format";
+  const emailError = useMemo(() => {
+    if (!formData.email?.trim()) {
+      return "Email is required";
     }
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(formData.email) ? "" : "Invalid email format";
+  }, [formData.email]);
+
+  const isDisabled = useMemo(
+    () =>
+      loading ||
+      !formData.firstName?.trim() ||
+      !formData.lastName?.trim() ||
+      !formData.email?.trim() ||
+      Boolean(firstNameError) ||
+      Boolean(lastNameError) ||
+      Boolean(emailError),
+    [
+      loading,
+      formData.firstName,
+      formData.lastName,
+      formData.email,
+      firstNameError,
+      lastNameError,
+      emailError,
+    ]
+  );
 
   const handleSubmit = () => {
-    if (validateForm()) {
-      onSubmit(formData);
+    if (firstNameError || lastNameError || emailError) {
+      return;
     }
+    onSubmit(formData);
   };
 
   const handleClose = () => {
-    setFormData({
+    onFormDataChange({
       firstName: "",
       lastName: "",
       companyName: "",
@@ -71,14 +89,12 @@ const UserCreateDialog: React.FC<UserCreateDialogProps> = ({
       email: "",
       roleId: 2,
     });
-    setErrors({});
     onClose();
   };
 
   return (
     <Dialog
       open={open}
-      onClose={handleClose}
       maxWidth="md"
       fullWidth
       fullScreen={isSmall}
@@ -197,35 +213,35 @@ const UserCreateDialog: React.FC<UserCreateDialogProps> = ({
             <TextField
               fullWidth
               label="First Name"
-              value={formData.firstName}
+              value={formData.firstName || ""}
               onChange={(e) =>
-                setFormData({ ...formData, firstName: e.target.value })
+                onFormDataChange({ ...formData, firstName: e.target.value })
               }
               required
-              error={!!errors.firstName}
-              helperText={errors.firstName || " "}
+              error={!!firstNameError}
+              helperText={firstNameError || " "}
               id="create-first-name"
               name="first-name"
             />
             <TextField
               fullWidth
               label="Last Name"
-              value={formData.lastName}
+              value={formData.lastName || ""}
               onChange={(e) =>
-                setFormData({ ...formData, lastName: e.target.value })
+                onFormDataChange({ ...formData, lastName: e.target.value })
               }
               required
-              error={!!errors.lastName}
-              helperText={errors.lastName || " "}
+              error={!!lastNameError}
+              helperText={lastNameError || " "}
               id="create-last-name"
               name="last-name"
             />
             <TextField
               fullWidth
               label="Username"
-              value={formData.username}
+              value={formData.username || ""}
               onChange={(e) =>
-                setFormData({ ...formData, username: e.target.value })
+                onFormDataChange({ ...formData, username: e.target.value })
               }
               id="create-username"
               name="username"
@@ -233,22 +249,22 @@ const UserCreateDialog: React.FC<UserCreateDialogProps> = ({
             <TextField
               fullWidth
               label="Email"
-              value={formData.email}
+              value={formData.email || ""}
               onChange={(e) =>
-                setFormData({ ...formData, email: e.target.value })
+                onFormDataChange({ ...formData, email: e.target.value })
               }
               required
-              error={!!errors.email}
-              helperText={errors.email || " "}
+              error={!!emailError}
+              helperText={emailError || " "}
               id="create-email"
               name="email"
             />
             <TextField
               fullWidth
               label="Company Name"
-              value={formData.companyName}
+              value={formData.companyName || ""}
               onChange={(e) =>
-                setFormData({ ...formData, companyName: e.target.value })
+                onFormDataChange({ ...formData, companyName: e.target.value })
               }
               id="create-company-name"
               name="company-name"
@@ -257,15 +273,18 @@ const UserCreateDialog: React.FC<UserCreateDialogProps> = ({
               fullWidth
               select
               label="Role"
-              value={formData.roleId}
+              value={formData.roleId || 2}
               onChange={(e) =>
-                setFormData({ ...formData, roleId: Number(e.target.value) })
+                onFormDataChange({
+                  ...formData,
+                  roleId: Number(e.target.value),
+                })
               }
               id="create-role"
               name="role"
             >
-              <option value={1}>Administrator</option>
-              <option value={2}>Standard User</option>
+              <MenuItem value={1}>Administrator</MenuItem>
+              <MenuItem value={2}>Standard User</MenuItem>
             </TextField>
           </Box>
         </Box>
@@ -288,7 +307,7 @@ const UserCreateDialog: React.FC<UserCreateDialogProps> = ({
         <Button
           onClick={handleSubmit}
           variant="contained"
-          disabled={loading}
+          disabled={isDisabled}
           sx={{ minWidth: 100 }}
         >
           {loading ? "Creating..." : "Create"}

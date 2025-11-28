@@ -36,7 +36,6 @@ const UserResendDialog: React.FC<UserResendDialogProps> = ({
   return (
     <Dialog
       open={open}
-      onClose={onClose}
       maxWidth="sm"
       fullWidth
       fullScreen={isSmall}

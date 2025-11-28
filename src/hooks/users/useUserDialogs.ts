@@ -16,12 +16,17 @@ export interface UseUserDialogsReturn {
   dialogOpen: boolean;
   dialogType: DialogType;
   selectedUser: any;
-  formData: any;
-  initialFormData: any;
+  formData: CreateUserRequest | UpdateUserRequest;
+  initialFormData: CreateUserRequest | UpdateUserRequest;
   isFormValid: boolean;
   hasChanges: boolean;
   dialogHeaderStyles: any;
   selectedUserDetails: any[];
+  loadingCreate: boolean;
+  loadingEdit: boolean;
+  loadingDelete: boolean;
+  loadingReset: boolean;
+  loadingResend: boolean;
   handleView: (user: any) => void;
   handleCreate: () => void;
   handleEdit: (user: any) => void;
@@ -30,6 +35,7 @@ export interface UseUserDialogsReturn {
   handleResendVerification: (user: any) => void;
   handleDialogClose: () => void;
   handleFormSubmit: () => Promise<void>;
+  setFormData: (data: CreateUserRequest | UpdateUserRequest) => void;
   setSnackbar: (snackbar: {
     open: boolean;
     message: string;
@@ -42,14 +48,24 @@ export const useUserDialogs = (
     open: boolean;
     message: string;
     severity: "success" | "error";
-  }) => void
+  }) => void,
+  onSuccess?: () => void
 ): UseUserDialogsReturn => {
   const dispatch = useDispatch<AppDispatch>();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogType, setDialogType] = useState<DialogType>("view");
   const [selectedUser, setSelectedUser] = useState<any>(null);
-  const [formData, setFormData] = useState<any>({});
-  const [initialFormData, setInitialFormData] = useState<any>({});
+  const [formData, setFormData] = useState<
+    CreateUserRequest | UpdateUserRequest
+  >({} as CreateUserRequest | UpdateUserRequest);
+  const [initialFormData, setInitialFormData] = useState<
+    CreateUserRequest | UpdateUserRequest
+  >({} as CreateUserRequest | UpdateUserRequest);
+  const [loadingCreate, setLoadingCreate] = useState(false);
+  const [loadingEdit, setLoadingEdit] = useState(false);
+  const [loadingDelete, setLoadingDelete] = useState(false);
+  const [loadingReset, setLoadingReset] = useState(false);
+  const [loadingResend, setLoadingResend] = useState(false);
 
   const firstNameError = useMemo(() => {
     return formData.firstName?.trim() ? "" : "First name is required";
@@ -84,7 +100,9 @@ export const useUserDialogs = (
         initialFormData.email !== formData.email ||
         initialFormData.companyName !== formData.companyName ||
         initialFormData.roleId !== formData.roleId ||
-        initialFormData.isActive !== formData.isActive
+        ("isActive" in initialFormData &&
+          "isActive" in formData &&
+          initialFormData.isActive !== formData.isActive)
       );
     }
     return false;
@@ -202,22 +220,24 @@ export const useUserDialogs = (
   const handleDialogClose = useCallback(() => {
     setDialogOpen(false);
     setSelectedUser(null);
-    setFormData({});
-    setInitialFormData({});
+    // Reset to empty object, but cast to satisfy TypeScript
+    setFormData({} as CreateUserRequest | UpdateUserRequest);
+    setInitialFormData({} as CreateUserRequest | UpdateUserRequest);
   }, []);
 
   const handleFormSubmit = useCallback(async () => {
     if (dialogType === "create") {
-      if (!isFormValid) {
-        setSnackbar({
-          open: true,
-          message:
-            "Please resolve the highlighted validation errors before creating the user.",
-          severity: "error",
-        });
-        return;
-      }
+      setLoadingCreate(true);
       try {
+        if (!isFormValid) {
+          setSnackbar({
+            open: true,
+            message:
+              "Please resolve the highlighted validation errors before creating the user.",
+            severity: "error",
+          });
+          return;
+        }
         const result = await dispatch(
           createUser(formData as CreateUserRequest)
         ).unwrap();
@@ -229,25 +249,29 @@ export const useUserDialogs = (
           severity: "success",
         });
         dispatch(fetchUsers());
+        onSuccess?.();
         handleDialogClose();
       } catch (err: any) {
         const errorMessage =
           err?.message || "Failed to create user. Please try again.";
         setSnackbar({ open: true, message: errorMessage, severity: "error" });
+      } finally {
+        setLoadingCreate(false);
       }
       return;
     }
     if (dialogType === "edit" && selectedUser) {
-      if (!isFormValid) {
-        setSnackbar({
-          open: true,
-          message:
-            "Please resolve the highlighted validation errors before saving changes.",
-          severity: "error",
-        });
-        return;
-      }
+      setLoadingEdit(true);
       try {
+        if (!isFormValid) {
+          setSnackbar({
+            open: true,
+            message:
+              "Please resolve the highlighted validation errors before saving changes.",
+            severity: "error",
+          });
+          return;
+        }
         await dispatch(updateUser(formData as UpdateUserRequest)).unwrap();
         setSnackbar({
           open: true,
@@ -255,15 +279,19 @@ export const useUserDialogs = (
           severity: "success",
         });
         dispatch(fetchUsers());
+        onSuccess?.();
         handleDialogClose();
       } catch (err: any) {
         const errorMessage =
           err?.message || "Failed to update user. Please try again.";
         setSnackbar({ open: true, message: errorMessage, severity: "error" });
+      } finally {
+        setLoadingEdit(false);
       }
       return;
     }
     if (dialogType === "delete" && selectedUser) {
+      setLoadingDelete(true);
       try {
         const result = await dispatch(deleteUser(selectedUser.id)).unwrap();
         setSnackbar({
@@ -272,13 +300,17 @@ export const useUserDialogs = (
           severity: "success",
         });
         dispatch(fetchUsers());
+        onSuccess?.();
         handleDialogClose();
       } catch (err: any) {
         const errorMessage = err?.message || "Failed to delete user.";
         setSnackbar({ open: true, message: errorMessage, severity: "error" });
+      } finally {
+        setLoadingDelete(false);
       }
     }
     if (dialogType === "reset" && selectedUser) {
+      setLoadingReset(true);
       try {
         const result = await dispatch(
           adminResetPassword(selectedUser.id)
@@ -291,13 +323,17 @@ export const useUserDialogs = (
           severity: "success",
         });
         dispatch(fetchUsers());
+        onSuccess?.();
         handleDialogClose();
       } catch (err: any) {
         const errorMessage = err?.message || "Failed to send reset email.";
         setSnackbar({ open: true, message: errorMessage, severity: "error" });
+      } finally {
+        setLoadingReset(false);
       }
     }
     if (dialogType === "resendVerification" && selectedUser) {
+      setLoadingResend(true);
       try {
         const result = await dispatch(
           resendVerificationEmail(selectedUser.id)
@@ -309,11 +345,14 @@ export const useUserDialogs = (
             "Verification email resent successfully.",
           severity: "success",
         });
+        onSuccess?.();
         handleDialogClose();
       } catch (err: any) {
         const errorMessage =
           err?.message || "Failed to resend verification email.";
         setSnackbar({ open: true, message: errorMessage, severity: "error" });
+      } finally {
+        setLoadingResend(false);
       }
     }
   }, [
@@ -324,6 +363,7 @@ export const useUserDialogs = (
     dispatch,
     setSnackbar,
     handleDialogClose,
+    onSuccess,
   ]);
 
   return {
@@ -336,6 +376,11 @@ export const useUserDialogs = (
     hasChanges,
     dialogHeaderStyles,
     selectedUserDetails,
+    loadingCreate,
+    loadingEdit,
+    loadingDelete,
+    loadingReset,
+    loadingResend,
     handleView,
     handleCreate,
     handleEdit,
@@ -344,6 +389,7 @@ export const useUserDialogs = (
     handleResendVerification,
     handleDialogClose,
     handleFormSubmit,
+    setFormData,
     setSnackbar,
   };
 };

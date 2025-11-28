@@ -20,7 +20,7 @@ export const DIALOG_TYPES: Record<
 > = {
   view: {
     title: "View User",
-    subtitle: "Review account information and access history.",
+    subtitle: "Review account information.",
   },
   create: {
     title: "Create New User",

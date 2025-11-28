@@ -35,6 +35,7 @@ import {
   DATA_GRID_FOOTER_HEIGHT,
   DATA_GRID_MIN_HEIGHT,
 } from "../../constants/userConstants";
+import RelativeTimeCell from "../shared/RelativeTimeCell";
 
 interface UserDataGridProps {
   data: User[];
@@ -220,18 +221,17 @@ const UserDataGrid: React.FC<UserDataGridProps> = ({
     },
     {
       field: "createdAt",
-      headerName: "Created At",
+      headerName: "Created",
       flex: 1,
       minWidth: 100,
       renderCell: (params) => new Date(params.value).toLocaleString(),
     },
     {
       field: "updatedAt",
-      headerName: "Updated At",
+      headerName: "Last Updated",
       flex: 1,
       minWidth: 100,
-      renderCell: (params) =>
-        params.value ? new Date(params.value).toLocaleString() : "N/A",
+      renderCell: (params) => <RelativeTimeCell value={params.value} />,
     },
     {
       field: "actions",
@@ -312,37 +312,37 @@ const UserDataGrid: React.FC<UserDataGridProps> = ({
               variant="contained"
               startIcon={<Add />}
               onClick={onCreate}
-              sx={{
-                borderRadius: 3,
-                width: { xs: "100%", md: "auto" },
-                minWidth: { md: 130 },
-                alignSelf: { xs: "stretch", md: "center" },
-                background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
-                color: "white",
-                fontWeight: 300,
-                fontSize: "0.65rem",
-                textTransform: "none",
-                px: 3,
-                py: 1.5,
-                boxShadow: "0 4px 14px 0 rgba(0,0,0,0.15)",
-                transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                "&:hover": {
-                  background: `linear-gradient(135deg, ${theme.palette.primary.dark} 0%, ${theme.palette.primary.main} 100%)`,
-                  boxShadow: "0 6px 20px rgba(0,0,0,0.23)",
-                  transform: "translateY(-2px)",
-                  "& .MuiButton-startIcon": {
-                    transform: "rotate(90deg)",
-                  },
-                },
-                "&:active": {
-                  transform: "translateY(0)",
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
-                },
-                "& .MuiButton-startIcon": {
-                  transition: "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                  mr: 1,
-                },
-              }}
+              // sx={{
+              //   borderRadius: 3,
+              //   width: { xs: "100%", md: "auto" },
+              //   minWidth: { md: 130 },
+              //   alignSelf: { xs: "stretch", md: "center" },
+              //   background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+              //   color: "white",
+              //   fontWeight: 300,
+              //   fontSize: "0.65rem",
+              //   textTransform: "none",
+              //   px: 3,
+              //   py: 1.5,
+              //   boxShadow: "0 4px 14px 0 rgba(0,0,0,0.15)",
+              //   transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+              //   "&:hover": {
+              //     background: `linear-gradient(135deg, ${theme.palette.primary.dark} 0%, ${theme.palette.primary.main} 100%)`,
+              //     boxShadow: "0 6px 20px rgba(0,0,0,0.23)",
+              //     transform: "translateY(-2px)",
+              //     "& .MuiButton-startIcon": {
+              //       transform: "rotate(90deg)",
+              //     },
+              //   },
+              //   "&:active": {
+              //     transform: "translateY(0)",
+              //     boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+              //   },
+              //   "& .MuiButton-startIcon": {
+              //     transition: "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+              //     mr: 1,
+              //   },
+              // }}
             >
               Add User
             </Button>

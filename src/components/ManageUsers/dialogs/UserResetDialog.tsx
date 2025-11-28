@@ -36,7 +36,6 @@ const UserResetDialog: React.FC<UserResetDialogProps> = ({
   return (
     <Dialog
       open={open}
-      onClose={onClose}
       maxWidth="sm"
       fullWidth
       fullScreen={isSmall}
@@ -59,7 +58,7 @@ const UserResetDialog: React.FC<UserResetDialogProps> = ({
         backdrop: {
           sx: {
             backdropFilter: "blur(6px)",
-            backgroundColor: "rgba(33, 150, 243, 0.6)",
+            backgroundColor: "rgba(15, 23, 42, 0.6)",
           },
         },
       }}
