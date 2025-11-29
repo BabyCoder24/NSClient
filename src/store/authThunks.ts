@@ -61,6 +61,14 @@ export const loginUser = createAsyncThunk(
           "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
         ] || "Standard User";
 
+      // Normalize role values to match frontend expectations
+      let normalizedRole = role;
+      if (role === "Admin" || role === "Administrator") {
+        normalizedRole = "Administrator";
+      } else if (role === "User" || role === "Standard User") {
+        normalizedRole = "Standard User";
+      }
+
       const expiresAt = Date.now() + response.expiresIn * 1000;
       const serverMessage =
         response?.message ||
@@ -74,7 +82,7 @@ export const loginUser = createAsyncThunk(
         accessToken: response.accessToken,
         refreshToken: response.refreshToken,
         expiresAt,
-        role,
+        role: normalizedRole,
         message: serverMessage,
       };
     } catch (error: any) {
@@ -267,6 +275,14 @@ export const refreshToken = createAsyncThunk(
           "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
         ] || "Standard User";
 
+      // Normalize role values to match frontend expectations
+      let normalizedRole = role;
+      if (role === "Admin" || role === "Administrator") {
+        normalizedRole = "Administrator";
+      } else if (role === "User" || role === "Standard User") {
+        normalizedRole = "Standard User";
+      }
+
       const expiresAt = Date.now() + response.expiresIn * 1000;
 
       return {
@@ -274,7 +290,7 @@ export const refreshToken = createAsyncThunk(
         accessToken: response.accessToken,
         refreshToken: response.refreshToken,
         expiresAt,
-        role,
+        role: normalizedRole,
       };
     } catch (error: any) {
       const message =
@@ -289,6 +305,71 @@ export const refreshToken = createAsyncThunk(
       );
       return rejectWithValue({
         message: error.message,
+        status: error.__status,
+        kind: error.__kind,
+      });
+    }
+  }
+);
+
+// Proactive refresh token thunk (for automatic refresh before expiry)
+export const proactiveRefreshToken = createAsyncThunk(
+  "auth/proactiveRefresh",
+  async (_, { getState, dispatch, rejectWithValue }) => {
+    const state = getState() as RootState;
+    const refreshToken = state.auth.refreshToken;
+    if (!refreshToken) {
+      return rejectWithValue("No refresh token available");
+    }
+
+    try {
+      const response = await refreshTokenAPI(refreshToken);
+
+      // Decode JWT to get user info
+      const decoded: any = jwtDecode(response.accessToken);
+      const user: AuthUser = {
+        id: parseInt(decoded.sub),
+        email: decoded.email,
+        username: decoded.username,
+        firstName: decoded.firstName || "",
+        lastName: decoded.lastName || "",
+        companyName: decoded.companyName || "",
+        roleId:
+          decoded[
+            "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
+          ] === "User"
+            ? 2
+            : 0,
+        isActive: true,
+      };
+
+      const role =
+        decoded[
+          "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
+        ] || "Standard User";
+      const expiresAt = Date.now() + response.expiresIn * 1000;
+
+      // Normalize role values to match frontend expectations
+      let normalizedRole = role;
+      if (role === "Admin" || role === "Administrator") {
+        normalizedRole = "Administrator";
+      } else if (role === "User" || role === "Standard User") {
+        normalizedRole = "Standard User";
+      }
+
+      return {
+        user,
+        accessToken: response.accessToken,
+        refreshToken: response.refreshToken,
+        expiresAt,
+        role: normalizedRole,
+      };
+    } catch (error: any) {
+      console.error("Proactive refresh error:", error);
+      // If refresh fails, logout
+      dispatch(logoutUser());
+      return rejectWithValue({
+        message: "Session expired. Please log in again.",
         status: error.__status,
         kind: error.__kind,
       });

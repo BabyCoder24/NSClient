@@ -1,24 +1,27 @@
 import * as React from "react";
+import axios from "axios";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
-import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import Popover from "@mui/material/Popover";
-import { useTheme } from "@mui/material/styles";
+import Chip from "@mui/material/Chip";
 import useMediaQuery from "@mui/material/useMediaQuery";
+import { useTheme } from "@mui/material/styles";
 import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
-import SettingsIcon from "@mui/icons-material/Settings";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
-import { Link as RouterLink } from "react-router-dom";
-import axios from "axios";
+import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
 import DashboardSidebarContext from "../../context/DashboardSidebarContext";
-import { ADMIN_DASHBOARD_SETTINGS_PATH } from "../../constants";
+import { BASE_URL } from "../../config/baseURL";
 
 interface AdminSidebarFooterProps {
   // isOnline prop removed, now checked internally
 }
+
+const SUCCESS_CODES = new Set([
+  200, 201, 202, 204, 301, 302, 304, 401, 403, 404, 405,
+]);
 
 export default function AdminSidebarFooter({}: AdminSidebarFooterProps) {
   const theme = useTheme();
@@ -28,39 +31,70 @@ export default function AdminSidebarFooter({}: AdminSidebarFooterProps) {
   const isSidebarCollapsed = sidebarContext?.fullyCollapsed ?? false;
   const isCompact = isViewportCompact || isSidebarMini || isSidebarCollapsed;
   const [isOnline, setIsOnline] = React.useState(true);
+  const [lastChecked, setLastChecked] = React.useState<Date | null>(null);
+  const [checking, setChecking] = React.useState(false);
+  const inFlightController = React.useRef<AbortController | null>(null);
+  const baseUrl = React.useMemo(() => BASE_URL.replace(/\/$/, ""), []);
   const statusLabel = isOnline ? "API Server Online" : "API Server Offline";
-  const statusColor = isOnline ? "success.main" : "error.main";
-  const glowColor = isOnline
-    ? "rgba(76, 175, 80, 0.6)"
-    : "rgba(244, 67, 54, 0.6)";
   const currentYear = new Date().getFullYear();
-
-  const checkConnection = React.useCallback(async () => {
-    try {
-      const healthAxios = axios.create({
-        baseURL: axios.defaults.baseURL,
-        timeout: 5000,
-      });
-      await healthAxios.get("/health");
-      setIsOnline(true);
-    } catch (error) {
-      const isNetwork =
-        !(error as any)?.response ||
-        (error as any)?.code === "ERR_NETWORK" ||
-        (error as any)?.code === "ECONNABORTED";
-      if (isNetwork) {
-        setIsOnline(false);
-      } else {
-        setIsOnline(true);
-      }
-    }
+  const isReachableStatus = React.useCallback((status: number) => {
+    if (SUCCESS_CODES.has(status)) return true;
+    return status >= 200 && status < 400;
   }, []);
 
-  React.useEffect(() => {
-    checkConnection();
-    const interval = setInterval(checkConnection, 30000); // Check every 30 seconds
-    return () => clearInterval(interval);
+  const checkConnection = React.useCallback(
+    async (signal?: AbortSignal) => {
+      if (!baseUrl) return;
+      setChecking(true);
+      let reachable = false;
+      try {
+        const response = await axios.get("/", {
+          baseURL: baseUrl,
+          signal,
+          timeout: 5000,
+          withCredentials: false,
+          headers: { "Cache-Control": "no-cache" },
+        });
+        reachable = isReachableStatus(response.status);
+      } catch (error) {
+        if ((error as DOMException)?.name === "AbortError") {
+          return;
+        }
+        if (axios.isAxiosError(error) && error.response) {
+          reachable = isReachableStatus(error.response.status);
+        } else {
+          reachable = false;
+        }
+      } finally {
+        if (!signal?.aborted) {
+          setIsOnline(reachable);
+          setLastChecked(new Date());
+          setChecking(false);
+        }
+      }
+    },
+    [baseUrl, isReachableStatus]
+  );
+
+  const triggerCheck = React.useCallback(() => {
+    inFlightController.current?.abort();
+    const controller = new AbortController();
+    inFlightController.current = controller;
+    checkConnection(controller.signal).finally(() => {
+      if (inFlightController.current === controller) {
+        inFlightController.current = null;
+      }
+    });
   }, [checkConnection]);
+
+  React.useEffect(() => {
+    triggerCheck();
+    const interval = setInterval(triggerCheck, 30000);
+    return () => {
+      clearInterval(interval);
+      inFlightController.current?.abort();
+    };
+  }, [triggerCheck]);
 
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const popoverOpen = Boolean(anchorEl);
@@ -79,96 +113,151 @@ export default function AdminSidebarFooter({}: AdminSidebarFooterProps) {
     setAnchorEl(null);
   };
 
+  const lastCheckedLabel = lastChecked
+    ? new Intl.DateTimeFormat(undefined, {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      }).format(lastChecked)
+    : "Not checked yet";
+
   const footerContent = (
     <Stack
       spacing={1.5}
       sx={{
         width: "100%",
-        borderRadius: 2,
-        border: (theme) => `1px solid ${(theme.vars || theme).palette.divider}`,
-        p: 1.5,
-        // background: (theme) =>
-        //   theme.palette.mode === "dark"
-        //     ? "rgba(255, 255, 255, 0.05)"
-        //     : "rgba(0, 0, 0, 0.02)",
-        background: "linear-gradient(135deg, #2c3e50 0%, #58b8c7 100%)",
-        backdropFilter: "blur(8px)",
-        boxShadow: (theme) =>
-          theme.palette.mode === "dark"
-            ? "0 4px 12px rgba(0, 0, 0, 0.3)"
-            : "0 2px 8px rgba(0, 0, 0, 0.1)",
-        transition: "all 0.2s ease-in-out",
+        borderRadius: 3,
+        p: { xs: 1.25, md: 1.75 },
+        background: "linear-gradient(135deg, #607e9b 0%, #80a8ce 100%)",
+        color: theme.palette.common.white,
+        // border: statusColors.border,
+        border: `1px solid rgba(255, 255, 255, 0.15)`,
+        boxShadow: `0 0 10px rgba(10, 157, 198, 0.6)`,
+        position: "relative",
+        overflow: "hidden",
+        isolation: "isolate",
+        "&::after": {
+          content: '""',
+          position: "absolute",
+          inset: 0,
+          // background: statusColors.overlay,
+          zIndex: -1,
+        },
       }}
     >
-      <Stack
-        direction="row"
-        spacing={1}
-        alignItems="center"
-        justifyContent={{ xs: "center", sm: "flex-start" }}
-        sx={{ flexWrap: "wrap" }}
-      >
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            width: 24,
-            height: 24,
-            borderRadius: "50%",
-            backgroundColor: (theme) =>
-              theme.palette.mode === "dark"
-                ? "rgba(255, 255, 255, 0.1)"
-                : "rgba(0, 0, 0, 0.05)",
-            boxShadow: `0 0 8px ${glowColor}`,
-          }}
-        >
-          <FiberManualRecordIcon fontSize="small" sx={{ color: statusColor }} />
-        </Box>
-        <Typography
-          variant="body2"
-          fontWeight={600}
-          noWrap
-          sx={{ color: "white" }}
-        >
-          Namakala Solutions
-        </Typography>
-      </Stack>
-      <Typography
-        variant="caption"
-        color="text.secondary"
-        sx={{ color: "white" }}
-      >
-        {statusLabel}
-      </Typography>
-      <Button
-        component={RouterLink}
-        to={ADMIN_DASHBOARD_SETTINGS_PATH}
-        variant="contained"
-        size="small"
-        startIcon={<SettingsIcon fontSize="small" />}
-        fullWidth
-        aria-label="Open settings"
+      <Box
         sx={{
-          backgroundColor: (theme) =>
-            theme.palette.mode === "dark"
-              ? "rgba(255, 255, 255, 0.1)"
-              : "rgba(0, 0, 0, 0.05)",
-          color: "white",
-          "&:hover": {
-            color: "white",
-          },
-          border: (theme) =>
-            `1px solid ${(theme.vars || theme).palette.divider}`,
+          display: "flex",
+          flexDirection: { xs: "column", md: "row" },
+          alignItems: { xs: "flex-start", md: "center" },
+          justifyContent: "space-between",
+          gap: { xs: 1, md: 1.25 },
+          flexWrap: "wrap",
         }}
       >
-        Settings
-      </Button>
-      <Box sx={{ mt: 0.5 }}>
-        <Typography variant="caption" color="white" display="block">
-          © {currentYear} Namakala Solutions
+        <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+          <Typography
+            variant="overline"
+            sx={{
+              letterSpacing: 1,
+              opacity: 0.75,
+              fontWeight: 600,
+              fontSize: "0.65rem",
+            }}
+          >
+            System Status
+          </Typography>
+          <Typography
+            variant="subtitle1"
+            sx={{ fontWeight: 600, lineHeight: 1.15, fontSize: "1rem" }}
+          >
+            Namakala Solutions
+          </Typography>
+        </Box>
+        <Stack
+          direction="row"
+          spacing={1}
+          alignItems="center"
+          flexWrap="wrap"
+          justifyContent={{ xs: "flex-start", md: "flex-end" }}
+          sx={{ width: { xs: "100%", md: "auto" }, rowGap: 1 }}
+        >
+          <Tooltip title={checking ? "Checking..." : "Refresh status"}>
+            <span>
+              <IconButton
+                size="small"
+                onClick={triggerCheck}
+                disabled={checking}
+                sx={{
+                  color: theme.palette.common.white,
+                  p: 0.5,
+                  "&:hover": {
+                    // bgcolor: statusColors.actionHover,
+                  },
+                  alignContent: "center",
+                }}
+              >
+                <RefreshRoundedIcon fontSize="small" />
+              </IconButton>
+            </span>
+          </Tooltip>
+        </Stack>
+      </Box>
+      <Stack spacing={1.1}>
+        <Chip
+          icon={
+            <FiberManualRecordIcon
+              {...(isOnline ? { color: "success" } : { color: "error" })}
+            />
+          }
+          label={statusLabel}
+          size="small"
+          sx={{
+            alignSelf: "flex-start",
+            // bgcolor: statusColors.chipBg,
+            // border: statusColors.chipBorder,
+            color: theme.palette.common.white,
+            fontWeight: 600,
+            fontSize: "0.8rem",
+            height: 26,
+            px: 0.75,
+          }}
+        />
+        <Stack
+          direction={{ xs: "column", sm: "row" }}
+          spacing={0.5}
+          justifyContent="space-between"
+          alignItems={{ xs: "flex-start", sm: "center" }}
+        >
+          <Typography
+            variant="body2"
+            sx={{ opacity: 0.85, fontSize: "0.85rem", lineHeight: 1.35 }}
+          >
+            {isOnline
+              ? "All services are responding normally."
+              : "Unable to reach the API server. We will keep retrying."}
+          </Typography>
+          <Typography
+            variant="caption"
+            sx={{ opacity: 0.75, fontSize: "0.72rem" }}
+          >
+            Checked {lastCheckedLabel}
+          </Typography>
+        </Stack>
+        <Typography
+          variant="caption"
+          sx={{ opacity: 0.7, fontSize: "0.72rem" }}
+        >
+          Auto-refresh every 30 seconds
         </Typography>
-        <Typography variant="caption" color="white">
-          All rights reserved.
+      </Stack>
+      <Box sx={{ pt: 0.5 }}>
+        <Typography
+          variant="caption"
+          display="block"
+          sx={{ fontSize: "0.7rem", opacity: 0.75 }}
+        >
+          © {currentYear} Namakala Solutions · All rights reserved.
         </Typography>
       </Box>
     </Stack>
@@ -195,7 +284,14 @@ export default function AdminSidebarFooter({}: AdminSidebarFooterProps) {
           anchorOrigin={{ vertical: "top", horizontal: "center" }}
           transformOrigin={{ vertical: "bottom", horizontal: "center" }}
           slotProps={{
-            paper: { sx: { p: 1, borderRadius: 2 } },
+            paper: {
+              sx: {
+                p: 0,
+                borderRadius: 3,
+                background: "transparent",
+                boxShadow: "none",
+              },
+            },
           }}
         >
           {footerContent}

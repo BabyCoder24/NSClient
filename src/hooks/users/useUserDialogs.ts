@@ -11,6 +11,7 @@ import {
 } from "../../store/userSlice";
 import type { CreateUserRequest, UpdateUserRequest } from "../../models/user";
 import type { DialogType } from "../../constants/userConstants";
+import { resolveApiMessage } from "../../utilities/messageUtils";
 
 export interface UseUserDialogsReturn {
   dialogOpen: boolean;
@@ -243,17 +244,20 @@ export const useUserDialogs = (
         ).unwrap();
         setSnackbar({
           open: true,
-          message:
-            (result as any).message ||
-            "User created successfully. A set-password email has been sent to the user's email address.",
+          message: resolveApiMessage(
+            result,
+            "User created successfully. A set-password email has been sent to the user's email address."
+          ),
           severity: "success",
         });
         dispatch(fetchUsers());
         onSuccess?.();
         handleDialogClose();
       } catch (err: any) {
-        const errorMessage =
-          err?.message || "Failed to create user. Please try again.";
+        const errorMessage = resolveApiMessage(
+          err,
+          "Failed to create user. Please try again."
+        );
         setSnackbar({ open: true, message: errorMessage, severity: "error" });
       } finally {
         setLoadingCreate(false);

@@ -130,7 +130,10 @@ const Settings: React.FC = () => {
 
   const handleLogout = async () => {
     await dispatch(logoutUser());
-    navigate("/login");
+    // Defer navigation to ensure Redux state is committed
+    setTimeout(() => {
+      navigate("/login", { replace: true });
+    }, 0);
   };
 
   const lastLoginLabel = user ? "Moments ago" : "Just now";

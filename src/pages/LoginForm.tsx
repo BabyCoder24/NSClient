@@ -36,29 +36,12 @@ const LoginForm: React.FC = () => {
   const navigate = useNavigate();
   const {
     loading,
-    role,
-    user,
     error: authError,
     successMessage,
   } = useSelector((state: RootState) => state.auth);
 
-  const isAuthenticated = Boolean(role && user);
   const isDisabled = loading || !usernameOrEmail.trim() || !password.trim();
   const errorMessage = formError || authError;
-
-  useEffect(() => {
-    if (!isAuthenticated || !role) {
-      return;
-    }
-
-    if (role === "Administrator") {
-      navigate("/admin-dashboard");
-    } else if (role === "Standard User") {
-      navigate("/user-dashboard");
-    } else {
-      navigate("/dashboard"); // fallback
-    }
-  }, [isAuthenticated, role, navigate]);
 
   useEffect(() => {
     // Clear any previous errors when component mounts
@@ -91,7 +74,7 @@ const LoginForm: React.FC = () => {
     }
 
     try {
-      await dispatch(
+      const result = await dispatch(
         loginUser({
           UsernameOrEmail: usernameOrEmail.trim(),
           Password: password,
@@ -107,7 +90,18 @@ const LoginForm: React.FC = () => {
         localStorage.removeItem(REMEMBER_ME_KEY);
       }
 
-      // Navigation handled by useEffect on role change
+      // Navigate based on role after successful login
+      const userRole = result.role;
+      // Defer navigation to ensure Redux state is committed
+      setTimeout(() => {
+        if (userRole === "Administrator") {
+          navigate("/admin-dashboard/overview", { replace: true });
+        } else if (userRole === "Standard User") {
+          navigate("/user-dashboard", { replace: true });
+        } else {
+          navigate("/dashboard", { replace: true }); // fallback
+        }
+      }, 0);
     } catch (error: any) {
       console.error("Login error:", error);
       setFormError(error.message);

@@ -49,9 +49,12 @@ const AdminDashboard: React.FC = () => {
   };
 
   const handleLogout = async () => {
-    await dispatch(logoutUser());
-    navigate("/login");
     handleMenuClose();
+    await dispatch(logoutUser());
+    // Defer navigation to ensure Redux state is committed
+    setTimeout(() => {
+      navigate("/login", { replace: true });
+    }, 0);
   };
 
   const handleSettings = () => {
@@ -172,4 +175,4 @@ const AdminDashboard: React.FC = () => {
   );
 };
 
-export default React.memo(AdminDashboard);
+export default AdminDashboard;

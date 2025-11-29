@@ -9,6 +9,7 @@ import {
   completeRegistration,
   setPassword,
   refreshToken,
+  proactiveRefreshToken,
   logoutUser,
 } from "./authThunks";
 import type { AuthState, AuthUser } from "../models/auth";
@@ -270,6 +271,25 @@ const authSlice = createSlice({
       })
       .addCase(refreshToken.rejected, (state) => {
         state.loading = false;
+      })
+
+      // Proactive Refresh Token
+      .addCase(proactiveRefreshToken.pending, () => {
+        // Silent refresh, no loading state
+      })
+      .addCase(proactiveRefreshToken.fulfilled, (state, action) => {
+        state.user = action.payload.user;
+        state.accessToken = action.payload.accessToken;
+        state.refreshToken = action.payload.refreshToken;
+        state.expiresAt = action.payload.expiresAt;
+        state.role = action.payload.role;
+        localStorage.setItem("accessToken", action.payload.accessToken);
+        localStorage.setItem("refreshToken", action.payload.refreshToken);
+        localStorage.setItem("expiresAt", action.payload.expiresAt.toString());
+        localStorage.setItem("role", action.payload.role);
+      })
+      .addCase(proactiveRefreshToken.rejected, () => {
+        // On failure, logout is handled in thunk
       })
 
       // Logout

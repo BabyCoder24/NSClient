@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { formatRelativeTime } from "../utilities/timeUtils";
 
 /**
@@ -15,24 +15,29 @@ export function useRelativeTime(
   date: string | Date | null | undefined,
   options: { fallback?: string; updateInterval?: number } = {}
 ): string {
-  const { updateInterval = 1000, ...formatOptions } = options;
+  const { updateInterval = 1000, fallback } = options;
 
-  // Initialize with static format
-  const [timeString, setTimeString] = useState(() =>
-    formatRelativeTime(date, formatOptions)
+  const formatTime = useCallback(
+    (referenceDate?: Date) =>
+      formatRelativeTime(date, { fallback, now: referenceDate }),
+    [date, fallback]
   );
 
+  const [timeString, setTimeString] = useState(() => formatTime());
+
   useEffect(() => {
-    if (updateInterval <= 0) return; // No updates if interval is 0 or negative
+    setTimeString(formatTime());
+  }, [formatTime]);
+
+  useEffect(() => {
+    if (updateInterval <= 0) return undefined;
 
     const interval = setInterval(() => {
-      setTimeString(
-        formatRelativeTime(date, { ...formatOptions, now: new Date() })
-      );
+      setTimeString(formatTime(new Date()));
     }, updateInterval);
 
     return () => clearInterval(interval);
-  }, [date, formatOptions, updateInterval]);
+  }, [formatTime, updateInterval]);
 
   return timeString;
 }
