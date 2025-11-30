@@ -1,4 +1,4 @@
-import React, { useMemo, useId } from "react";
+import React, { useMemo, useId, useState, useEffect } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -44,36 +44,54 @@ const UserCreateDialog: React.FC<UserCreateDialogProps> = ({
   const roleLabelId = `${titleId}-role-label`;
   const roleSelectId = `${titleId}-role`;
 
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [companyName, setCompanyName] = useState("");
+  const [roleId, setRoleId] = useState(2);
+
+  useEffect(() => {
+    if (open) {
+      setFirstName(formData.firstName || "");
+      setLastName(formData.lastName || "");
+      setUsername(formData.username || "");
+      setEmail(formData.email || "");
+      setCompanyName(formData.companyName || "");
+      setRoleId(formData.roleId || 2);
+    }
+  }, [open, formData]);
+
   const firstNameError = useMemo(() => {
-    return formData.firstName?.trim() ? "" : "First name is required";
-  }, [formData.firstName]);
+    return firstName.trim() ? "" : "First name is required";
+  }, [firstName]);
 
   const lastNameError = useMemo(() => {
-    return formData.lastName?.trim() ? "" : "Last name is required";
-  }, [formData.lastName]);
+    return lastName.trim() ? "" : "Last name is required";
+  }, [lastName]);
 
   const emailError = useMemo(() => {
-    if (!formData.email?.trim()) {
+    if (!email.trim()) {
       return "Email is required";
     }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(formData.email) ? "" : "Invalid email format";
-  }, [formData.email]);
+    return emailRegex.test(email) ? "" : "Invalid email format";
+  }, [email]);
 
   const isDisabled = useMemo(
     () =>
       loading ||
-      !formData.firstName?.trim() ||
-      !formData.lastName?.trim() ||
-      !formData.email?.trim() ||
+      !firstName.trim() ||
+      !lastName.trim() ||
+      !email.trim() ||
       Boolean(firstNameError) ||
       Boolean(lastNameError) ||
       Boolean(emailError),
     [
       loading,
-      formData.firstName,
-      formData.lastName,
-      formData.email,
+      firstName,
+      lastName,
+      email,
       firstNameError,
       lastNameError,
       emailError,
@@ -84,17 +102,24 @@ const UserCreateDialog: React.FC<UserCreateDialogProps> = ({
     if (firstNameError || lastNameError || emailError) {
       return;
     }
-    onSubmit(formData);
+    onSubmit({
+      firstName,
+      lastName,
+      username,
+      email,
+      companyName,
+      roleId,
+    });
   };
 
   const handleClose = () => {
     onFormDataChange({
-      firstName: "",
-      lastName: "",
-      companyName: "",
-      username: "",
-      email: "",
-      roleId: 2,
+      firstName,
+      lastName,
+      username,
+      email,
+      companyName,
+      roleId,
     });
     onClose();
   };
@@ -223,10 +248,8 @@ const UserCreateDialog: React.FC<UserCreateDialogProps> = ({
             <TextField
               fullWidth
               label="First Name"
-              value={formData.firstName || ""}
-              onChange={(e) =>
-                onFormDataChange({ ...formData, firstName: e.target.value })
-              }
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
               required
               error={!!firstNameError}
               helperText={firstNameError || " "}
@@ -236,10 +259,8 @@ const UserCreateDialog: React.FC<UserCreateDialogProps> = ({
             <TextField
               fullWidth
               label="Last Name"
-              value={formData.lastName || ""}
-              onChange={(e) =>
-                onFormDataChange({ ...formData, lastName: e.target.value })
-              }
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
               required
               error={!!lastNameError}
               helperText={lastNameError || " "}
@@ -249,20 +270,16 @@ const UserCreateDialog: React.FC<UserCreateDialogProps> = ({
             <TextField
               fullWidth
               label="Username"
-              value={formData.username || ""}
-              onChange={(e) =>
-                onFormDataChange({ ...formData, username: e.target.value })
-              }
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               id="create-username"
               name="username"
             />
             <TextField
               fullWidth
               label="Email"
-              value={formData.email || ""}
-              onChange={(e) =>
-                onFormDataChange({ ...formData, email: e.target.value })
-              }
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               required
               error={!!emailError}
               helperText={emailError || " "}
@@ -272,10 +289,8 @@ const UserCreateDialog: React.FC<UserCreateDialogProps> = ({
             <TextField
               fullWidth
               label="Company Name"
-              value={formData.companyName || ""}
-              onChange={(e) =>
-                onFormDataChange({ ...formData, companyName: e.target.value })
-              }
+              value={companyName}
+              onChange={(e) => setCompanyName(e.target.value)}
               id="create-company-name"
               name="company-name"
             />
@@ -285,13 +300,8 @@ const UserCreateDialog: React.FC<UserCreateDialogProps> = ({
                 labelId={roleLabelId}
                 id={roleSelectId}
                 label="Role"
-                value={formData.roleId || 2}
-                onChange={(e) =>
-                  onFormDataChange({
-                    ...formData,
-                    roleId: Number(e.target.value),
-                  })
-                }
+                value={roleId}
+                onChange={(e) => setRoleId(Number(e.target.value))}
                 inputProps={{ name: "role" }}
               >
                 <MenuItem value={1}>Administrator</MenuItem>

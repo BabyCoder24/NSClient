@@ -68,7 +68,6 @@ const UserResendDialog: React.FC<UserResendDialogProps> = ({
       <DialogTitle
         component="div"
         id={titleId}
-        disableTypography
         sx={{
           position: "relative",
           px: { xs: 2.5, sm: 3 },

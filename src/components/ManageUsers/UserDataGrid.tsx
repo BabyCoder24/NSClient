@@ -294,7 +294,9 @@ const UserDataGrid: React.FC<UserDataGridProps> = ({
   ];
 
   return (
-    <Card>
+    <Card
+      sx={{ background: "linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)" }}
+    >
       <CardContent>
         <Box
           sx={{

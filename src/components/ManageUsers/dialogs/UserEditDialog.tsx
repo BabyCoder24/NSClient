@@ -1,4 +1,4 @@
-import React, { useMemo, useId } from "react";
+import React, { useMemo, useId, useState, useEffect, useCallback } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -26,8 +26,8 @@ import type { UpdateUserRequest } from "../../../models/user";
 interface UserEditDialogProps {
   open: boolean;
   formData: UpdateUserRequest;
+  initialFormData: UpdateUserRequest;
   onFormDataChange: (data: UpdateUserRequest) => void;
-  hasChanges: boolean;
   onClose: () => void;
   onSubmit: (data: UpdateUserRequest) => void;
   loading?: boolean;
@@ -36,8 +36,8 @@ interface UserEditDialogProps {
 const UserEditDialog: React.FC<UserEditDialogProps> = ({
   open,
   formData,
+  initialFormData,
   onFormDataChange,
-  hasChanges,
   onClose,
   onSubmit,
   loading = false,
@@ -47,30 +47,98 @@ const UserEditDialog: React.FC<UserEditDialogProps> = ({
   const titleId = useId();
   const roleLabelId = useId();
 
+  const [localFormData, setLocalFormData] =
+    useState<UpdateUserRequest>(formData);
+
+  useEffect(() => {
+    if (open) {
+      setLocalFormData(formData);
+    }
+  }, [open, formData]);
+
+  const localHasChanges = useMemo(() => {
+    return (
+      initialFormData.firstName !== localFormData.firstName ||
+      initialFormData.lastName !== localFormData.lastName ||
+      initialFormData.username !== localFormData.username ||
+      initialFormData.email !== localFormData.email ||
+      initialFormData.companyName !== localFormData.companyName ||
+      initialFormData.roleId !== localFormData.roleId ||
+      initialFormData.isActive !== localFormData.isActive
+    );
+  }, [initialFormData, localFormData]);
+
+  const handleFirstNameChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setLocalFormData((prev) => ({ ...prev, firstName: e.target.value }));
+    },
+    []
+  );
+
+  const handleLastNameChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setLocalFormData((prev) => ({ ...prev, lastName: e.target.value }));
+    },
+    []
+  );
+
+  const handleUsernameChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setLocalFormData((prev) => ({ ...prev, username: e.target.value }));
+    },
+    []
+  );
+
+  const handleEmailChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setLocalFormData((prev) => ({ ...prev, email: e.target.value }));
+    },
+    []
+  );
+
+  const handleCompanyNameChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setLocalFormData((prev) => ({ ...prev, companyName: e.target.value }));
+    },
+    []
+  );
+
+  const handleRoleChange = useCallback((e: any) => {
+    setLocalFormData((prev) => ({ ...prev, roleId: Number(e.target.value) }));
+  }, []);
+
+  const handleIsActiveChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setLocalFormData((prev) => ({ ...prev, isActive: e.target.checked }));
+    },
+    []
+  );
+
   const firstNameError = useMemo(() => {
-    return formData.firstName?.trim() ? "" : "First name is required";
-  }, [formData.firstName]);
+    return localFormData.firstName?.trim() ? "" : "First name is required";
+  }, [localFormData.firstName]);
 
   const lastNameError = useMemo(() => {
-    return formData.lastName?.trim() ? "" : "Last name is required";
-  }, [formData.lastName]);
+    return localFormData.lastName?.trim() ? "" : "Last name is required";
+  }, [localFormData.lastName]);
 
   const emailError = useMemo(() => {
-    if (!formData.email?.trim()) {
+    if (!localFormData.email?.trim()) {
       return "Email is required";
     }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(formData.email) ? "" : "Invalid email format";
-  }, [formData.email]);
+    return emailRegex.test(localFormData.email) ? "" : "Invalid email format";
+  }, [localFormData.email]);
 
   const handleSubmit = () => {
     if (firstNameError || lastNameError || emailError) {
       return;
     }
-    onSubmit(formData);
+    onSubmit(localFormData);
   };
 
   const handleClose = () => {
+    onFormDataChange(localFormData);
     onClose();
   };
 
@@ -199,10 +267,8 @@ const UserEditDialog: React.FC<UserEditDialogProps> = ({
             <TextField
               fullWidth
               label="First Name"
-              value={formData.firstName || ""}
-              onChange={(e) =>
-                onFormDataChange({ ...formData, firstName: e.target.value })
-              }
+              value={localFormData.firstName || ""}
+              onChange={handleFirstNameChange}
               required
               error={!!firstNameError}
               helperText={firstNameError || " "}
@@ -212,10 +278,8 @@ const UserEditDialog: React.FC<UserEditDialogProps> = ({
             <TextField
               fullWidth
               label="Last Name"
-              value={formData.lastName || ""}
-              onChange={(e) =>
-                onFormDataChange({ ...formData, lastName: e.target.value })
-              }
+              value={localFormData.lastName || ""}
+              onChange={handleLastNameChange}
               required
               error={!!lastNameError}
               helperText={lastNameError || " "}
@@ -225,20 +289,16 @@ const UserEditDialog: React.FC<UserEditDialogProps> = ({
             <TextField
               fullWidth
               label="Username"
-              value={formData.username || ""}
-              onChange={(e) =>
-                onFormDataChange({ ...formData, username: e.target.value })
-              }
+              value={localFormData.username || ""}
+              onChange={handleUsernameChange}
               id="edit-username"
               name="username"
             />
             <TextField
               fullWidth
               label="Email"
-              value={formData.email || ""}
-              onChange={(e) =>
-                onFormDataChange({ ...formData, email: e.target.value })
-              }
+              value={localFormData.email || ""}
+              onChange={handleEmailChange}
               required
               error={!!emailError}
               helperText={emailError || " "}
@@ -248,10 +308,8 @@ const UserEditDialog: React.FC<UserEditDialogProps> = ({
             <TextField
               fullWidth
               label="Company Name"
-              value={formData.companyName || ""}
-              onChange={(e) =>
-                onFormDataChange({ ...formData, companyName: e.target.value })
-              }
+              value={localFormData.companyName || ""}
+              onChange={handleCompanyNameChange}
               id="edit-company-name"
               name="company-name"
             />
@@ -261,13 +319,8 @@ const UserEditDialog: React.FC<UserEditDialogProps> = ({
                 labelId={roleLabelId}
                 id={`${roleLabelId}-select`}
                 label="Role"
-                value={formData.roleId || 2}
-                onChange={(e) =>
-                  onFormDataChange({
-                    ...formData,
-                    roleId: Number(e.target.value),
-                  })
-                }
+                value={localFormData.roleId || 2}
+                onChange={handleRoleChange}
                 name="role"
               >
                 <MenuItem value={1}>Administrator</MenuItem>
@@ -280,20 +333,18 @@ const UserEditDialog: React.FC<UserEditDialogProps> = ({
             <FormControlLabel
               control={
                 <Checkbox
-                  checked={Boolean(formData.isActive)}
-                  onChange={(e) =>
-                    onFormDataChange({
-                      ...formData,
-                      isActive: e.target.checked,
-                    })
-                  }
+                  checked={Boolean(localFormData.isActive)}
+                  onChange={handleIsActiveChange}
                 />
               }
               label="Active"
             />
             <FormControlLabel
               control={
-                <Checkbox checked={Boolean(formData.isVerified)} disabled />
+                <Checkbox
+                  checked={Boolean(localFormData.isVerified)}
+                  disabled
+                />
               }
               label="Verified"
             />
@@ -318,7 +369,7 @@ const UserEditDialog: React.FC<UserEditDialogProps> = ({
         <Button
           onClick={handleSubmit}
           variant="contained"
-          disabled={loading || !hasChanges}
+          disabled={loading || !localHasChanges}
           sx={{ minWidth: 100 }}
         >
           {loading ? "Saving..." : "Save"}

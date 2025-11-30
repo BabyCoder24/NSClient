@@ -40,7 +40,7 @@ const UserFilters: React.FC<UserFiltersProps> = ({
         overflow: "hidden",
         color: "common.white",
         background:
-          "linear-gradient(135deg, #1e3c72 0%, #2a5298 45%, #38a3d1 100%)",
+          " linear-gradient(180deg, rgba(84, 164, 229, 0.95) 0%, rgba(133, 187, 245, 0.85) 100%)",
         boxShadow: "0px 18px 42px rgba(30, 64, 175, 0.22)",
         "&::before": {
           content: '""',
@@ -98,7 +98,7 @@ const UserFilters: React.FC<UserFiltersProps> = ({
               onChange={(e) => onFilterChange("firstName", e.target.value)}
               sx={{ minWidth: 0 }}
               id="filter-first-name"
-              name="first-name"
+              name="filter-first-name"
             />
             <TextField
               fullWidth
@@ -107,7 +107,7 @@ const UserFilters: React.FC<UserFiltersProps> = ({
               onChange={(e) => onFilterChange("lastName", e.target.value)}
               sx={{ minWidth: 0 }}
               id="filter-last-name"
-              name="last-name"
+              name="filter-last-name"
             />
             <TextField
               fullWidth
@@ -126,7 +126,7 @@ const UserFilters: React.FC<UserFiltersProps> = ({
                 label="Role"
                 value={filters.role}
                 onChange={(e) => onFilterChange("role", e.target.value)}
-                name="role"
+                name="filter-role"
               >
                 <MenuItem value="All">All</MenuItem>
                 <MenuItem value="Administrator">Administrator</MenuItem>
@@ -142,7 +142,7 @@ const UserFilters: React.FC<UserFiltersProps> = ({
                 label="Verified"
                 value={filters.isVerified}
                 onChange={(e) => onFilterChange("isVerified", e.target.value)}
-                name="is-verified"
+                name="filter-is-verified"
               >
                 <MenuItem value="All">All</MenuItem>
                 <MenuItem value="Verified">Verified</MenuItem>
@@ -158,7 +158,7 @@ const UserFilters: React.FC<UserFiltersProps> = ({
                 label="Active"
                 value={filters.isActive}
                 onChange={(e) => onFilterChange("isActive", e.target.value)}
-                name="is-active"
+                name="filter-is-active"
               >
                 <MenuItem value="All">All</MenuItem>
                 <MenuItem value="Active">Active</MenuItem>
@@ -174,7 +174,7 @@ const UserFilters: React.FC<UserFiltersProps> = ({
               onChange={(e) => onFilterChange("createdAt", e.target.value)}
               sx={{ minWidth: 0 }}
               id="filter-created-at"
-              name="created-at"
+              name="filter-created-at"
               InputLabelProps={{ shrink: true }}
             />
             <TextField
@@ -185,7 +185,7 @@ const UserFilters: React.FC<UserFiltersProps> = ({
               onChange={(e) => onFilterChange("updatedAt", e.target.value)}
               sx={{ minWidth: 0 }}
               id="filter-updated-at"
-              name="updated-at"
+              name="filter-updated-at"
               InputLabelProps={{ shrink: true }}
             />
           </Box>

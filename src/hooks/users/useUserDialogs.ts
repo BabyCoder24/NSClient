@@ -35,7 +35,9 @@ export interface UseUserDialogsReturn {
   handlePasswordReset: (user: any) => void;
   handleResendVerification: (user: any) => void;
   handleDialogClose: () => void;
-  handleFormSubmit: () => Promise<void>;
+  handleFormSubmit: (
+    data?: CreateUserRequest | UpdateUserRequest
+  ) => Promise<void>;
   setFormData: (data: CreateUserRequest | UpdateUserRequest) => void;
   setSnackbar: (snackbar: {
     open: boolean;
@@ -257,149 +259,155 @@ export const useUserDialogs = (
     setInitialFormData({} as CreateUserRequest | UpdateUserRequest);
   }, [blurActiveElement]);
 
-  const handleFormSubmit = useCallback(async () => {
-    if (dialogType === "create") {
-      setLoadingCreate(true);
-      try {
-        if (!isFormValid) {
+  const handleFormSubmit = useCallback(
+    async (data?: CreateUserRequest | UpdateUserRequest) => {
+      const formDataToUse = data || formData;
+      if (dialogType === "create") {
+        setLoadingCreate(true);
+        try {
+          if (!isFormValid) {
+            setSnackbar({
+              open: true,
+              message:
+                "Please resolve the highlighted validation errors before creating the user.",
+              severity: "error",
+            });
+            return;
+          }
+          const result = await dispatch(
+            createUser(formDataToUse as CreateUserRequest)
+          ).unwrap();
+          setSnackbar({
+            open: true,
+            message: resolveApiMessage(
+              result,
+              "User created successfully. A set-password email has been sent to the user's email address."
+            ),
+            severity: "success",
+          });
+          dispatch(fetchUsers());
+          onSuccess?.();
+          handleDialogClose();
+        } catch (err: any) {
+          const errorMessage = resolveApiMessage(
+            err,
+            "Failed to create user. Please try again."
+          );
+          setSnackbar({ open: true, message: errorMessage, severity: "error" });
+        } finally {
+          setLoadingCreate(false);
+        }
+        return;
+      }
+      if (dialogType === "edit" && selectedUser) {
+        setLoadingEdit(true);
+        try {
+          if (!isFormValid) {
+            setSnackbar({
+              open: true,
+              message:
+                "Please resolve the highlighted validation errors before saving changes.",
+              severity: "error",
+            });
+            return;
+          }
+          await dispatch(
+            updateUser(formDataToUse as UpdateUserRequest)
+          ).unwrap();
+          setSnackbar({
+            open: true,
+            message: "User updated successfully.",
+            severity: "success",
+          });
+          dispatch(fetchUsers());
+          onSuccess?.();
+          handleDialogClose();
+        } catch (err: any) {
+          const errorMessage =
+            err?.message || "Failed to update user. Please try again.";
+          setSnackbar({ open: true, message: errorMessage, severity: "error" });
+        } finally {
+          setLoadingEdit(false);
+        }
+        return;
+      }
+      if (dialogType === "delete" && selectedUser) {
+        setLoadingDelete(true);
+        try {
+          const result = await dispatch(deleteUser(selectedUser.id)).unwrap();
+          setSnackbar({
+            open: true,
+            message: result.message || "User deleted successfully.",
+            severity: "success",
+          });
+          dispatch(fetchUsers());
+          onSuccess?.();
+          handleDialogClose();
+        } catch (err: any) {
+          const errorMessage = err?.message || "Failed to delete user.";
+          setSnackbar({ open: true, message: errorMessage, severity: "error" });
+        } finally {
+          setLoadingDelete(false);
+        }
+      }
+      if (dialogType === "reset" && selectedUser) {
+        setLoadingReset(true);
+        try {
+          const result = await dispatch(
+            adminResetPassword(selectedUser.id)
+          ).unwrap();
           setSnackbar({
             open: true,
             message:
-              "Please resolve the highlighted validation errors before creating the user.",
-            severity: "error",
+              (result as any)?.message ||
+              "Password reset email sent successfully.",
+            severity: "success",
           });
-          return;
+          dispatch(fetchUsers());
+          onSuccess?.();
+          handleDialogClose();
+        } catch (err: any) {
+          const errorMessage = err?.message || "Failed to send reset email.";
+          setSnackbar({ open: true, message: errorMessage, severity: "error" });
+        } finally {
+          setLoadingReset(false);
         }
-        const result = await dispatch(
-          createUser(formData as CreateUserRequest)
-        ).unwrap();
-        setSnackbar({
-          open: true,
-          message: resolveApiMessage(
-            result,
-            "User created successfully. A set-password email has been sent to the user's email address."
-          ),
-          severity: "success",
-        });
-        dispatch(fetchUsers());
-        onSuccess?.();
-        handleDialogClose();
-      } catch (err: any) {
-        const errorMessage = resolveApiMessage(
-          err,
-          "Failed to create user. Please try again."
-        );
-        setSnackbar({ open: true, message: errorMessage, severity: "error" });
-      } finally {
-        setLoadingCreate(false);
       }
-      return;
-    }
-    if (dialogType === "edit" && selectedUser) {
-      setLoadingEdit(true);
-      try {
-        if (!isFormValid) {
+      if (dialogType === "resendVerification" && selectedUser) {
+        setLoadingResend(true);
+        try {
+          const result = await dispatch(
+            resendVerificationEmail(selectedUser.id)
+          ).unwrap();
           setSnackbar({
             open: true,
             message:
-              "Please resolve the highlighted validation errors before saving changes.",
-            severity: "error",
+              (result as any)?.message ||
+              "Verification email resent successfully.",
+            severity: "success",
           });
-          return;
+          onSuccess?.();
+          handleDialogClose();
+        } catch (err: any) {
+          const errorMessage =
+            err?.message || "Failed to resend verification email.";
+          setSnackbar({ open: true, message: errorMessage, severity: "error" });
+        } finally {
+          setLoadingResend(false);
         }
-        await dispatch(updateUser(formData as UpdateUserRequest)).unwrap();
-        setSnackbar({
-          open: true,
-          message: "User updated successfully.",
-          severity: "success",
-        });
-        dispatch(fetchUsers());
-        onSuccess?.();
-        handleDialogClose();
-      } catch (err: any) {
-        const errorMessage =
-          err?.message || "Failed to update user. Please try again.";
-        setSnackbar({ open: true, message: errorMessage, severity: "error" });
-      } finally {
-        setLoadingEdit(false);
       }
-      return;
-    }
-    if (dialogType === "delete" && selectedUser) {
-      setLoadingDelete(true);
-      try {
-        const result = await dispatch(deleteUser(selectedUser.id)).unwrap();
-        setSnackbar({
-          open: true,
-          message: result.message || "User deleted successfully.",
-          severity: "success",
-        });
-        dispatch(fetchUsers());
-        onSuccess?.();
-        handleDialogClose();
-      } catch (err: any) {
-        const errorMessage = err?.message || "Failed to delete user.";
-        setSnackbar({ open: true, message: errorMessage, severity: "error" });
-      } finally {
-        setLoadingDelete(false);
-      }
-    }
-    if (dialogType === "reset" && selectedUser) {
-      setLoadingReset(true);
-      try {
-        const result = await dispatch(
-          adminResetPassword(selectedUser.id)
-        ).unwrap();
-        setSnackbar({
-          open: true,
-          message:
-            (result as any)?.message ||
-            "Password reset email sent successfully.",
-          severity: "success",
-        });
-        dispatch(fetchUsers());
-        onSuccess?.();
-        handleDialogClose();
-      } catch (err: any) {
-        const errorMessage = err?.message || "Failed to send reset email.";
-        setSnackbar({ open: true, message: errorMessage, severity: "error" });
-      } finally {
-        setLoadingReset(false);
-      }
-    }
-    if (dialogType === "resendVerification" && selectedUser) {
-      setLoadingResend(true);
-      try {
-        const result = await dispatch(
-          resendVerificationEmail(selectedUser.id)
-        ).unwrap();
-        setSnackbar({
-          open: true,
-          message:
-            (result as any)?.message ||
-            "Verification email resent successfully.",
-          severity: "success",
-        });
-        onSuccess?.();
-        handleDialogClose();
-      } catch (err: any) {
-        const errorMessage =
-          err?.message || "Failed to resend verification email.";
-        setSnackbar({ open: true, message: errorMessage, severity: "error" });
-      } finally {
-        setLoadingResend(false);
-      }
-    }
-  }, [
-    dialogType,
-    isFormValid,
-    formData,
-    selectedUser,
-    dispatch,
-    setSnackbar,
-    handleDialogClose,
-    onSuccess,
-  ]);
+    },
+    [
+      dialogType,
+      isFormValid,
+      formData,
+      selectedUser,
+      dispatch,
+      setSnackbar,
+      handleDialogClose,
+      onSuccess,
+    ]
+  );
 
   return {
     dialogOpen,

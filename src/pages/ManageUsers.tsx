@@ -81,7 +81,7 @@ const ManageUsers: React.FC = () => {
     dialogType,
     selectedUser,
     formData,
-    hasChanges,
+    initialFormData,
     loadingCreate,
     loadingEdit,
     loadingDelete,
@@ -355,16 +355,16 @@ const ManageUsers: React.FC = () => {
         formData={formData as CreateUserRequest}
         onFormDataChange={setFormData}
         onClose={handleDialogClose}
-        onSubmit={handleFormSubmit}
+        onSubmit={(data) => handleFormSubmit(data)}
         loading={loadingCreate}
       />
       <UserEditDialog
         open={dialogOpen && dialogType === "edit"}
         formData={formData as UpdateUserRequest}
+        initialFormData={initialFormData as UpdateUserRequest}
         onFormDataChange={setFormData}
-        hasChanges={hasChanges}
         onClose={handleDialogClose}
-        onSubmit={handleFormSubmit}
+        onSubmit={(data) => handleFormSubmit(data)}
         loading={loadingEdit}
       />
       <UserDeleteDialog

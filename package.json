@@ -17,6 +17,7 @@
     "@mui/x-data-grid": "^8.18.0",
     "@mui/x-date-pickers": "^8.18.0",
     "@reduxjs/toolkit": "^2.10.1",
+    "@types/yup": "^0.29.14",
     "axios": "^1.13.2",
     "dayjs": "^1.11.19",
     "jspdf": "^3.0.4",
