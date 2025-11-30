@@ -1,29 +1,16 @@
 import React, { useEffect, useState, useCallback } from "react";
-import {
-  Box,
-  Typography,
-  useTheme,
-  Menu,
-  MenuItem,
-  Snackbar,
-  Alert,
-  Stack,
-} from "@mui/material";
+import { Menu, MenuItem, Snackbar, Alert } from "@mui/material";
 import { Settings as SettingsIcon, Logout } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import type { RootState, AppDispatch } from "../store/store";
 import { logoutUser } from "../store/authThunks";
 import { fetchUsers } from "../store/userSlice";
-import PageContainer from "../components/PageContainer";
 import { printUtility, type PrintColumn } from "../utilities/printUtility";
 import axios from "axios";
-import Loading from "../components/Loading";
 
 // New imports for refactored components and hooks
-import StatsCards from "../components/ManageUsers/StatsCards";
-import UserFilters from "../components/ManageUsers/UserFilters";
-import UserDataGrid from "../components/ManageUsers/UserDataGrid";
+import ManageUsersPageBody from "../components/ManageUsers/ManageUsersPageBody";
 import UserViewDialog from "../components/ManageUsers/dialogs/UserViewDialog";
 import UserCreateDialog from "../components/ManageUsers/dialogs/UserCreateDialog";
 import UserEditDialog from "../components/ManageUsers/dialogs/UserEditDialog";
@@ -41,7 +28,6 @@ const ManageUsers: React.FC = () => {
   );
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-  const theme = useTheme();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [snackbar, setSnackbar] = useState({
     open: false,
@@ -331,90 +317,32 @@ const ManageUsers: React.FC = () => {
         </MenuItem>
       </Menu>
 
-      <PageContainer
-        title="User Management"
-        maxWidth="xl"
-        breadcrumbs={[
-          { title: "Admin Dashboard", path: "/admin-dashboard/overview" },
-          { title: "Manage Users" },
-        ]}
-      >
-        {loading ? (
-          <Loading />
-        ) : (
-          <Stack spacing={4}>
-            {/* Header Section */}
-            <Box
-              sx={{
-                background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
-                borderRadius: 3,
-                p: { xs: 1.5, sm: 2, md: 3 },
-                color: "white",
-                position: "relative",
-                overflow: "hidden",
-                "&::before": {
-                  content: '""',
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  background: "rgba(255, 255, 255, 0.1)",
-                  borderRadius: 3,
-                },
-              }}
-            >
-              <Box sx={{ position: "relative", zIndex: 1 }}>
-                <Typography
-                  variant="h4"
-                  component="h1"
-                  gutterBottom
-                  sx={{ fontWeight: 700, typography: { xs: "h5", md: "h4" } }}
-                >
-                  User Management
-                </Typography>
-                <Typography variant="h6" sx={{ mb: 2, opacity: 0.9 }}>
-                  Manage user accounts, roles, and permissions across the
-                  system.
-                </Typography>
-              </Box>
-            </Box>
-
-            {/* Stats Cards */}
-            <StatsCards />
-
-            {/* Filters */}
-            <UserFilters
-              filters={filters}
-              onFilterChange={handleFilterChange}
-              onSearch={handleSearch}
-              onClearFilters={handleClearFilters}
-            />
-
-            <UserDataGrid
-              data={dataGridRows}
-              rowCount={dataGridRowCount}
-              loading={dataLoading}
-              paginationModel={paginationModel}
-              onPaginationModelChange={setPaginationModel}
-              onSortModelChange={setSortModel}
-              onFilterModelChange={handleFilterModelChange}
-              onView={handleView}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              onPasswordReset={handlePasswordReset}
-              onResendVerification={handleResendVerification}
-              onCreate={handleCreate}
-              printLoading={printLoading}
-              excelLoading={excelLoading}
-              pdfLoading={pdfLoading}
-              onExportExcel={handleExportExcel}
-              onExportPdf={handleExportPdf}
-              onPrint={handlePrint}
-            />
-          </Stack>
-        )}
-      </PageContainer>
+      <ManageUsersPageBody
+        loading={loading}
+        filters={filters}
+        onFilterChange={handleFilterChange}
+        onSearch={handleSearch}
+        onClearFilters={handleClearFilters}
+        dataGridRows={dataGridRows}
+        dataGridRowCount={dataGridRowCount}
+        dataLoading={dataLoading}
+        paginationModel={paginationModel}
+        onPaginationModelChange={setPaginationModel}
+        onSortModelChange={setSortModel}
+        onFilterModelChange={handleFilterModelChange}
+        onView={handleView}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        onPasswordReset={handlePasswordReset}
+        onResendVerification={handleResendVerification}
+        onCreate={handleCreate}
+        printLoading={printLoading}
+        excelLoading={excelLoading}
+        pdfLoading={pdfLoading}
+        onExportExcel={handleExportExcel}
+        onExportPdf={handleExportPdf}
+        onPrint={handlePrint}
+      />
 
       {/* Dialogs */}
       <UserViewDialog

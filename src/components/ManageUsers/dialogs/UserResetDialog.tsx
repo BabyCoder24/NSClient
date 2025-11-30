@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useId } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -32,6 +32,7 @@ const UserResetDialog: React.FC<UserResetDialogProps> = ({
 }) => {
   const theme = useTheme();
   const isSmall = useMediaQuery(theme.breakpoints.down("sm"));
+  const titleId = useId();
 
   return (
     <Dialog
@@ -40,6 +41,7 @@ const UserResetDialog: React.FC<UserResetDialogProps> = ({
       fullWidth
       fullScreen={isSmall}
       disableEscapeKeyDown
+      aria-labelledby={titleId}
       slotProps={{
         paper: {
           sx: {
@@ -64,6 +66,8 @@ const UserResetDialog: React.FC<UserResetDialogProps> = ({
       }}
     >
       <DialogTitle
+        component="div"
+        id={titleId}
         sx={{
           position: "relative",
           px: { xs: 2.5, sm: 3 },
@@ -75,11 +79,12 @@ const UserResetDialog: React.FC<UserResetDialogProps> = ({
           gap: 0.75,
         }}
       >
-        <Typography variant="h6" sx={{ fontWeight: 700 }}>
+        <Typography variant="h6" component="h2" sx={{ fontWeight: 700 }}>
           Reset Password
         </Typography>
         <Typography
           variant="body2"
+          component="p"
           sx={{
             opacity: 0.85,
             maxWidth: 420,

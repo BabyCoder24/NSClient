@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useId } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -32,6 +32,7 @@ const UserResendDialog: React.FC<UserResendDialogProps> = ({
 }) => {
   const theme = useTheme();
   const isSmall = useMediaQuery(theme.breakpoints.down("sm"));
+  const titleId = useId();
 
   return (
     <Dialog
@@ -40,6 +41,7 @@ const UserResendDialog: React.FC<UserResendDialogProps> = ({
       fullWidth
       fullScreen={isSmall}
       disableEscapeKeyDown
+      aria-labelledby={titleId}
       slotProps={{
         paper: {
           sx: {
@@ -64,6 +66,9 @@ const UserResendDialog: React.FC<UserResendDialogProps> = ({
       }}
     >
       <DialogTitle
+        component="div"
+        id={titleId}
+        disableTypography
         sx={{
           position: "relative",
           px: { xs: 2.5, sm: 3 },
@@ -75,11 +80,12 @@ const UserResendDialog: React.FC<UserResendDialogProps> = ({
           gap: 0.75,
         }}
       >
-        <Typography variant="h6" sx={{ fontWeight: 700 }}>
+        <Typography variant="h6" component="h2" sx={{ fontWeight: 700 }}>
           Resend Verification
         </Typography>
         <Typography
           variant="body2"
+          component="p"
           sx={{
             opacity: 0.85,
             maxWidth: 420,

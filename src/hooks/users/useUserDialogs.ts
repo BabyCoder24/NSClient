@@ -67,6 +67,15 @@ export const useUserDialogs = (
   const [loadingDelete, setLoadingDelete] = useState(false);
   const [loadingReset, setLoadingReset] = useState(false);
   const [loadingResend, setLoadingResend] = useState(false);
+  const blurActiveElement = useCallback(() => {
+    if (typeof document === "undefined") {
+      return;
+    }
+    const activeElement = document.activeElement as HTMLElement | null;
+    if (activeElement && typeof activeElement.blur === "function") {
+      activeElement.blur();
+    }
+  }, []);
 
   const firstNameError = useMemo(() => {
     return formData.firstName?.trim() ? "" : "First name is required";
@@ -162,13 +171,18 @@ export const useUserDialogs = (
     [selectedUser]
   );
 
-  const handleView = useCallback((user: any) => {
-    setSelectedUser(user);
-    setDialogType("view");
-    setDialogOpen(true);
-  }, []);
+  const handleView = useCallback(
+    (user: any) => {
+      blurActiveElement();
+      setSelectedUser(user);
+      setDialogType("view");
+      setDialogOpen(true);
+    },
+    [blurActiveElement]
+  );
 
   const handleCreate = useCallback(() => {
+    blurActiveElement();
     setFormData({
       firstName: "",
       lastName: "",
@@ -179,52 +193,69 @@ export const useUserDialogs = (
     });
     setDialogType("create");
     setDialogOpen(true);
-  }, []);
+  }, [blurActiveElement]);
 
-  const handleEdit = useCallback((user: any) => {
-    setSelectedUser(user);
-    const data = {
-      id: user.id,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      companyName: user.companyName,
-      username: user.username,
-      email: user.email,
-      isVerified: user.isVerified,
-      isActive: user.isActive,
-      roleId: user.roleId,
-    };
-    setFormData(data);
-    setInitialFormData(data);
-    setDialogType("edit");
-    setDialogOpen(true);
-  }, []);
+  const handleEdit = useCallback(
+    (user: any) => {
+      blurActiveElement();
+      setSelectedUser(user);
+      const data = {
+        id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        companyName: user.companyName,
+        username: user.username,
+        email: user.email,
+        isVerified: user.isVerified,
+        isActive: user.isActive,
+        roleId: user.roleId,
+      };
+      setFormData(data);
+      setInitialFormData(data);
+      setDialogType("edit");
+      setDialogOpen(true);
+    },
+    [blurActiveElement]
+  );
 
-  const handleDelete = useCallback((user: any) => {
-    setSelectedUser(user);
-    setDialogType("delete");
-    setDialogOpen(true);
-  }, []);
+  const handleDelete = useCallback(
+    (user: any) => {
+      blurActiveElement();
+      setSelectedUser(user);
+      setDialogType("delete");
+      setDialogOpen(true);
+    },
+    [blurActiveElement]
+  );
 
-  const handlePasswordReset = useCallback((user: any) => {
-    setSelectedUser(user);
-    setDialogType("reset");
-    setDialogOpen(true);
-  }, []);
+  const handlePasswordReset = useCallback(
+    (user: any) => {
+      blurActiveElement();
+      setSelectedUser(user);
+      setDialogType("reset");
+      setDialogOpen(true);
+    },
+    [blurActiveElement]
+  );
 
-  const handleResendVerification = useCallback((user: any) => {
-    setSelectedUser(user);
-    setDialogType("resendVerification");
-    setDialogOpen(true);
-  }, []);
+  const handleResendVerification = useCallback(
+    (user: any) => {
+      blurActiveElement();
+      setSelectedUser(user);
+      setDialogType("resendVerification");
+      setDialogOpen(true);
+    },
+    [blurActiveElement]
+  );
 
   const handleDialogClose = useCallback(() => {
+    blurActiveElement();
     setDialogOpen(false);
     setSelectedUser(null);
     // Reset to empty object, but cast to satisfy TypeScript
     setFormData({} as CreateUserRequest | UpdateUserRequest);
     setInitialFormData({} as CreateUserRequest | UpdateUserRequest);
-  }, []);
+  }, [blurActiveElement]);
 
   const handleFormSubmit = useCallback(async () => {
     if (dialogType === "create") {

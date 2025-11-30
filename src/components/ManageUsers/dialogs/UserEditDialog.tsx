@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useId } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -10,6 +10,10 @@ import {
   Typography,
   FormControlLabel,
   Checkbox,
+  FormControl,
+  InputLabel,
+  Select,
+  FormHelperText,
   useTheme,
   useMediaQuery,
   IconButton,
@@ -40,6 +44,8 @@ const UserEditDialog: React.FC<UserEditDialogProps> = ({
 }) => {
   const theme = useTheme();
   const isSmall = useMediaQuery(theme.breakpoints.down("sm"));
+  const titleId = useId();
+  const roleLabelId = useId();
 
   const firstNameError = useMemo(() => {
     return formData.firstName?.trim() ? "" : "First name is required";
@@ -75,6 +81,7 @@ const UserEditDialog: React.FC<UserEditDialogProps> = ({
       fullWidth
       fullScreen={isSmall}
       disableEscapeKeyDown
+      aria-labelledby={titleId}
       slotProps={{
         paper: {
           sx: {
@@ -99,6 +106,8 @@ const UserEditDialog: React.FC<UserEditDialogProps> = ({
       }}
     >
       <DialogTitle
+        component="div"
+        id={titleId}
         sx={{
           position: "relative",
           px: { xs: 2.5, sm: 3 },
@@ -110,11 +119,12 @@ const UserEditDialog: React.FC<UserEditDialogProps> = ({
           gap: 0.75,
         }}
       >
-        <Typography variant="h6" sx={{ fontWeight: 700 }}>
+        <Typography variant="h6" component="h2" sx={{ fontWeight: 700 }}>
           Edit User
         </Typography>
         <Typography
           variant="body2"
+          component="p"
           sx={{
             opacity: 0.85,
             maxWidth: 420,
@@ -245,29 +255,32 @@ const UserEditDialog: React.FC<UserEditDialogProps> = ({
               id="edit-company-name"
               name="company-name"
             />
-            <TextField
-              fullWidth
-              select
-              label="Role"
-              value={formData.roleId || 2}
-              onChange={(e) =>
-                onFormDataChange({
-                  ...formData,
-                  roleId: Number(e.target.value),
-                })
-              }
-              id="edit-role"
-              name="role"
-            >
-              <MenuItem value={1}>Administrator</MenuItem>
-              <MenuItem value={2}>Standard User</MenuItem>
-            </TextField>
+            <FormControl fullWidth>
+              <InputLabel id={roleLabelId}>Role</InputLabel>
+              <Select
+                labelId={roleLabelId}
+                id={`${roleLabelId}-select`}
+                label="Role"
+                value={formData.roleId || 2}
+                onChange={(e) =>
+                  onFormDataChange({
+                    ...formData,
+                    roleId: Number(e.target.value),
+                  })
+                }
+                name="role"
+              >
+                <MenuItem value={1}>Administrator</MenuItem>
+                <MenuItem value={2}>Standard User</MenuItem>
+              </Select>
+              <FormHelperText>&nbsp;</FormHelperText>
+            </FormControl>
           </Box>
           <Box sx={{ display: "flex", gap: 2, mt: 2 }}>
             <FormControlLabel
               control={
                 <Checkbox
-                  checked={formData.isActive || false}
+                  checked={Boolean(formData.isActive)}
                   onChange={(e) =>
                     onFormDataChange({
                       ...formData,
@@ -279,7 +292,9 @@ const UserEditDialog: React.FC<UserEditDialogProps> = ({
               label="Active"
             />
             <FormControlLabel
-              control={<Checkbox checked={formData.isVerified} disabled />}
+              control={
+                <Checkbox checked={Boolean(formData.isVerified)} disabled />
+              }
               label="Verified"
             />
           </Box>

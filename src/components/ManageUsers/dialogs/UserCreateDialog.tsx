@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useId } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -13,6 +13,10 @@ import {
   IconButton,
   alpha,
   MenuItem,
+  FormControl,
+  InputLabel,
+  Select,
+  FormHelperText,
 } from "@mui/material";
 import { Close } from "@mui/icons-material";
 import type { CreateUserRequest } from "../../../models/user";
@@ -36,6 +40,9 @@ const UserCreateDialog: React.FC<UserCreateDialogProps> = ({
 }) => {
   const theme = useTheme();
   const isSmall = useMediaQuery(theme.breakpoints.down("sm"));
+  const titleId = useId();
+  const roleLabelId = `${titleId}-role-label`;
+  const roleSelectId = `${titleId}-role`;
 
   const firstNameError = useMemo(() => {
     return formData.firstName?.trim() ? "" : "First name is required";
@@ -99,6 +106,7 @@ const UserCreateDialog: React.FC<UserCreateDialogProps> = ({
       fullWidth
       fullScreen={isSmall}
       disableEscapeKeyDown
+      aria-labelledby={titleId}
       slotProps={{
         paper: {
           sx: {
@@ -123,6 +131,8 @@ const UserCreateDialog: React.FC<UserCreateDialogProps> = ({
       }}
     >
       <DialogTitle
+        component="div"
+        id={titleId}
         sx={{
           position: "relative",
           px: { xs: 2.5, sm: 3 },
@@ -134,7 +144,7 @@ const UserCreateDialog: React.FC<UserCreateDialogProps> = ({
           gap: 0.75,
         }}
       >
-        <Typography variant="h6" sx={{ fontWeight: 700 }}>
+        <Typography variant="h6" component="h2" sx={{ fontWeight: 700 }}>
           Create New User
         </Typography>
         <Typography
@@ -269,23 +279,26 @@ const UserCreateDialog: React.FC<UserCreateDialogProps> = ({
               id="create-company-name"
               name="company-name"
             />
-            <TextField
-              fullWidth
-              select
-              label="Role"
-              value={formData.roleId || 2}
-              onChange={(e) =>
-                onFormDataChange({
-                  ...formData,
-                  roleId: Number(e.target.value),
-                })
-              }
-              id="create-role"
-              name="role"
-            >
-              <MenuItem value={1}>Administrator</MenuItem>
-              <MenuItem value={2}>Standard User</MenuItem>
-            </TextField>
+            <FormControl fullWidth>
+              <InputLabel id={roleLabelId}>Role</InputLabel>
+              <Select
+                labelId={roleLabelId}
+                id={roleSelectId}
+                label="Role"
+                value={formData.roleId || 2}
+                onChange={(e) =>
+                  onFormDataChange({
+                    ...formData,
+                    roleId: Number(e.target.value),
+                  })
+                }
+                inputProps={{ name: "role" }}
+              >
+                <MenuItem value={1}>Administrator</MenuItem>
+                <MenuItem value={2}>Standard User</MenuItem>
+              </Select>
+              <FormHelperText>&nbsp;</FormHelperText>
+            </FormControl>
           </Box>
         </Box>
       </DialogContent>

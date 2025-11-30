@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useId } from "react";
 import { useTheme } from "@mui/material/styles";
 import { alpha } from "@mui/material/styles";
 import Card from "@mui/material/Card";
@@ -8,6 +8,10 @@ import Box from "@mui/material/Box";
 import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
 import MenuItem from "@mui/material/MenuItem";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import Select from "@mui/material/Select";
+import FormHelperText from "@mui/material/FormHelperText";
 import type { UserFilters as UserFiltersType } from "../../hooks/users/useUserFilters";
 
 interface UserFiltersProps {
@@ -24,6 +28,9 @@ const UserFilters: React.FC<UserFiltersProps> = ({
   onClearFilters,
 }) => {
   const theme = useTheme();
+  const roleLabelId = useId();
+  const verifiedLabelId = useId();
+  const activeLabelId = useId();
 
   return (
     <Card
@@ -111,48 +118,54 @@ const UserFilters: React.FC<UserFiltersProps> = ({
               id="filter-email"
               name="filter-email"
             />
-            <TextField
-              fullWidth
-              select
-              label="Role"
-              value={filters.role}
-              onChange={(e) => onFilterChange("role", e.target.value)}
-              sx={{ minWidth: 0 }}
-              id="filter-role"
-              name="role"
-            >
-              <MenuItem value="All">All</MenuItem>
-              <MenuItem value="Administrator">Administrator</MenuItem>
-              <MenuItem value="User">Standard User</MenuItem>
-            </TextField>
-            <TextField
-              fullWidth
-              select
-              label="Verified"
-              value={filters.isVerified}
-              onChange={(e) => onFilterChange("isVerified", e.target.value)}
-              sx={{ minWidth: 0 }}
-              id="filter-is-verified"
-              name="is-verified"
-            >
-              <MenuItem value="All">All</MenuItem>
-              <MenuItem value="Verified">Verified</MenuItem>
-              <MenuItem value="Unverified">Unverified</MenuItem>
-            </TextField>
-            <TextField
-              fullWidth
-              select
-              label="Active"
-              value={filters.isActive}
-              onChange={(e) => onFilterChange("isActive", e.target.value)}
-              sx={{ minWidth: 0 }}
-              id="filter-is-active"
-              name="is-active"
-            >
-              <MenuItem value="All">All</MenuItem>
-              <MenuItem value="Active">Active</MenuItem>
-              <MenuItem value="Inactive">Inactive</MenuItem>
-            </TextField>
+            <FormControl fullWidth sx={{ minWidth: 0 }}>
+              <InputLabel id={roleLabelId}>Role</InputLabel>
+              <Select
+                labelId={roleLabelId}
+                id={`${roleLabelId}-select`}
+                label="Role"
+                value={filters.role}
+                onChange={(e) => onFilterChange("role", e.target.value)}
+                name="role"
+              >
+                <MenuItem value="All">All</MenuItem>
+                <MenuItem value="Administrator">Administrator</MenuItem>
+                <MenuItem value="User">Standard User</MenuItem>
+              </Select>
+              <FormHelperText>&nbsp;</FormHelperText>
+            </FormControl>
+            <FormControl fullWidth sx={{ minWidth: 0 }}>
+              <InputLabel id={verifiedLabelId}>Verified</InputLabel>
+              <Select
+                labelId={verifiedLabelId}
+                id={`${verifiedLabelId}-select`}
+                label="Verified"
+                value={filters.isVerified}
+                onChange={(e) => onFilterChange("isVerified", e.target.value)}
+                name="is-verified"
+              >
+                <MenuItem value="All">All</MenuItem>
+                <MenuItem value="Verified">Verified</MenuItem>
+                <MenuItem value="Unverified">Unverified</MenuItem>
+              </Select>
+              <FormHelperText>&nbsp;</FormHelperText>
+            </FormControl>
+            <FormControl fullWidth sx={{ minWidth: 0 }}>
+              <InputLabel id={activeLabelId}>Active</InputLabel>
+              <Select
+                labelId={activeLabelId}
+                id={`${activeLabelId}-select`}
+                label="Active"
+                value={filters.isActive}
+                onChange={(e) => onFilterChange("isActive", e.target.value)}
+                name="is-active"
+              >
+                <MenuItem value="All">All</MenuItem>
+                <MenuItem value="Active">Active</MenuItem>
+                <MenuItem value="Inactive">Inactive</MenuItem>
+              </Select>
+              <FormHelperText>&nbsp;</FormHelperText>
+            </FormControl>
             <TextField
               fullWidth
               label="Created At"

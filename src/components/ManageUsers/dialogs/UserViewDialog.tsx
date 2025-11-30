@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useId } from "react";
 import { useTheme } from "@mui/material/styles";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import Dialog from "@mui/material/Dialog";
@@ -25,6 +25,7 @@ const UserViewDialog: React.FC<UserViewDialogProps> = ({
 }) => {
   const theme = useTheme();
   const isSmall = useMediaQuery(theme.breakpoints.down("sm"));
+  const titleId = useId();
 
   const selectedUserDetails = user
     ? [
@@ -65,6 +66,7 @@ const UserViewDialog: React.FC<UserViewDialogProps> = ({
       fullWidth
       fullScreen={isSmall}
       disableEscapeKeyDown
+      aria-labelledby={titleId}
       slotProps={{
         paper: {
           sx: {
@@ -89,6 +91,8 @@ const UserViewDialog: React.FC<UserViewDialogProps> = ({
       }}
     >
       <DialogTitle
+        component="div"
+        id={titleId}
         sx={{
           position: "relative",
           px: { xs: 2.5, sm: 3 },
@@ -100,11 +104,12 @@ const UserViewDialog: React.FC<UserViewDialogProps> = ({
           gap: 0.75,
         }}
       >
-        <Typography variant="h6" sx={{ fontWeight: 700 }}>
+        <Typography variant="h6" component="h2" sx={{ fontWeight: 700 }}>
           {DIALOG_TYPES.view.title}
         </Typography>
         <Typography
           variant="body2"
+          component="p"
           sx={{
             opacity: 0.85,
             maxWidth: 420,
